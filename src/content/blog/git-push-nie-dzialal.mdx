@@ -1,0 +1,136 @@
+---
+title: "Dlaczego mój git push nie działał — 5 pułapek początkującego"
+description: "Spędziłem godzinę, zanim mój kod trafił na GitHub. Oto 5 pułapek — od pagera i pustego agenta SSH po HTTPS vs SSH — i jak je rozbroić."
+pubDate: 2026-10-06
+tags: ["git", "github", "ssh", "dla-początkujących"]
+draft: false
+---
+
+import Hare from "../../components/Hare.astro";
+
+Miało być tak prosto: `git add`, `git commit`, `git push` — i blog ląduje na GitHubie. A skończyło się godziną z terminalem, który uparcie twierdził, że „jakby nie działa". Spisuję wszystkie pułapki, w które wpadłem — żebyś Ty przeszedł przez to w 5 minut, a nie w godzinę.
+
+<Hare type="why">
+
+„Przecież wpisuję wszystko dobrze, czemu to nie działa?!" — jeśli to pomyślałeś, czytaj dalej. Zwykle problem nie jest tam, gdzie go szukasz.
+
+</Hare>
+
+## Pułapka 1: terminal utknął w pagerze
+
+Odpaliłem `git log` i zobaczyłem na dole ekranu `(END)`. Wpisuję kolejne komendy — cisza, nic się nie dzieje.
+
+Okazało się, że `git log` otworzył wynik w **pagerze** (programie `less`). Dopóki w nim siedzisz, wszystko, co wpisujesz, leci **do pagera, a nie do terminala**.
+
+<Hare type="simple">
+
+Naciśnij **`q`**, żeby wyjść z pagera. Tyle. Komendy znów zaczną działać.
+
+</Hare>
+
+Żeby `git log` nie wpadał w pager, możesz raz ustawić:
+
+```bash
+git config --global core.pager cat
+```
+
+## Pułapka 2: „repo jest na GitHubie" ≠ „kod wypchnięty"
+
+Założyłem repo na GitHubie i byłem pewien, że mam wszystko w chmurze. Tymczasem `git status` pokazywał **wszystkie pliki** jako nowe. Zajrzałem w historię:
+
+```bash
+git log --oneline
+# cce8179 (HEAD -> main, origin/main) "Initial commit from Astro"
+```
+
+<Hare type="explain">
+
+Ten „Initial commit from Astro" zrobił za mnie `npm create astro` przy zakładaniu projektu — zawierał tylko domyślny starter, nie mój kod. Cała moja praca wciąż była **niezacommitowana**.
+
+</Hare>
+
+Nauczka: **utworzenie repozytorium na GitHubie to nie to samo co wypchnięcie kodu.** Dopóki nie zrobisz `commit` + `push`, na górze jest pusto (albo stoi sam szkielet).
+
+## Pułapka 3: klucz SSH, którego nikt nie wczytał
+
+Robię `git push` i dostaję:
+
+```
+git@github.com: Permission denied (publickey).
+```
+
+Sprawdziłem agenta SSH:
+
+```bash
+ssh-add -l
+# The agent has no identities.
+```
+
+<Hare type="bug">
+
+Klucz **istniał** na dysku, był **dodany na GitHubie** — ale nie był **wczytany do agenta**. GitHub nie dostawał czym się przedstawić, więc odbijał mnie z „Permission denied". Klasyka po restarcie komputera.
+
+</Hare>
+
+Rozwiązanie — wczytać klucz (i zapisać go w Keychain, żeby przeżył restart):
+
+```bash
+ssh-add --apple-use-keychain ~/.ssh/id_ed25519
+```
+
+Potem test:
+
+```bash
+ssh -T git@github.com
+# Hi TwojaNazwa! You've successfully authenticated...
+```
+
+## Pułapka 4: HTTPS kontra SSH
+
+Myślałem, że po naprawie SSH będzie z górki. A push znów padł:
+
+```
+error: RPC failed; HTTP 400 curl 22 ...
+fatal: the remote end hung up unexpectedly
+```
+
+<Hare type="explain">
+
+Słowa **`curl`** i **`HTTP`** zdradziły sprawę: mój `origin` był na **HTTPS**, nie SSH. Cała naprawa klucza nie dotyczyła pusha, bo szedł inną drogą! A HTTPS zadławił się większą paczką (miałem sporo grafik).
+
+</Hare>
+
+Skoro SSH już działało, przełączyłem remote na SSH:
+
+```bash
+git remote set-url origin git@github.com:TwojaNazwa/twoje-repo.git
+git push -u origin main
+```
+
+<Hare type="tip">
+
+Jeśli widzisz `curl` i `HTTP 400` przy pushu — jedziesz po HTTPS. Przełączenie `origin` na `git@github.com:...` omija limity HTTP i jest trwałe. (Alternatywa bez zmiany protokołu: `git config http.postBuffer 524288000`.)
+
+</Hare>
+
+## Pułapka 5: znaki, które nie są tym, czym myślisz
+
+Przez chwilę nic nie działało, bo w komendach… wpisywałem złe znaki. `~` zamieniało mi się na `¬`, a `-l` na `-1`. Terminal grzecznie szukał katalogu `¬` i zwracał błąd, który z pozoru nie miał sensu.
+
+<Hare type="tip">
+
+Gdy komenda „nie działa", sprawdź **dokładnie te znaki**, które poszły do terminala. Tylda, myślniki, mała litera `l` vs cyfra `1` — to klasyczne pułapki. W razie problemów z tyldą użyj `$HOME` zamiast `~`.
+
+</Hare>
+
+## Morał
+
+Zauważ wzorzec: **„jakby nie działa" prawie nigdy nie znaczy, że komenda zawiodła.** Znaczy, że terminal jest w jakimś stanie, którego nie widzę — czeka w pagerze, czeka na domknięcie cudzysłowu, albo dostaje inne znaki, niż myślę.
+
+<Hare type="success">
+
+Kod w końcu wylądował na GitHubie: `cce8179..3e202fb main -> main`. Godzina walki, ale każdą z tych pułapek rozumiem teraz od podszewki — i już nigdy mnie nie zaskoczą. To jest nauka. 🎉
+
+</Hare>
+
+Jeśli utknąłeś na którejś z tych pięciu — napisz do mnie na [GitHubie](https://github.com/TenaciousHare) albo [LinkedInie](https://www.linkedin.com/in/...). Następnym razem rozbroisz je w minutę.
