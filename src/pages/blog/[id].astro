@@ -16,7 +16,10 @@ const { post } = Astro.props;
 const { Content } = await render(post);
 ---
 
-<Layout>
+<Layout
+  title={`${post.data.title} — Zając na Froncie`}
+  description={post.data.description}
+>
   <article class="prose prose-slate prose-a:text-brand prose-a:no-underline hover:prose-a:underline">
     <h1>{post.data.title}</h1>
     <p class="text-sm text-slate-500">

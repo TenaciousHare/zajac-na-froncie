@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://zajac-na-froncie.netlify.app/sitemap-index.xml
