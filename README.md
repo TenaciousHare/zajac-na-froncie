@@ -83,4 +83,13 @@ W treści MDX można wołać Senior Hare'a z jednym z 12 typów. Każdy ma włas
 
 - [x] Deploy na Netlify
 - [ ] Paleta kolorów i dopracowanie stylów
-- [ ] Analityka w
+- [ ] Analityka wyświetleń (prywatna, bez ciasteczek)
+- [ ] Wpisy po angielsku
+
+## Autor
+
+**Paweł Zajączkowski** — [GitHub](https://github.com/TenaciousHare)
+
+---
+
+_Zbudowane z 🥕 i pomocą AI._
