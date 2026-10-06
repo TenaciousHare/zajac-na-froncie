@@ -17,9 +17,11 @@ const { Content } = await render(post);
 ---
 
 <Layout>
-  <article class="prose prose-slate">
+  <article class="prose prose-slate prose-a:text-brand prose-a:no-underline hover:prose-a:underline">
     <h1>{post.data.title}</h1>
-    <p>{post.data.pubDate.toLocaleDateString("pl-PL")}</p>
+    <p class="text-sm text-slate-500">
+      {post.data.pubDate.toLocaleDateString("pl-PL")}
+    </p>
     <Content />
   </article>
 </Layout>
