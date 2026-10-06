@@ -1,3 +1,10 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 @source "../content";
+
+@theme {
+  --color-brand: #4d7c0f; /* oliwkowa zieleń */
+  --color-brand-dark: #3f6212; /* ciemniejsza — pod hover */
+  --color-denim: #2563eb; /* niebieski jeansu */
+  --color-sneaker: #dc2626; /* czerwień trampek */
+}
