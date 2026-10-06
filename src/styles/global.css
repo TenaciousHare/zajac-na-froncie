@@ -3,8 +3,10 @@
 @source "../content";
 
 @theme {
-  --color-brand: #4d7c0f; /* oliwkowa zieleń */
-  --color-brand-dark: #3f6212; /* ciemniejsza — pod hover */
-  --color-denim: #2563eb; /* niebieski jeansu */
+  --color-brand: #4d7c0f; /* oliwkowa zieleń — koszula (kolor dodatkowy) */
+  --color-brand-dark: #3f6212;
+  --color-accent: #ea580c; /* pomarańcz — "Froncie" (GŁÓWNY akcent) */
+  --color-accent-dark: #c2410c; /* ciemniejszy — pod hover / lepszy kontrast */
+  --color-denim: #2563eb; /* niebieski */
   --color-sneaker: #dc2626; /* czerwień trampek */
 }

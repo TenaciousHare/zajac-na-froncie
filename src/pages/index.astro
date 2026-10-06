@@ -1,31 +1,35 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import { Image } from "astro:assets";
-import heroImg from "../assets/SeniorHareHero.png";
+import heroImg from "../assets/hero-banner.png";
 ---
 
 <Layout
-  title="Zając na Froncie - frontent od zera"
+  title="Zając na Froncie — frontend od zera"
   description="Nauka frontendu od podstaw z komiksowym Senior Hare. React, TypeScript, Astro i CSS — po polsku, krok po kroku."
 >
-  <section class="flex flex-col items-center gap-8 md:flex-row md:justify-between">
-    <div>
-      <h1 class="text-4xl font-bold text-slate-900">Zając na Froncie</h1>
-      <p class="mt-4 text-lg text-slate-600">
+  <section class="w-screen ml-[calc(50%-50vw)] mr-[calc(50%-50vw)] bg-white">
+    <div class="mx-auto max-w-5xl px-4 py-12">
+      <h1 class="sr-only">Zając na Froncie</h1>
+
+      <div class="relative">
+        <Image
+          src={heroImg}
+          alt="Zając na Froncie — Senior Hare, zając-senior programista"
+          class="w-full"
+        />
+
+        <a
+          href="/blog"
+          class="mt-4 block w-fit mx-auto md:mt-0 md:absolute md:bottom-6 md:left-1/2 md:-translate-x-1/2 rounded-lg bg-accent px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-accent-dark"
+        >
+          Czytaj blog
+        </a>
+      </div>
+
+      <p class="mt-1 text-center text-lg text-slate-600">
         Frontend od zera — z Senior Hare w roli przewodnika.
       </p>
-      <a
-        href="/blog"
-        class="mt-6 inline-block rounded-lg bg-brand px-5 py-3 font-medium text-white hover:bg-brand-dark"
-      >
-        Czytaj blog
-      </a>
     </div>
-
-    <Image
-      src={heroImg}
-      alt="Senior Hare — zając-senior programista"
-      class="w-64 md:w-80"
-    />
   </section>
 </Layout>
