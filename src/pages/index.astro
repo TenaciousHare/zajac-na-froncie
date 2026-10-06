@@ -1,11 +1,28 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+import Layout from "../layouts/Layout.astro";
+import { Image } from "astro:assets";
+import heroImg from "../assets/SeniorHareHero.png";
 ---
 
 <Layout>
-	<Welcome />
+  <section class="flex flex-col items-center gap-8 md:flex-row md:justify-between">
+    <div>
+      <h1 class="text-4xl font-bold text-slate-900">Zając na Froncie</h1>
+      <p class="mt-4 text-lg text-slate-600">
+        Frontend od zera — z Senior Hare w roli przewodnika.
+      </p>
+      <a
+        href="/blog"
+        class="mt-6 inline-block rounded-lg bg-blue-600 px-5 py-3 font-medium text-white hover:bg-blue-700"
+      >
+        Czytaj blog
+      </a>
+    </div>
+
+    <Image
+      src={heroImg}
+      alt="Senior Hare — zając-senior programista"
+      class="w-64 md:w-80"
+    />
+  </section>
 </Layout>

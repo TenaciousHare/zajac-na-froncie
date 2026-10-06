@@ -1,0 +1,32 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { getCollection } from "astro:content";
+
+// pobierz wszystkie wpisy z kolekcji "blog"
+const posts = (await getCollection("blog")).sort(
+  (a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime(),
+);
+---
+
+<Layout>
+  <h1 class="text-3xl font-bold text-slate-900">Blog</h1>
+
+  <ul class="space-y-6">
+    {posts.map((post) => (
+      <li>
+        <a
+          href={`/blog/${post.id}`}
+          class="group block rounded-xl border border-slate-200 p-6 transition hover:shadow-md"
+        >
+          <h2 class="text-xl font-semibold text-slate-900 group-hover:text-blue-600">
+            {post.data.title}
+          </h2>
+          <p class="mt-1 text-sm text-slate-500">
+            {post.data.pubDate.toLocaleDateString("pl-PL")}
+          </p>
+          <p class="mt-2 text-slate-700">{post.data.description}</p>
+        </a>
+      </li>
+    ))}
+  </ul>
+</Layout>

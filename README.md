@@ -1,46 +1,86 @@
-# Astro Starter Kit: Basics
+# 🐰 Zając na Froncie
 
-```sh
-npm create astro@latest -- --template basics
+> Blog o nauce frontendu dla początkujących — prowadzony przez komiksowego **Senior Hare'a**. Zapis prawdziwej drogi od zera, z naciskiem na to, _jak_ się uczyć (również z pomocą AI).
+
+![Senior Hare](./src/assets/SeniorHareHero.png)
+
+🔗 **Demo na żywo:** _wkrótce_ (Netlify)
+
+## O projekcie
+
+„Zając na Froncie" to blog pisany z perspektywy osoby, która uczy się frontendu od podstaw. Zamiast udawać eksperta, dokumentuję realny proces: błędy, momenty „aha", debugowanie o 3:00 i małe zwycięstwa. Przewodnikiem jest **Senior Hare** — komiksowy zając-senior, który komentuje każdy etap.
+
+Blog jest po polsku, z myślą o polskich początkujących. Architektura jest gotowa na wpisy po angielsku w przyszłości.
+
+## Stack
+
+- **[Astro 5](https://astro.build/)** — framework, zero JS domyślnie, szybki statyczny output
+- **MDX** — Markdown + komponenty w treści wpisów
+- **Tailwind CSS v4** (+ plugin `@tailwindcss/typography`) — stylowanie
+- **TypeScript** — bezpieczeństwo typów
+- **Content Collections** — wpisy z walidacją schematu (Zod)
+
+## Uruchomienie lokalne
+
+```bash
+npm install      # instalacja zależności
+npm run dev      # serwer deweloperski → http://localhost:4321
+npm run build    # build produkcyjny → katalog dist/
+npm run preview  # podgląd buildu lokalnie
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+## Struktura
 
-## 🚀 Project Structure
-
-Inside of your Astro project, you'll see the following folders and files:
-
-```text
-/
-├── public/
-│   └── favicon.svg
-├── src
-│   ├── assets
-│   │   └── astro.svg
-│   ├── components
-│   │   └── Welcome.astro
-│   ├── layouts
-│   │   └── Layout.astro
-│   └── pages
-│       └── index.astro
-└── package.json
+```
+src/
+├── assets/          # grafiki optymalizowane przez Astro (hero, badge'y)
+│   └── hare/        # 12 badge'y Senior Hare'a
+├── components/      # Nav, Hare (komponent do MDX)
+├── content/blog/    # wpisy w .mdx
+├── layouts/         # Layout.astro (szkielet strony)
+├── pages/           # routing: index, about, blog/[id]
+├── styles/          # global.css (Tailwind)
+└── content.config.ts # schemat kolekcji wpisów
 ```
 
-To learn more about the folder structure of an Astro project, refer to [our guide on project structure](https://docs.astro.build/en/basics/project-structure/).
+## Jak dodać wpis
 
-## 🧞 Commands
+1. Utwórz plik w `src/content/blog/`, np. `moj-wpis.mdx`.
+2. Dodaj frontmatter zgodny ze schematem:
+   ```yaml
+   ---
+   title: "Tytuł wpisu"
+   description: "Krótki opis"
+   pubDate: 2026-10-06
+   tags: ["astro", "nauka"]
+   draft: false
+   ---
+   ```
+3. Nazwa pliku = slug wpisu (adres URL).
 
-All commands are run from the root of the project, from a terminal:
+## Komponent `<Hare>`
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+W treści MDX można wołać Senior Hare'a z jednym z 12 typów. Każdy ma własny badge i nagłówek:
 
-## 👀 Want to learn more?
+```mdx
+<Hare type="tip">
+  <div class="italic text-slate-600">
+    Najpierw spróbuj sam, dopiero potem pytaj.
+  </div>
+</Hare>
+```
 
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+| `type`    | Nagłówek                | `type`         | Nagłówek           |
+| --------- | ----------------------- | -------------- | ------------------ |
+| `explain` | Wyjaśnienie             | `works`        | Działa!            |
+| `code`    | Kod                     | `debug`        | Debugowanie o 3:00 |
+| `tip`     | Wskazówka               | `learn`        | Nowa technologia   |
+| `bug`     | Bug                     | `question`     | Pytanie            |
+| `why`     | Dlaczego to nie działa? | `simple`       | Proste rozwiązanie |
+| `success` | Sukces!                 | `architecture` | Architektura       |
+
+## Roadmap
+
+- [ ] Deploy na Netlify
+- [ ] Paleta kolorów i dopracowanie stylów
+- [ ] Analityka w

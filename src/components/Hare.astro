@@ -1,0 +1,61 @@
+---
+import { Image } from "astro:assets";
+
+import explain from "../assets/hare/SeniorHare_1_explanations-tutorial.png";
+import code from "../assets/hare/SeniorHare_2_coding.png";
+import tip from "../assets/hare/SeniorHare_3_tips_bestPractices.png";
+import bug from "../assets/hare/SeniorHare_4_bugs-frustration.png";
+import why from "../assets/hare/SeniorHare_5_whyNotWorking.png";
+import works from "../assets/hare/SeniorHare_6_itWorks.png";
+import debug from "../assets/hare/SeniorHare_7_debugging.png";
+import learn from "../assets/hare/SeniorHare_8_learning-newTechnologies.png";
+import question from "../assets/hare/SeniorHare_9_questions-concerns.png";
+import simple from "../assets/hare/SeniorHare_10_simpleSolutions.png";
+import architecture from "../assets/hare/SeniorHare_11_architecture-advanced.png";
+import success from "../assets/hare/SeniorHare_12_success.png";
+
+const badges = {
+  explain,
+  code,
+  tip,
+  bug,
+  why,
+  works,
+  debug,
+  learn,
+  question,
+  simple,
+  architecture,
+  success,
+};
+const labels: Record<keyof typeof badges, string> = {
+  explain: "Wyjaśnienie",
+  code: "Kod",
+  tip: "Wskazówka",
+  bug: "Bug",
+  why: "Dlaczego to nie działa?",
+  works: "Działa!",
+  debug: "Debugowanie o 3:00",
+  learn: "Nowa technologia",
+  question: "Pytanie",
+  simple: "Proste rozwiązanie",
+  architecture: "Architektura",
+  success: "Sukces!",
+};
+
+interface Props {
+  type: keyof typeof badges;
+}
+
+const { type } = Astro.props;
+const img = badges[type];
+const label = labels[type];
+---
+
+<aside class="not-prose my-6 flex items-center gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+  <Image src={img} alt="Senior Hare" class="w-16 shrink-0" />
+  <div class="text-slate-700">
+    <p class="font-semibold text-slate-900">{label}</p>
+    <slot />
+  </div>
+</aside>

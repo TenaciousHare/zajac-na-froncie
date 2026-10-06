@@ -1,0 +1,25 @@
+---
+import { getCollection, render } from "astro:content";
+import Layout from "../../layouts/Layout.astro";
+
+// 1. Powiedz Astro, jakie strony zbudować — po jednej na wpis
+export async function getStaticPaths() {
+  const posts = await getCollection("blog");
+  return posts.map((post) => ({
+    params: { id: post.id }, // ⚠️ "id" MUSI pasować do nazwy pliku [id].astro
+    props: { post }, // przekazujemy cały wpis do strony
+  }));
+}
+
+// 2. Odbierz przekazany wpis i wyrenderuj jego Markdown
+const { post } = Astro.props;
+const { Content } = await render(post);
+---
+
+<Layout>
+  <article class="prose prose-slate">
+    <h1>{post.data.title}</h1>
+    <p>{post.data.pubDate.toLocaleDateString("pl-PL")}</p>
+    <Content />
+  </article>
+</Layout>
