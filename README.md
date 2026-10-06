@@ -4,7 +4,7 @@
 
 ![Senior Hare](./src/assets/SeniorHareHero.png)
 
-🔗 **Demo na żywo:** _wkrótce_ (Netlify)
+🔗 **Demo na żywo:** [zajac-na-froncie.netlify.app](https://zajac-na-froncie.netlify.app)
 
 ## O projekcie
 
@@ -81,6 +81,6 @@ W treści MDX można wołać Senior Hare'a z jednym z 12 typów. Każdy ma włas
 
 ## Roadmap
 
-- [ ] Deploy na Netlify
+- [x] Deploy na Netlify
 - [ ] Paleta kolorów i dopracowanie stylów
 - [ ] Analityka w
