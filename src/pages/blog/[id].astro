@@ -1,14 +1,15 @@
 ---
-import { getCollection, render } from "astro:content";
+import { render } from "astro:content";
+import { getPublishedPosts } from "../../utils/posts";
 import Layout from "../../layouts/Layout.astro";
 import Comments from "../../components/Comments.astro";
 
 // 1. Powiedz Astro, jakie strony zbudować — po jednej na wpis
 export async function getStaticPaths() {
-  const posts = await getCollection("blog");
+  const posts = await getPublishedPosts();
   return posts.map((post) => ({
-    params: { id: post.id }, // ⚠️ "id" MUSI pasować do nazwy pliku [id].astro
-    props: { post }, // przekazujemy cały wpis do strony
+    params: { id: post.id },
+    props: { post },
   }));
 }
 
