@@ -12,6 +12,8 @@ const blog = defineCollection({
     pubDate: z.coerce.date(), // string z YAML → prawdziwy Date
     tags: z.array(z.string()).default([]),
     draft: z.boolean().default(false),
+    series: z.string().optional(),
+    seriesPart: z.number().optional(),
   }),
 });
 
