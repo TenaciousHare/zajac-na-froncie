@@ -1,22 +1,28 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import { Image } from "astro:assets";
-import heroImg from "../assets/hero-banner.png";
+import heroLight from "../assets/hero-banner_light.png";
+import heroDark from "../assets/hero-banner_dark.png";
 ---
 
 <Layout
   title="Zając na Froncie — frontend od zera"
   description="Nauka frontendu od podstaw z komiksowym Senior Hare. React, TypeScript, Astro i CSS — po polsku, krok po kroku."
 >
-  <section class="w-screen ml-[calc(50%-50vw)] mr-[calc(50%-50vw)] bg-white">
+  <section class="w-screen ml-[calc(50%-50vw)] mr-[calc(50%-50vw)] bg-white dark:bg-slate-900">
     <div class="mx-auto max-w-5xl px-4 py-12">
       <h1 class="sr-only">Zając na Froncie</h1>
 
       <div class="relative">
         <Image
-          src={heroImg}
-          alt="Zając na Froncie — Senior Hare, zając-senior programista"
-          class="w-full"
+          src={heroLight}
+          alt="Zając na Froncie — Senior Hare"
+          class="w-full dark:hidden"
+        />
+        <Image
+          src={heroDark}
+          alt="Zając na Froncie — Senior Hare"
+          class="hidden w-full dark:block"
         />
 
         <a
@@ -27,7 +33,7 @@ import heroImg from "../assets/hero-banner.png";
         </a>
       </div>
 
-      <p class="mt-1 text-center text-lg text-slate-600">
+      <p class="mt-1 text-center text-lg text-slate-600 dark:text-slate-400">
         Frontend od zera — z Senior Hare w roli przewodnika.
       </p>
     </div>

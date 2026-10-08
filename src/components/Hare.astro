@@ -52,10 +52,10 @@ const img = badges[type];
 const label = labels[type];
 ---
 
-<aside class="not-prose my-6 flex items-center gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+<aside class="not-prose my-6 flex items-center gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800">
   <Image src={img} alt="Senior Hare" class="w-16 shrink-0" />
-  <div class="text-slate-700">
-    <p class="font-semibold text-slate-900">{label}</p>
+  <div class="text-slate-700 dark:text-slate-300">
+    <p class="font-semibold text-slate-900 dark:text-slate-100">{label}</p>
     <slot />
   </div>
 </aside>

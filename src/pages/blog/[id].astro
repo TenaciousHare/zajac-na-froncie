@@ -21,9 +21,9 @@ const { Content } = await render(post);
   title={`${post.data.title} — Zając na Froncie`}
   description={post.data.description}
 >
-  <article class="prose prose-slate prose-a:text-accent hover:prose-a:text-accent-dark prose-a:no-underline hover:prose-a:underline">
+  <article class="prose prose-slate prose-a:text-accent hover:prose-a:text-accent-dark prose-a:no-underline hover:prose-a:underline dark:prose-invert">
     <h1>{post.data.title}</h1>
-    <p class="text-sm text-slate-500">
+    <p class="text-sm text-slate-500 dark:text-slate-400">
       {post.data.pubDate.toLocaleDateString("pl-PL")}
     </p>
     <Content />

@@ -17,3 +17,34 @@
     async
   ></script>
 </section>
+
+<script>
+  function giscusTheme() {
+    return document.documentElement.getAttribute("data-theme") === "dark"
+      ? "dark"
+      : "light";
+  }
+
+  function applyGiscusTheme() {
+    const iframe = document.querySelector<HTMLIFrameElement>(
+      "iframe.giscus-frame",
+    );
+    iframe?.contentWindow?.postMessage(
+      { giscus: { setConfig: { theme: giscusTheme() } } },
+      "https://giscus.app",
+    );
+  }
+
+  // 1. gdy Giscus się załaduje → ustaw aktualny motyw
+  addEventListener("message", (event) => {
+    if (event.origin !== "https://giscus.app") return;
+    if (typeof event.data?.giscus === "undefined") return;
+    applyGiscusTheme();
+  });
+
+  // 2. gdy motyw strony się zmieni (klik w przełącznik) → zaktualizuj Giscus
+  new MutationObserver(applyGiscusTheme).observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["data-theme"],
+  });
+</script>
