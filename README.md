@@ -2,7 +2,10 @@
 
 > Blog o nauce frontendu dla początkujących — prowadzony przez komiksowego **Senior Hare'a**. Zapis prawdziwej drogi od zera, z naciskiem na to, _jak_ się uczyć (również z pomocą AI).
 
-![Senior Hare](./src/assets/SeniorHareHero.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./src/assets/hero-banner_dark.png">
+  <img alt="Zając na Froncie — Senior Hare" src="./src/assets/hero-banner_light.png">
+</picture>
 
 🔗 **Demo na żywo:** [zajac-na-froncie.netlify.app](https://zajac-na-froncie.netlify.app)
 
@@ -10,7 +13,16 @@
 
 „Zając na Froncie" to blog pisany z perspektywy osoby, która uczy się frontendu od podstaw. Zamiast udawać eksperta, dokumentuję realny proces: błędy, momenty „aha", debugowanie o 3:00 i małe zwycięstwa. Przewodnikiem jest **Senior Hare** — komiksowy zając-senior, który komentuje każdy etap.
 
-Blog jest po polsku, z myślą o polskich początkujących. Architektura jest gotowa na wpisy po angielsku w przyszłości.
+Blog jest po polsku, z myślą o polskich początkujących.
+
+## Funkcje
+
+- 🌗 **Tryb ciemny** z przełącznikiem — pamięta wybór (`localStorage`), startuje bez mignięcia
+- 💬 **Komentarze** (Giscus / GitHub Discussions) zsynchronizowane z motywem
+- 🗓️ **Zaplanowane wpisy** — pisanie „na zapas" z przyszłą datą + codzienny auto-build
+- 🔍 **SEO** — tytuły i opisy per strona, Open Graph, sitemap, robots.txt
+- 📊 **Analityka** — Cloudflare Web Analytics (bez ciasteczek, bez bannera)
+- 🐰 **Komponent `<Hare>`** z 12 typami badge'y
 
 ## Stack
 
@@ -22,7 +34,7 @@ Blog jest po polsku, z myślą o polskich początkujących. Architektura jest go
 
 ## Uruchomienie lokalne
 
-```bash
+```
 npm install      # instalacja zależności
 npm run dev      # serwer deweloperski → http://localhost:4321
 npm run build    # build produkcyjny → katalog dist/
@@ -35,11 +47,12 @@ npm run preview  # podgląd buildu lokalnie
 src/
 ├── assets/          # grafiki optymalizowane przez Astro (hero, badge'y)
 │   └── hare/        # 12 badge'y Senior Hare'a
-├── components/      # Nav, Hare (komponent do MDX)
+├── components/      # Nav, Hare, Comments
 ├── content/blog/    # wpisy w .mdx
 ├── layouts/         # Layout.astro (szkielet strony)
 ├── pages/           # routing: index, about, blog/[id]
-├── styles/          # global.css (Tailwind)
+├── styles/          # global.css (Tailwind + motyw)
+├── utils/           # getPublishedPosts (filtr daty)
 └── content.config.ts # schemat kolekcji wpisów
 ```
 
@@ -47,22 +60,26 @@ src/
 
 1. Utwórz plik w `src/content/blog/`, np. `moj-wpis.mdx`.
 2. Dodaj frontmatter zgodny ze schematem:
-   ```yaml
-   ---
-   title: "Tytuł wpisu"
-   description: "Krótki opis"
-   pubDate: 2026-10-06
-   tags: ["astro", "nauka"]
-   draft: false
-   ---
-   ```
+
+```
+---
+title: "Tytuł wpisu"
+description: "Krótki opis"
+pubDate: 2026-10-08
+tags: ["astro", "nauka"]
+draft: false
+---
+```
+
 3. Nazwa pliku = slug wpisu (adres URL).
+
+> 💡 **Ukrywanie i planowanie:** `draft: true` chowa wpis. Data w **przyszłości** (`pubDate`) też go ukrywa — aż nadejdzie jej dzień, a codzienny automatyczny build opublikuje go sam.
 
 ## Komponent `<Hare>`
 
 W treści MDX można wołać Senior Hare'a z jednym z 12 typów. Każdy ma własny badge i nagłówek:
 
-```mdx
+```
 <Hare type="tip">
   <div class="italic text-slate-600">
     Najpierw spróbuj sam, dopiero potem pytaj.
@@ -73,8 +90,8 @@ W treści MDX można wołać Senior Hare'a z jednym z 12 typów. Każdy ma włas
 | `type`    | Nagłówek                | `type`         | Nagłówek           |
 | --------- | ----------------------- | -------------- | ------------------ |
 | `explain` | Wyjaśnienie             | `works`        | Działa!            |
-| `code`    | Kod                     | `debug`        | Debugowanie o 3:00 |
-| `tip`     | Wskazówka               | `learn`        | Nowa technologia   |
+| `code`    | Kod                     | `debug`        | Debugowanie        |
+| `tip`     | Wskazówka               | `learn`        | Nauka              |
 | `bug`     | Bug                     | `question`     | Pytanie            |
 | `why`     | Dlaczego to nie działa? | `simple`       | Proste rozwiązanie |
 | `success` | Sukces!                 | `architecture` | Architektura       |
@@ -82,9 +99,17 @@ W treści MDX można wołać Senior Hare'a z jednym z 12 typów. Każdy ma włas
 ## Roadmap
 
 - [x] Deploy na Netlify
-- [ ] Paleta kolorów i dopracowanie stylów
-- [ ] Analityka wyświetleń (prywatna, bez ciasteczek)
-- [ ] Wpisy po angielsku
+- [x] Paleta kolorów i dopracowanie stylów
+- [x] Analityka wyświetleń (prywatna, bez ciasteczek)
+- [x] Tryb ciemny
+- [x] Komentarze (Giscus)
+- [x] Zaplanowane wpisy
+- [ ] Nawigacja serii / poprzedni–następny wpis
+- [ ] Zakładka Projekty / portfolio
+- [ ] RSS feed
+- [ ] Klikalne tagi → strony tagów
+- [ ] Czas czytania + spis treści w wpisach
+- [ ] Własna strona 404 z Senior Hare'em
 
 ## Autor
 
