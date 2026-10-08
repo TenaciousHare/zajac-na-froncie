@@ -1,0 +1,71 @@
+---
+title: "Jak powstał mój METAR (cz. 1): pomysł i stack"
+description: "Pierwsza część serii o budowie aplikacji pogody lotniczej. Skąd pomysł, czym jest METAR i dlaczego wybrałem React, TypeScript i AVWX."
+pubDate: 2026-10-08
+tags: ["react", "typescript", "projekt", "lotnictwo"]
+draft: false
+---
+
+import Hare from "../../components/Hare.astro";
+
+To pierwszy wpis z serii o tym, jak krok po kroku zbudowałem **METAR** — moją aplikację do podglądu pogody lotniczej. Zacznę od początku: skąd w ogóle pomysł i z jakich „klocków" go złożyłem. Kod i konkrety przyjdą w kolejnych częściach.
+
+## Skąd pomysł
+
+Pracuję w miejscu, gdzie pogoda ma znaczenie. Kiepskie warunki pogodowe, takie jak burze, śnieżyce czy chociażby z pozoru niewinne jesienne mgły, mają ogromny wpływ na operacje lotnicze.Dotychczas korzystałem z zewnętrznych narzędzi, ale chciałem mieć **własny, czytelny, spersonalizowany podgląd** aktualnej pogody i prognozy na lotnisku — a przy okazji nauczyć się front-endu na czymś **realnym**, a nie kolejnej to-do liście.
+
+<Hare type="question">
+
+Po co budować coś, co już istnieje?! Bo nauka na czymś, czego naprawdę chcesz używać, jest sto razy skuteczniejsza niż na przykładzie z kursu.
+
+</Hare>
+
+## Czym jest METAR (i TAF)
+
+Dla osób spoza branży w dwóch zdaniach:
+
+- **METAR** to raport **aktualnej** pogody na lotnisku — wiatr, widzialność, chmury, temperatura, ciśnienie.
+- **TAF** to **prognoza** na najbliższe godziny.
+
+Oba, w wersji surowej zapisane są gęstymi skrótami, np. `BKN`, `VFR`, `TEMPO`. Dla fachowca czytelne od ręki, dla reszty — szyfr. (W jednym z kolejnych wpisów pokażę, jak zamieniłem te skróty na ludzki język.)
+
+<Hare type="explain">
+
+Przykładowy METAR: `EPKT 071200Z 24008KT 9999 BKN020 05/02 Q1018`. Wygląda groźnie, ale to tylko wiatr, widzialność, chmury, temperatura i ciśnienie — poukładane w stałej kolejności.
+
+</Hare>
+
+## Dlaczego własna apka, skoro są gotowe serwisy?
+
+Trzy powody:
+
+1. **Nauka** — chciałem zrozumieć, jak działa pobieranie danych z API, typowanie, komponenty.
+2. **Czytelność** — własny widok, dokładnie taki, jaki mi pasuje.
+3. **Jednostki metryczne** — wolę odległości podawane w metrach i prędkości w m/s zamiast stóp i węzłów, więc apka od razu to przelicza.
+
+## Stack — i dlaczego taki
+
+<Hare type="learn">
+
+Nie wybierałem technologii „bo to modne". Każdy klocek rozwiązuje konkretny problem — i tak podchodź do stacku na starcie: najpierw problem, potem narzędzie.
+
+</Hare>
+
+- **React + TypeScript** — komponenty do budowy interfejsu, a TypeScript łapie głupie błędy (literówki, złe typy) **zanim** odpalę aplikację.
+- **Vite** — błyskawiczny serwer deweloperski; zapisuję plik, widzę zmianę od razu. Poza tym znam go z poprzednich projektów.
+- **TanStack Query** — zarządza pobieraniem danych z API: cache'em, obsługą ładowania/błędów i **auto-odświeżaniem co 5 minut** (pogoda ma być aktualna) bez pisania tego ręcznie.
+- **CSS Modules** — style „lokalne" per komponent, bez kolizji nazw klas między plikami. Wybór ze względu na potrzebę przypomnienia sobie zwykłych CSS-ów. Tutaj równie dobrze mógłby trafić Tailwind.
+- **AVWX** — API, z którego biorę surowe dane METAR/TAF.
+- **Netlify** — hosting + darmowe wdrożenie prosto z GitHuba.
+
+<Hare type="tip">
+
+Jeśli dopiero zaczynasz: React + TypeScript + Vite to świetny, nowoczesny zestaw na start. Nie musisz od razu rozumieć wszystkiego — ja też nie rozumiałem. Dochodzisz do tego, budując.
+
+</Hare>
+
+## Co dalej
+
+W **części 2** zajmiemy się pierwszym prawdziwym wyzwaniem: **jak schować klucz API**, żeby nie wyciekł do świata. To był jeden z ważniejszych (i najbardziej pouczających) momentów całego projektu.
+
+Aplikację na żywo i kod podlinkuję na końcu serii — a jak nie możesz się doczekać, zajrzyj do mojego GitHuba. 😉
