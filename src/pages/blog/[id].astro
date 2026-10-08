@@ -1,8 +1,9 @@
 ---
 import { render } from "astro:content";
-import { getPublishedPosts } from "../../utils/posts";
+import { getPublishedPosts, getSeriesNav } from "../../utils/posts";
 import Layout from "../../layouts/Layout.astro";
 import Comments from "../../components/Comments.astro";
+import SeriesNav from "../../components/SeriesNav.astro";
 
 // 1. Powiedz Astro, jakie strony zbudować — po jednej na wpis
 export async function getStaticPaths() {
@@ -16,6 +17,9 @@ export async function getStaticPaths() {
 // 2. Odbierz przekazany wpis i wyrenderuj jego Markdown
 const { post } = Astro.props;
 const { Content } = await render(post);
+
+// Pobranie innych części wpisu, jeśli istnieją
+const { prev, next } = await getSeriesNav(post);
 ---
 
 <Layout
@@ -29,5 +33,6 @@ const { Content } = await render(post);
     </p>
     <Content />
   </article>
+  <SeriesNav prev={prev} next={next} />
   <Comments />
 </Layout>
