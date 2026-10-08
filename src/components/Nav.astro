@@ -4,29 +4,91 @@ const isActive = (href: string) =>
   href === "/" ? path === "/" : path.startsWith(href);
 ---
 
-<nav class="border-b border-slate-200">
+<nav class="border-b border-slate-200 dark:border-slate-700">
   <div class="mx-auto flex max-w-3xl items-center gap-6 px-4 py-4">
-    <a href="/" class="font-semibold text-slate-900 hover:text-accent">
+    <a
+      href="/"
+      class="font-semibold text-slate-900 hover:text-accent dark:text-slate-100"
+    >
       Zając na Froncie
     </a>
     <a
       href="/blog"
       class:list={[
         "transition hover:text-accent",
-        isActive("/blog") ? "text-accent font-semibold" : "text-slate-700",
+        isActive("/blog")
+          ? "text-accent font-semibold"
+          : "text-slate-700 dark:text-slate-300",
       ]}
     >
       Blog
     </a>
-
     <a
       href="/about"
       class:list={[
         "transition hover:text-accent",
-        isActive("/about") ? "text-accent font-semibold" : "text-slate-700",
+        isActive("/about")
+          ? "text-accent font-semibold"
+          : "text-slate-700 dark:text-slate-300",
       ]}
     >
       O mnie
     </a>
+
+    <button
+      id="theme-toggle"
+      type="button"
+      aria-label="Przełącz motyw"
+      class="ml-auto rounded-lg p-2 text-slate-700 transition hover:text-accent dark:text-slate-300"
+    >
+      <!-- księżyc: widoczny w jasnym motywie (klik → ciemny) -->
+      <svg
+        class="dark:hidden"
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+      </svg>
+      <!-- słońce: widoczne w ciemnym motywie (klik → jasny) -->
+      <svg
+        class="hidden dark:block"
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <circle cx="12" cy="12" r="5" />
+        <line x1="12" y1="1" x2="12" y2="3" />
+        <line x1="12" y1="21" x2="12" y2="23" />
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+        <line x1="1" y1="12" x2="3" y2="12" />
+        <line x1="21" y1="12" x2="23" y2="12" />
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+      </svg>
+    </button>
   </div>
 </nav>
+
+<script>
+  const btn = document.getElementById("theme-toggle");
+  btn?.addEventListener("click", () => {
+    const current = document.documentElement.getAttribute("data-theme");
+    const next = current === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    localStorage.setItem("theme", next);
+  });
+</script>
