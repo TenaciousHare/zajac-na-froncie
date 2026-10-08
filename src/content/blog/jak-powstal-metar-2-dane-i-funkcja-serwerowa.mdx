@@ -1,0 +1,118 @@
+---
+title: "Jak powstał Avia Weather (cz. 2): skąd brać dane i jak ukryć klucz API"
+description: "Prawdziwe dane METAR i TAF z AVWX API — i dlaczego token nie może trafić do przeglądarki. Funkcja serwerowa Netlify jako bezpieczny pośrednik."
+pubDate: 2026-10-09
+tags: ["metar", "api", "netlify", "bezpieczeństwo"]
+---
+
+import Hare from "../../components/Hare.astro";
+
+W [części 1](/blog/jak-powstal-metar-1-pomysl-i-stack) ustaliliśmy pomysł i stack.
+Mam ładny interfejs, który… nie pokazuje żadnej pogody. Pora to zmienić — bo
+aplikacja pogodowa bez prawdziwych danych to tylko makieta.
+
+## Skąd wziąć prawdziwe METAR-y i TAF-y?
+
+Nie będę przecież ręcznie przepisywał depesz. Potrzebuję źródła, które poda mi
+aktualne dane dla dowolnego lotniska. Padło na **AVWX** — API, które zwraca
+METAR, TAF i informacje o stacji w czytelnym JSON-ie. Jest darmowy plan, który
+w zupełności wystarcza do nauki i małego projektu.
+
+Jest jeden haczyk: żeby z niego korzystać, trzeba się uwierzytelnić **tokenem**.
+
+<Hare type="explain">
+  Token to taki klucz do drzwi. AVWX po nim poznaje, że to ja wysyłam zapytanie,
+  i zlicza mi je w ramach limitu. Czyli: token = moja tożsamość i mój limit. Nie
+  chcę, żeby ktoś inny go używał na mój rachunek.
+</Hare>
+
+## Pierwszy odruch (zły): token we frontendzie
+
+Mój pierwszy pomysł był prosty: skoro to React woła API, to wkleję token do
+kodu i po sprawie. I tu zapaliła mi się lampka.
+
+<Hare type="bug">
+  Wszystko, co trafia do kodu frontendu, trafia też do przeglądarki użytkownika.
+  Każdy może otworzyć zakładkę „Network" albo podejrzeć pliki JS i zobaczyć mój
+  token jak na dłoni. To tak, jakby zostawić klucz do mieszkania przyklejony
+  taśmą do drzwi.
+</Hare>
+
+Nawet jeśli schowam token do zmiennej środowiskowej z prefiksem `VITE_` — to
+nic nie daje! Vite **wkompilowuje** takie zmienne do paczki, która leci do
+przeglądarki. Prefiks `VITE_` oznacza wręcz „to jest publiczne, możesz tego
+używać na froncie". Dokładnie takiego zachowania chciałem uniknąć.
+
+## Rozwiązanie: funkcja serwerowa jako pośrednik
+
+Potrzebowałem czegoś pomiędzy przeglądarką a AVWX — kawałka kodu, który działa
+**na serwerze**, trzyma token u siebie i tylko podaje mi gotowe dane. Na
+Netlify robi to **funkcja serwerowa** (serverless function).
+
+Przepływ wygląda tak:
+
+1. Frontend woła **moją** funkcję: `/.netlify/functions/avwx?station=EPWA`
+2. Funkcja (na serwerze) dokłada token i woła AVWX
+3. AVWX zwraca dane do funkcji
+4. Funkcja oddaje czysty JSON do frontendu
+
+Token nigdy nie opuszcza serwera. Przeglądarka widzi tylko moją funkcję, a nie
+AVWX ani klucza.
+
+<Hare type="explain">
+  To się nazywa <em>proxy</em> — pośrednik. Frontend rozmawia tylko z moim
+  pośrednikiem, a pośrednik w zaufanym miejscu (na serwerze) rozmawia z AVWX.
+  Sekret siedzi po stronie, do której użytkownik nie ma dostępu.
+</Hare>
+
+Uproszczony szkielet funkcji (`netlify/functions/avwx.mjs`):
+
+```js
+export default async (req) => {
+  const url = new URL(req.url);
+  const station = url.searchParams.get("station") ?? "";
+
+  // Walidacja: tylko 3 lub 4 litery (kod IATA albo ICAO)
+  if (!/^[A-Za-z]{3,4}$/.test(station)) {
+    return new Response("Nieprawidłowy kod stacji", { status: 400 });
+  }
+
+  const token = process.env.AVWX_TOKEN; // tylko na serwerze!
+  const res = await fetch(`https://avwx.rest/api/metar/${station}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  return new Response(await res.text(), {
+    status: res.status,
+    headers: { "Content-Type": "application/json" },
+  });
+};
+```
+
+Dwie rzeczy, na które zwróć uwagę:
+
+<Hare type="tip">
+  Zmienna nazywa się `AVWX_TOKEN` — **bez** prefiksu `VITE_`. Dzięki temu Vite
+  jej nie dotknie, a widzi ją tylko serwer. Lokalnie trzymam ją w pliku `.env`,
+  który jest w `.gitignore` — żeby *nigdy* nie trafiła na GitHub. Na Netlify
+  dodaję ją w ustawieniach projektu (Environment variables).
+</Hare>
+
+<Hare type="tip">
+Ta linijka `if (!/^[A-Za-z]{3,4}$/.test(station))` to walidacja
+wejścia. Nie puszczam dalej czegokolwiek, co przyśle użytkownik — przyjmuję
+tylko 3 lub 4 litery. To pierwszy bastion przeciwko śmieciom i próbom
+„przemycenia" czegoś do zapytania.
+</Hare>
+
+## Po stronie frontendu — jeden punkt wejścia
+
+Zamiast wołać funkcję w trzech miejscach (METAR, TAF, stacja), zrobiłem sobie
+jedną funkcję pomocniczą i trzy cienkie opakowania na niej. Ale o tym — jak
+ładnie to posprzątać i jak zamienić te kosmiczne kody na ludzki język —
+w [części 3](/blog/jak-powstal-metar-3-dekodery-i-testy).
+
+<Hare type="success">
+  Efekt opisanych wcześniej działań? Aplikacja pokazuje prawdziwą pogodę, a mój
+  token jest bezpieczny na serwerze. Zero wycieków w przeglądarce. 🔐
+</Hare>

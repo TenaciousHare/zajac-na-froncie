@@ -1,0 +1,120 @@
+---
+title: "Jak powstał Avia Weather (cz. 3): jak rozszyfrować METAR na ludzki język"
+description: "BKN020, VFR, TEMPO, VRB — kody, które rozumie dyspozytor, ale nie zwykły użytkownik. Dekodery do czytelnego polskiego i testy w Vitest."
+pubDate: 2026-10-10
+tags: ["metar", "typescript", "testy"]
+---
+
+import Hare from "../../components/Hare.astro";
+
+W [części 2](/blog/jak-powstal-metar-2-dane-i-funkcja-serwerowa) aplikacja
+w końcu pokazała prawdziwe dane. Problem? Wyglądały tak:
+
+```
+EPWA 081200Z 24008KT 9999 BKN020 15/09 Q1018
+```
+
+Ja to jeszcze rozszyfruję, bo na co dzień mam z tym do czynienia w pracy. Jednak zwykły
+użytkownik / nowy pracownik w branży widzi ciąg przypadkowych znaków. Więc wypadało to przetłumaczyć.
+
+## Decyzja: kod ORAZ opis, nie opis ZAMIAST kodu
+
+Pierwsza pokusa to zamienić `BKN020` na „zachmurzenie duże, 2000 ft" i tyle.
+Tylko, że to by zabolało kogoś, kto te kody zna lub kogoś, kto chce je zrozumieć. Więc
+ustaliłem zasadę:
+
+<Hare type="explain">
+  Pokazuję **jedno i drugie**: surowy kod dla tych, co go rozumieją, oraz opis
+  po polsku dla reszty. Nikomu niczego nie odbieram — tylko dokładam tłumaczenie
+  obok.
+</Hare>
+
+## Dekodery — mały słownik + bezpieczny fallback
+
+Każdy typ kodu dostał swoją małą funkcję-tłumacza. Wzorzec jest zawsze ten sam:
+słownik plus zabezpieczenie na nieznany kod.
+
+Przykład — zachmurzenie (`src/utils/clouds.ts`):
+
+```ts
+const CLOUD_COVER: Record<string, string> = {
+  SKC: "bezchmurnie",
+  CLR: "bezchmurnie",
+  FEW: "zachmurzenie małe",
+  SCT: "zachmurzenie umiarkowane",
+  BKN: "zachmurzenie duże",
+  OVC: "zachmurzenie całkowite",
+};
+
+export function describeCloudCover(code: string): string {
+  return CLOUD_COVER[code.toUpperCase()] ?? code;
+}
+```
+
+Trzy rzeczy, które tu robię świadomie:
+
+<Hare type="explain">
+`Record<string, string>` to po prostu obiekt-słownik: klucz tekstowy → wartość
+tekstowa. TypeScript pilnuje, że i klucze, i wartości to tekst (string). Zdecydowanie łatwiej i czytelniej
+niż długi `switch`.
+</Hare>
+
+<Hare type="tip">
+  Warto było dodać `code.toUpperCase()`. Dlaczego? Bo chcę zawsze ten sam wynik,
+  niezależnie czy w depeszy będzie `bkn` czy `BKN`. Normalizuję wejście, zanim
+  zajrzę do słownika.
+</Hare>
+
+<Hare type="tip">
+  `?? code` to fallback. Jeśli trafię na kod, którego nie ma w słowniku (a
+  lotnictwo lubi niespodzianki), to zamiast `undefined` i pustki w interfejsie
+  pokażę przynajmniej surowy kod. Aplikacja się nie wysypie.
+</Hare>
+
+Tym samym wzorcem zrobiłem resztę: reguły lotów (`VFR`, `MVFR`, `IFR`, `LIFR`),
+typy prognozy w TAF-ie (`BECMG`, `TEMPO`, `FROM`), a wiatr `VRB` zamieniam na
+„zmienny". Jeden pomysł, cztery małe pliki, zero kopiuj-wklej logiki.
+
+## A skąd mam pewność, że to działa?
+
+Mógłbym po każdej zmianie ręcznie klikać po aplikacji i sprawdzać. Mógłbym —
+ale jestem leniwy w dobrym sensie. Napisałem **testy** w Vitest.
+
+```ts
+import { describe, it, expect } from "vitest";
+import { describeCloudCover } from "./clouds";
+
+describe("describeCloudCover", () => {
+  it("tłumaczy znany kod", () => {
+    expect(describeCloudCover("BKN")).toBe("zachmurzenie duże");
+  });
+
+  it("działa niezależnie od wielkości liter", () => {
+    expect(describeCloudCover("bkn")).toBe("zachmurzenie duże");
+  });
+
+  it("zwraca surowy kod, gdy go nie zna", () => {
+    expect(describeCloudCover("XYZ")).toBe("XYZ");
+  });
+});
+```
+
+<Hare type="learn">
+  Każdy test ma trzy części (wzorzec **AAA**): *Arrange* — przygotuj dane, *Act*
+  — wywołaj funkcję, *Assert* — sprawdź wynik. Tutaj wszystko mieści się w
+  jednej linijce, ale schemat zostaje ten sam.
+</Hare>
+
+Pilnuję trzech rodzajów przypadków: **typowy** (znany kod), **brzegowy**
+(inna wielkość liter) i **awaryjny** (nieznany kod → fallback). To właśnie te
+„dziwne" przypadki najczęściej psują aplikację w praniu.
+
+<Hare type="success">
+  Ostatecznie w aplikacji powstało **51 testów, wszystkie zielone**. Teraz mogę
+  refaktoryzować dekodery bez strachu — jak coś zepsuję, testy od razu dadzą mi
+  o tym znać.
+</Hare>
+
+To tyle, jeśli chodzi o „jak powstał" — od pomysłu, przez dane, po tłumacza.
+Dalej już tylko kolejne usprawnienia: tryb ciemny, SEO, rebranding na
+Avia Weather… ale to historie na osobne wpisy.
