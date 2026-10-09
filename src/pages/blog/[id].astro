@@ -16,7 +16,7 @@ export async function getStaticPaths() {
 
 // 2. Odbierz przekazany wpis i wyrenderuj jego Markdown
 const { post } = Astro.props;
-const { Content } = await render(post);
+const { Content, remarkPluginFrontmatter } = await render(post);
 
 // Pobranie innych części wpisu, jeśli istnieją
 const { prev, next } = await getSeriesNav(post);
@@ -29,7 +29,8 @@ const { prev, next } = await getSeriesNav(post);
   <article class="prose prose-slate prose-a:text-accent hover:prose-a:text-accent-dark prose-a:no-underline hover:prose-a:underline dark:prose-invert">
     <h1>{post.data.title}</h1>
     <p class="text-sm text-slate-500 dark:text-slate-400">
-      {post.data.pubDate.toLocaleDateString("pl-PL")}
+      {post.data.pubDate.toLocaleDateString("pl-PL")} ·{" "}
+      {remarkPluginFrontmatter.minutesRead} min czytania
     </p>
     <Content />
   </article>
