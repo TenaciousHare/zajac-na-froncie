@@ -1,0 +1,37 @@
+---
+import { Image } from "astro:assets";
+import Layout from "../layouts/Layout.astro";
+import notFoundLight from "../assets/not-found_light.png";
+import notFoundDark from "../assets/not-found_dark.png";
+---
+
+<Layout
+  title="404 — nie znaleziono strony — Zając na Froncie"
+  description="Tej strony nie znaleźliśmy. Ale przynajmniej u Senior Hare działa."
+>
+  <section class="w-screen ml-[calc(50%-50vw)] mr-[calc(50%-50vw)] bg-white dark:bg-slate-900">
+    <h1 class="sr-only">404 — nie znaleźliśmy tej strony</h1>
+
+    <Image
+      src={notFoundLight}
+      alt="Senior Hare rozparty w fotelu z nogami na biurku — strona nie znaleziona"
+      class="mx-auto w-full max-w-4xl dark:hidden"
+      loading="eager"
+    />
+    <Image
+      src={notFoundDark}
+      alt="Senior Hare rozparty w fotelu z nogami na biurku — strona nie znaleziona"
+      class="mx-auto hidden w-full max-w-4xl dark:block"
+      loading="eager"
+    />
+  </section>
+
+  <div class="mt-6 text-center">
+    <a
+      href="/"
+      class="inline-block rounded-lg bg-accent px-5 py-2.5 font-medium text-white transition-colors hover:bg-accent-dark"
+    >
+      ← Wróć na stronę główną
+    </a>
+  </div>
+</Layout>
