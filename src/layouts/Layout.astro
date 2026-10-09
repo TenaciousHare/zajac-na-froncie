@@ -43,6 +43,13 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:image" content={new URL("/og-image.png", Astro.site)} />
     <meta property="og:locale" content="pl_PL" />
 
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title="Zając na Froncie"
+      href={new URL("rss.xml", Astro.site)}
+    />
+
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
