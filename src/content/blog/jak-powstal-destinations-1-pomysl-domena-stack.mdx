@@ -1,0 +1,103 @@
+---
+title: "Jak powstał Destinations (cz. 1): pomysł, domena i stack"
+description: "Generator testów ze znajomości kierunków dla pracowników lotniska. Skąd pomysł, jak wygląda model danych i dlaczego postawiłem na React, Firebase i React Router."
+pubDate: 2026-10-11
+tags: ["destinations", "react", "firebase"]
+series: "jak-powstal-destinations"
+seriesPart: 1
+---
+
+import Hare from "../../components/Hare.astro";
+
+Nieco starszy projekt, nowa seria. Tym razem opowiem, jak powstał **Destinations** —
+aplikacja, która wyrosła wprost z mojej codziennej pracy.
+
+## Problem, który znam z pracy
+
+Jako szkoleniowiec regularnie sprawdzam, czy nowi pracownicy znają kierunki:
+jakie miasto kryje się pod danym kodem IATA i do jakiej strefy należy. Do tego
+trzeba testów. A robienie ich ręcznie, za każdym razem w innej wersji (żeby nikt
+nie ściągał od sąsiada), to syzyfowa, powtarzalna robota.
+
+<Hare type="simple">
+  Skoro komputer świetnie radzi sobie z powtarzalnością i losowaniem, to po co
+  robić to ręcznie? Taki był punkt wyjścia: niech aplikacja generuje testy za
+  mnie.
+</Hare>
+
+## Pomysł
+
+Destinations robi dwie rzeczy:
+
+1. **Generuje testy do druku** z bazy destynacji — za każdym razem inny zestaw.
+2. Daje mi, jako szkoleniowcowi, **panel do zarządzania bazą** i drukowania
+   tabel do nauki.
+
+Czyli od razu są dwa światy: zwykły użytkownik, który tylko generuje test, oraz
+szkoleniowiec, który zarządza danymi. Ten drugi musi być schowany za logowaniem
+— ale o tym w kolejnych częściach.
+
+## Domena: czym w ogóle jest „destynacja"
+
+Zanim cokolwiek napisałem, musiałem nazwać rzeczy. Jedna destynacja to w moim
+świecie trzy informacje: miasto, kod lotniska (IATA) i strefa, do której należy.
+W pierwszej wersji wyglądało to mniej więcej tak:
+
+```js
+const destinations = [
+  {
+    abbreviation: "STN",
+    expansion: "Londyn Stansted",
+    country: "Wielka Brytania",
+    zone: "Non-Schengen",
+  },
+  // kolejne destynacje
+];
+```
+
+_To uproszczony przykład — dostosuj pola do swoich danych, jeśli odtwarzasz projekt._
+
+<Hare type="tip">
+  Dobre zorganizowanie danych na początku to połowa sukcesu. `abbreviation`,
+  `expansion`, `country`, `zone` to nie są przypadkowe słowa — to pojęcia,
+  dzięki którym mogłem uporządkować dane, które potem służyły do generowania
+  testów. Poza tym kod, który mówi Twoim językiem, czyta się dużo łatwiej.
+</Hare>
+
+## Stack i dlaczego akurat taki
+
+- **React + Vite** — chciałem szybkiego startu i jednej aplikacji w
+  przeglądarce (SPA), bez przeładowań.
+- **Firebase (Firestore + Auth)** — baza danych i logowanie **bez stawiania
+  własnego serwera**. To był kluczowy wybór.
+- **React Router** — bo mam dwa oddzielne światy (publiczny generator i zamknięty
+  panel), więc potrzebowałem ścieżek i ochrony niektórych z nich.
+
+<Hare type="explain">
+  Firebase wybrałem świadomie: jako osoba ucząca się frontu nie chciałem na tym
+  etapie utrzymywać backendu, bazy i serwera uwierzytelniania. Firebase daje to
+  wszystko out of the box, a ja mogę skupić się na tym, co mnie uczy — na
+  interfejsie i logice po stronie klienta.
+</Hare>
+
+## Świadoma decyzja: najpierw JavaScript, TypeScript później
+
+I tu ważna uwaga, bo wrócę do niej w części 2. Pierwszą wersję Destinations
+napisałem w **JavaScripcie (JSX)** — mimo że TypeScript już wtedy trochę
+znałem.
+
+To nie było przeoczenie. To był **wybór**.
+
+<Hare type="simple">
+  Priorytetem było jak najszybciej postawić działającą, użyteczną aplikację —
+  taką, której realnie użyję w pracy. Typowanie, testy i inne usprawnienia mogły
+  poczekać. Lepiej mieć coś, co działa i pomaga, niż miesiącami dłubać projekt,
+  który nigdy nie wyjdzie poza `localhost`.
+</Hare>
+
+Innymi słowy: świadomie wziąłem na siebie trochę „długu technicznego", żeby
+szybciej dowieźć wartość. A potem, już spokojnie, ten dług spłaciłem —
+przepisując projekt na TypeScript.
+
+I to jest temat na **część 2**: jak wyglądała migracja z JS na TS, co mnie w JS
+uwierało i co TypeScript wyłapał, gdy już się za to zabrałem.
