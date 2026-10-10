@@ -1,0 +1,106 @@
+---
+title: "Jak powstał Destinations (cz. 2): z JavaScriptu na TypeScript"
+description: "Projekt zaczął życie w czystym JS. Oto dlaczego i jak przepisałem go na TypeScript, co mnie w JS uwierało i jaki błąd TS złapał w sekundę."
+pubDate: 2026-10-12
+tags: ["destinations", "typescript", "javascript"]
+series: "jak-powstal-destinations"
+seriesPart: 2
+---
+
+import Hare from "../../components/Hare.astro";
+
+W [części 1](/blog/jak-powstal-destinations-1-pomysl-domena-stack) opowiedziałem,
+że pierwszą wersję Destinations napisałem **świadomie w czystym JavaScripcie** —
+żeby szybciej dowieźć działającą aplikację. Teraz czas na drugą część tej
+historii: jak i dlaczego spłaciłem ten dług, przepisując projekt na TypeScript.
+
+## Co mnie zaczęło uwierać w JS
+
+Dopóki projekt był mały, JS wystarczał. Problem pojawił się, gdy destynacje
+miały krążyć po całej aplikacji: z bazy do generatora testów, do tabel do
+druku, do panelu. W każdym z tych miejsc musiałem **pamiętać**, jak dokładnie
+wygląda obiekt destynacji — czy pole to `abbreviation` czy `abbr`, `expansion`
+czy może `name`. Skala projektu nie jest ogromna, ale jej przyszły rozrost mógłby te problemy pogłębić. No i była to świetna okazja, żeby nauczyć się TS.
+
+<Hare type="bug">
+  Najgorszy jest ten cichy rodzaj błędu. Napiszesz w tabeli
+  `destination.expantion` (mała literówka — brakuje `s`), a JavaScript nie
+  piśnie ani słowa: po prostu wstawi `undefined`, czyli **pustą komórkę w
+  wydrukowanym teście**. Zauważysz to dopiero, patrząc na gotowy arkusz. Gdzieś
+  indziej mogłoby to przejść niezauważone.
+</Hare>
+
+Do tego dochodził brak podpowiedzi edytora (teraz może pamiętam nazwy pól w obiekcie, ale w przyszłości musiałbym co chwilę wracać do danych,
+żeby sprawdzić nazwy tych pól). No i strach przed refaktorem — zmiana nazwy jednego pola
+oznaczałaby ręczne polowanie na wszystkie użycia, z nadzieją, że żadnego nie
+przeoczę.
+
+## Decyzja: migracja, a nie przepisywanie od zera
+
+Nie zaczynałem projektu na nowo. Przepisanie wszystkiego od zera to najprostsza
+droga do porzucenia działającej aplikacji. Zamiast tego zrobiłem to **stopniowo**:
+dodałem konfigurację TypeScriptu, zmieniałem pliki `.jsx` na `.tsx` po kolei i
+naprawiałem błędy, które TS mi po drodze wyrzucał.
+
+<Hare type="tip">
+  Migracja krok po kroku jest dużo mniej stresująca niż „wielki przepis".
+  Aplikacja przez cały czas działa, a Ty spłacasz dług kawałek po kawałku. Tam,
+  gdzie typ był na początku zbyt zagmatwany, tymczasowo zostawiałem `any` jako
+  most — i wracałem do niego później. To nie jest oszustwo, to przejściowy etap.
+</Hare>
+
+## Najpierw domena
+
+Zacząłem od najważniejszego: otypowania samej destynacji. Zamiast „obiektu, który
+mam nadzieję, że ma odpowiednie pola", dostałem jawny kontrakt:
+
+```ts
+export interface Destination {
+  abbreviation: string; // kod, np. "STN"
+  expansion: string; // rozwinięcie, np. "Londyn Stansted"
+  country: string; // np. "Wielka Brytania"
+  zone: string; // np. "Non-Schengen"
+}
+```
+
+<Hare type="explain">
+  Taki `interface` to jednocześnie **dokumentacja i strażnik**. Dokumentacja, bo
+  patrząc na niego, od razu wiem, z czego składa się destynacja — bez zaglądania
+  do danych. Strażnik, bo od teraz każda funkcja i każdy komponent, który
+  dostaje `Destination`, wie dokładnie, czego się spodziewać.
+</Hare>
+
+## Co TypeScript złapał od razu
+
+Gdy tylko otypowałem destynację, mój wcześniejszy błąd z literówką przestał być
+cichy:
+
+```tsx
+// Wcześniej (JS): milczenie, pusta komórka w teście
+<td>{destination.expantion}</td>
+
+// Po otypowaniu (TS) — błąd od razu w edytorze:
+// Property 'expantion' does not exist on type 'Destination'.
+// Did you mean 'expansion'?
+```
+
+<Hare type="success">
+  To jest cała magia tej zmiany. Błąd, który wcześniej wyszedłby na wydruku
+  (albo wcale), teraz podkreśla mi się na czerwono **zanim** zapiszę plik — i to
+  jeszcze z gotową podpowiedzią. Refaktory przestały być straszne: zmieniam
+  nazwę pola, a TS pokazuje mi każde miejsce, które trzeba poprawić.
+</Hare>
+
+## Czego się nauczyłem
+
+<Hare type="learn">
+  Typy nie spowalniają — po początkowej górce **przyspieszają**, bo edytor
+  podpowiada, a błędy łapią się same. Dla uczącego się TypeScript jest jak
+  drugi, cierpliwy programista zaglądający Ci przez ramię. I bardzo ważne:
+  świadomy start w JS nie był błędem — pozwolił mi szybko dowieźć coś
+  działającego. TS był kolejnym krokiem, który pozwolił aplikację udoskonalić.
+</Hare>
+
+W [części 3](/blog/jak-powstal-destinations-3-firebase-baza-i-logowanie) wchodzimy
+głębiej: skąd biorą się destynacje i jak schowałem panel szkoleniowca za
+logowaniem — czyli Firebase, baza i uwierzytelnianie.
