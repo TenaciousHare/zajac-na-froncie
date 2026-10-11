@@ -1,8 +1,8 @@
 {
-  "plugins": ["prettier-plugin-astro"],
   "proseWrap": "preserve",
   "overrides": [
     { "files": "*.astro", "options": { "parser": "astro" } },
     { "files": "*.mdx", "options": { "proseWrap": "preserve" } }
-  ]
+  ],
+  "plugins": ["prettier-plugin-astro", "prettier-plugin-tailwindcss"]
 }
