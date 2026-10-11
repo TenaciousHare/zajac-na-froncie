@@ -1,0 +1,123 @@
+---
+title: "Jak powstał Destinations (cz. 4): chronione trasy w React Router"
+description: "Wiem już, kto jest zalogowany — teraz czas zamknąć panel przed resztą. ProtectedRoute, przekierowanie na logowanie i dlaczego to tylko połowa bezpieczeństwa."
+pubDate: 2026-10-14
+tags: ["destinations", "react", "bezpieczeństwo"]
+series: "jak-powstal-destinations"
+seriesPart: 4
+---
+
+import Hare from "../../components/Hare.astro";
+
+W [części 3](/blog/jak-powstal-destinations-3-firebase-baza-i-logowanie) dodałem
+logowanie i wiem już, **kto** jest zalogowany (dzięki `AuthContext`). Zostało
+pytanie: jak **fizycznie** nie wpuścić niezalogowanych do panelu szkoleniowca?
+
+## Ukrycie linku to nie zabezpieczenie
+
+Pierwsza myśl: „schowam przycisk do panelu, jak ktoś nie jest zalogowany". Tylko
+że to żadna ochrona.
+
+<Hare type="bug">
+  Ukryty link nie znika z aplikacji — po prostu go nie widać. Każdy może wpisać
+  `/admin` ręcznie w pasku adresu i wejść prosto do panelu. Chowanie przycisku
+  to kosmetyka, a nie zamek w drzwiach.
+</Hare>
+
+Potrzebowałem czegoś, co **naprawdę pilnuje trasy** — sprawdza, czy jesteś
+zalogowany, zanim w ogóle pokaże panel. A jeśli nie jesteś, odsyła Cię do
+logowania.
+
+## ProtectedRoute — strażnik trasy
+
+W React Router zrobiłem komponent `ProtectedRoute`, który opakowuje chronione
+trasy. Układ tras wygląda tak:
+
+```tsx
+<Route
+  path="/panel"
+  element={
+    <ProtectedRoute>
+      <Panel />
+    </ProtectedRoute>
+  }
+/>
+```
+
+Generator i logowanie są publiczne, a `/admin` siedzi **wewnątrz**
+`ProtectedRoute` — czyli przechodzi przez strażnika. Sam strażnik:
+
+```tsx
+import { Navigate } from "react-router-dom";
+import { useAuth } from "../contexts/useAuth";
+import type { ReactNode } from "react";
+
+const ProtectedRoute = ({ children }: { children: ReactNode }) => {
+  const { currentUser } = useAuth();
+
+  if (!currentUser) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+};
+
+export default ProtectedRoute;
+```
+
+<Hare type="explain">
+`ProtectedRoute` dostaje chroniony komponent jako `children`. Jeśli nikt nie jest zalogowany, zamiast go wyrenderować — odsyłamy na `/login` przez `<Navigate replace />`. `replace` jest ważny: podmienia wpis w historii, więc przycisk „wstecz" nie wrzuci użytkownika z powrotem na chronioną stronę.
+</Hare>
+
+## Pułapka, w którą można wpaść: stan ładowania
+
+<Hare type="tip">
+Moja wersja ma jeden subtelny haczyk. Zaraz po wejściu na stronę Firebase
+dopiero *sprawdza*, czy ktoś jest zalogowany — i przez ułamek sekundy
+`currentUser` jest `null`, nawet jeśli faktycznie mam aktywną sesję. Efekt:
+zalogowany użytkownik potrafi na moment mignąć ekranem `/login`, zanim wróci
+na swoją stronę. U mnie działa, ale to pole do poprawy na przyszłość.
+</Hare>
+
+Lekarstwo to dołożenie stanu `loading` w `AuthContext` (ustawianego w
+`onAuthStateChanged`) i wstrzymanie decyzji, dopóki Firebase nie skończy:
+
+```tsx
+const ProtectedRoute = ({ children }: { children: ReactNode }) => {
+  const { currentUser, loading } = useAuth();
+
+  if (loading) {
+    return null; // albo <Spinner />
+  }
+
+  if (!currentUser) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+};
+```
+
+Dopóki `loading` jest `true`, nic nie renderujemy (albo pokazujemy spinner) —
+więc nie ma jak omyłkowo przekierować. To zostawiam sobie na kolejny krok.
+
+## Najważniejsze: to wciąż tylko połowa
+
+I tu wracam do lekcji z części 3. `ProtectedRoute` jest ważny, ale **nie jest
+prawdziwym zabezpieczeniem danych**.
+
+<Hare type="learn">
+  Chronione trasy to **warstwa interfejsu** — decydują, co użytkownik *widzi*.
+  Ale cały routing to JavaScript w przeglądarce, więc ktoś uparty może go
+  obejść. Prawdziwej ochrony **danych** pilnują **reguły Firestore** z części 3
+  (zapis tylko dla zalogowanych). To dwie różne warstwy: `ProtectedRoute` chowa
+  panel dla wygody i porządku, a reguły nie pozwolą nikomu niepowołanemu niczego
+  zapisać — nawet gdyby obszedł interfejs.
+</Hare>
+
+Dopiero obie warstwy razem dają sensowne bezpieczeństwo: jedna dba o to, co
+widać, druga o to, co można zrobić z danymi.
+
+W [części 5](/blog/jak-powstal-destinations-5-generatory-do-druku) — finał serii:
+dlaczego cała aplikacja powstała, czyli **generowanie testów i tabel do
+druku** (i CSS, o którym mało kto myśli: `@media print`).
