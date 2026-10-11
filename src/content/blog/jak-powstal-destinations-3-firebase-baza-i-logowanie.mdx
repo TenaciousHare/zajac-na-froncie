@@ -1,0 +1,119 @@
+---
+title: "Jak powstał Destinations (cz. 3): Firebase — baza i logowanie"
+description: "Gdzie mieszkają destynacje i jak schowałem panel szkoleniowca za logowaniem. Firestore, Firebase Auth i dlaczego klucz w kodzie tym razem NIE jest wyciekiem."
+pubDate: 2026-10-13
+tags: ["destinations", "firebase", "bezpieczeństwo"]
+series: "jak-powstal-destinations"
+seriesPart: 3
+---
+
+import Hare from "../../components/Hare.astro";
+
+W [części 2](/blog/jak-powstal-destinations-2-z-js-na-ts) otypowałem destynacje.
+Ale skąd się w ogóle biorą? W pierwszej wersji siedziały w zwykłej tablicy w
+kodzie. Czas pokazać, gdzie zamieszkały naprawdę - i jak zamknąłem panel
+szkoleniowca na klucz.
+
+## Dane nie mogą mieszkać w kodzie
+
+Tablica destynacji w pliku była OK na start, ale ma wadę: żeby **dodać albo usunąć
+kierunek**, musiałbym edytować kod i wdrażać stronę od nowa. A przecież to
+szkoleniowiec ma zarządzać bazą - bez dotykania kodu. Potrzebowałem więc dwóch
+rzeczy: prawdziwej **bazy danych** oraz **logowania**, żeby panel zarządzania nie
+był otwarty dla wszystkich.
+
+<Hare type="why">
+  Zwykły użytkownik ma tylko generować testy. Dodawanie i kasowanie destynacji
+  to rola szkoleniowca - i musi być za logowaniem. Inaczej ktoś przypadkiem
+  (albo złośliwie) namieszałby w bazie, z której korzystają wszyscy.
+</Hare>
+
+## Firebase: baza i logowanie bez backendu
+
+Jak wspominałem w części 1, wybrałem **Firebase** — bo daje jedno i drugie bez
+stawiania własnego serwera: **Firestore** (baza) i **Firebase Auth** (logowanie).
+
+<Hare type="explain">
+  Firestore to baza typu NoSQL: zamiast tabel masz **kolekcje dokumentów**. Moja
+  kolekcja `destinations` to po prostu zbiór dokumentów, z których każdy jest
+  jedną destynacją — i ma dokładnie te pola, które otypowałem w części 2.
+</Hare>
+
+Czytanie destynacji wygląda mniej więcej tak:
+
+```ts
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "./firebase";
+import type { Destination } from "./types";
+
+export async function getDestinations(): Promise<Destination[]> {
+  const snapshot = await getDocs(collection(db, "destinations"));
+  return snapshot.docs.map((doc) => doc.data() as Destination);
+}
+```
+
+I tu widać, jak część 2 się spłaca: dane z bazy od razu wpadają w typ
+`Destination`, więc reszta aplikacji wie, z czym ma do czynienia.
+
+## „Zaraz, klucz API w kodzie?!"
+
+Konfiguracja Firebase ląduje w kodzie frontendu — razem z `apiKey`:
+
+```ts
+const firebaseConfig = {
+  apiKey: "AIza...", // to jest PUBLICZNE — i tak ma być
+  authDomain: "destinations-xxxx.firebaseapp.com",
+  projectId: "destinations-xxxx",
+};
+```
+
+Jeśli czytałeś moją serię o metarze, teraz pewnie zastanawiasz się, skąd ta rozbieżność. „Przecież uczyłeś, że token API chowa się na serwerze!". I słusznie — ale to **inny przypadek**.
+
+<Hare type="question">
+  Dlaczego token AVWX w metarze musiał być tajny, a klucz Firebase może leżeć w
+  kodzie? Bo to **dwa różne rodzaje kluczy**. Token AVWX to hasło — kto go ma,
+  działa na mój rachunek. `apiKey` Firebase **nie jest hasłem** — to tylko
+  identyfikator projektu. Mówi „to jest ten projekt", a nie „wpuść mnie".
+</Hare>
+
+Skoro klucz nie chroni projektu, to co go chroni? **Reguły bezpieczeństwa** (Security
+Rules) po stronie Firebase:
+
+```js
+match /destinations/{id} {
+  allow read: if true;                    // czytać może każdy (do generowania testów)
+  allow write: if request.auth != null;   // pisać tylko zalogowany
+}
+```
+
+<Hare type="tip">
+  To reguły, a nie ukrywanie klucza, decydują o tym, kto co może zrobić. Każdy
+  może pobrać destynacje (bo testy generuje każdy), ale **zapisać coś** może
+  tylko ktoś zalogowany. Nawet gdyby ktoś wziął mój `apiKey`, bez zalogowania
+  nic nie dopisze.
+</Hare>
+
+## Logowanie szkoleniowca
+
+Samo logowanie to zasługa Firebase Auth — konto na e-mail i hasło:
+
+```ts
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "./firebase";
+
+await signInWithEmailAndPassword(auth, email, password);
+```
+
+Informację o tym, **kto jest zalogowany**, trzymam w `AuthContext` — jednym miejscu,
+z którego cała aplikacja może zapytać „czy ktoś jest zalogowany?".
+
+<Hare type="learn">
+  Najważniejsza lekcja tej części: **nie każdy „klucz" to sekret.** Zanim coś
+  ukryjesz, zapytaj — czy to hasło (działa w moim imieniu), czy tylko
+  identyfikator (wskazuje zasób)? Pierwsze chowaj na serwerze, drugie może być
+  publiczne, a dostępu pilnują reguły.
+</Hare>
+
+W [części 4](/blog/jak-powstal-destinations-4-protected-routes) domknę temat: skoro
+wiem już, kto jest zalogowany, pokażę, jak **fizycznie zamknąć panel** przed
+niezalogowanymi — czyli chronione trasy w React Router.
