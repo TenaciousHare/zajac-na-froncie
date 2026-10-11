@@ -10,6 +10,7 @@ const blog = defineCollection({
     title: z.string(),
     description: z.string(),
     pubDate: z.coerce.date(), // string z YAML → prawdziwy Date
+    updatedDate: z.coerce.date().optional(), // ustaw po istotnej edycji wpisu → trafi do sitemapy jako lastmod
     tags: z.array(z.string()).default([]),
     draft: z.boolean().default(false),
     series: z.string().optional(),
