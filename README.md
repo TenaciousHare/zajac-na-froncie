@@ -68,6 +68,9 @@ description: "Krótki opis"
 pubDate: 2026-10-08
 tags: ["astro", "nauka"]
 draft: false
+series: "nazwa-serii"    # opcjonalnie — łączy wpisy w serię
+seriesPart: 1            # opcjonalnie — numer części
+updatedDate: 2026-10-11  # opcjonalnie — po istotnej edycji (trafia do sitemapy)
 ---
 ```
 
@@ -98,18 +101,28 @@ W treści MDX można wołać Senior Hare'a z jednym z 12 typów. Każdy ma włas
 
 ## Roadmap
 
+**Zrobione**
+
 - [x] Deploy na Netlify
 - [x] Paleta kolorów i dopracowanie stylów
 - [x] Analityka wyświetleń (prywatna, bez ciasteczek)
-- [x] Tryb ciemny
+- [x] Tryb ciemny z przełącznikiem
 - [x] Komentarze (Giscus)
-- [x] Zaplanowane wpisy
-- [ ] Nawigacja serii / poprzedni–następny wpis
+- [x] Zaplanowane wpisy (filtr daty + auto-build)
+- [x] Nawigacja serii / poprzedni–następny wpis
+- [x] RSS feed
+- [x] Czas czytania wpisu
+- [x] Własna strona 404 z Senior Hare'em
+- [x] SEO: lastmod w sitemapie
+
+**W planach**
+
+- [ ] Spis treści (TOC) w wpisach
 - [ ] Zakładka Projekty / portfolio
-- [ ] RSS feed
 - [ ] Klikalne tagi → strony tagów
-- [ ] Czas czytania + spis treści w wpisach
-- [ ] Własna strona 404 z Senior Hare'em
+- [ ] Przycisk „kopiuj" przy blokach kodu
+- [ ] Kotwice przy nagłówkach
+- [ ] „Więcej z serii" / powiązane wpisy
 
 ## Autor
 
