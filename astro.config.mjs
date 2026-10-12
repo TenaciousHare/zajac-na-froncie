@@ -6,6 +6,8 @@ import tailwindcss from "@tailwindcss/vite";
 import { remarkReadingTime } from "./src/lib/remark-reading-time.mjs";
 import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
+import rehypeSlug from "rehype-slug";
+import rehypeAutolinkHeadings from "rehype-autolink-headings";
 
 import { readdirSync, readFileSync } from "node:fs";
 
@@ -44,6 +46,20 @@ export default defineConfig({
   markdown: {
     processor: unified({
       remarkPlugins: [remarkReadingTime],
+      rehypePlugins: [
+        rehypeSlug,
+        [
+          rehypeAutolinkHeadings,
+          {
+            behavior: "append",
+            properties: {
+              class: "heading-anchor",
+              ariaLabel: "Link do tej sekcji",
+            },
+            content: { type: "text", value: "#" },
+          },
+        ],
+      ],
     }),
   },
   integrations: [
