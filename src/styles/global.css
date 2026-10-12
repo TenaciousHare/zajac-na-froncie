@@ -11,3 +11,22 @@
   --color-denim: #2563eb; /* niebieski */
   --color-sneaker: #dc2626; /* czerwień trampek */
 }
+
+a.heading-anchor {
+  margin-left: 0.35rem;
+  color: var(--color-accent);
+  text-decoration: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+/* pokaż na hover nagłówka + dla klawiatury (focus) */
+:is(h1, h2, h3, h4, h5, h6):hover > a.heading-anchor,
+a.heading-anchor:focus-visible {
+  opacity: 1;
+}
+
+/* nagłówek nie chowa się pod nawigacją po skoku z kotwicy */
+:is(h1, h2, h3, h4, h5, h6)[id] {
+  scroll-margin-top: 1rem;
+}

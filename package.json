@@ -22,6 +22,8 @@
     "astro": "^7.3.5",
     "mdast-util-to-string": "^4.0.0",
     "reading-time": "^1.5.0",
+    "rehype-autolink-headings": "^7.1.0",
+    "rehype-slug": "^6.0.0",
     "tailwindcss": "^4.3.3"
   },
   "allowScripts": {
