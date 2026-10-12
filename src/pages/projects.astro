@@ -1,0 +1,104 @@
+---
+import Layout from "../layouts/Layout.astro";
+
+const projects = [
+  {
+    name: "Avia Weather",
+    description:
+      "Pogoda lotnicza METAR & TAF — surowe depesze tłumaczone na ludzki język. Dane przez TanStack Query, klucz API ukryty w funkcji serwerowej Netlify.",
+    tech: [
+      "React",
+      "TypeScript",
+      "Vite",
+      "TanStack Query",
+      "Vitest",
+      "Netlify Functions",
+    ],
+    live: "https://avia-weather.netlify.app",
+    repo: "https://github.com/TenaciousHare/Avia-Weather",
+  },
+  {
+    name: "Destinations",
+    description:
+      "Generator losowych testów z kierunków (kody IATA) dla obsługi naziemnej — panel szkoleniowca za logowaniem (Firebase Auth), dane w Firestore, trasy chronione React Routerem.",
+    tech: ["React", "TypeScript", "Vite", "React Router", "Firebase", "Vitest"],
+    live: "https://destinations-test.netlify.app",
+    repo: "https://github.com/TenaciousHare/Destinations",
+  },
+  {
+    name: "ManualBoarding",
+    description:
+      "Trener manualnego boardingu dla obsługi lotu — procedura krok po kroku, z testami jednostkowymi (Vitest) i E2E (Playwright).",
+    tech: ["React", "TypeScript", "Vite", "Vitest", "Playwright"],
+    live: "https://manual-boarding.netlify.app",
+    repo: "https://github.com/TenaciousHare/ManualBoarding",
+  },
+  {
+    name: "Zając na Froncie",
+    description:
+      "Ten blog — nauka frontendu od zera, prowadzona przez komiksowego Senior Hare'a.",
+    tech: ["Astro", "MDX", "Tailwind", "TypeScript"],
+    live: "https://zajac-na-froncie.netlify.app",
+    repo: "https://github.com/TenaciousHare/zajac-na-froncie",
+  },
+];
+---
+
+<Layout
+  title="Projekty — Zając na Froncie"
+  description="Realne narzędzia webowe z pogranicza lotnictwa i frontendu: Avia Weather, Destinations, ManualBoarding i ten blog. React, TypeScript, Astro."
+>
+  <h1 class="mb-2 text-3xl font-bold text-slate-900 dark:text-slate-100">
+    Projekty
+  </h1>
+  <p class="mb-6 text-slate-600 dark:text-slate-400">
+    Narzędzia, które wyrosły z mojej pracy w lotnictwie — każde rozwiązuje
+    realny problem i każde jest na żywo.
+  </p>
+
+  <div class="grid gap-6 sm:grid-cols-2">
+    {projects.map((project) => (
+      <article class="flex flex-col rounded-xl border border-slate-200 p-6 transition hover:border-accent hover:shadow-md dark:border-slate-700 dark:bg-slate-800">
+        <div class="flex items-start justify-between gap-3">
+          <h2 class="text-xl font-semibold text-slate-900 dark:text-slate-100">
+            {project.name}
+          </h2>
+          <span class="shrink-0 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/40 dark:text-green-300">
+            live
+          </span>
+        </div>
+
+        <p class="mt-2 grow text-slate-700 dark:text-slate-300">
+          {project.description}
+        </p>
+
+        <ul class="mt-3 flex flex-wrap gap-2">
+          {project.tech.map((t) => (
+            <li class="rounded-full bg-accent/10 px-3 py-1 text-xs font-medium text-accent-dark dark:bg-accent/20 dark:text-accent">
+              {t}
+            </li>
+          ))}
+        </ul>
+
+        <div class="mt-4 flex gap-4 text-sm">
+          <a
+            href={project.live}
+            target="_blank"
+            rel="noopener"
+            class="font-medium text-accent hover:text-accent-dark"
+          >
+            Zobacz live →
+          </a>
+          <a
+            href={project.repo}
+            target="_blank"
+            rel="noopener"
+            class="font-medium text-slate-600 hover:text-accent dark:text-slate-400"
+          >
+            Kod na GitHubie
+          </a>
+        </div>
+      </article>
+    ))}
+  </div>
+</Layout>

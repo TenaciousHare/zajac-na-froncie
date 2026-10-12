@@ -24,6 +24,17 @@ const isActive = (href: string) =>
       Blog
     </a>
     <a
+      href="/projects"
+      class:list={[
+        "transition hover:text-accent",
+        isActive("/projects")
+          ? "text-accent font-semibold"
+          : "text-slate-700 dark:text-slate-300",
+      ]}
+    >
+      Projekty
+    </a>
+    <a
       href="/about"
       class:list={[
         "transition hover:text-accent",
