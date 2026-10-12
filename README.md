@@ -22,7 +22,7 @@ Blog jest po polsku, z myślą o polskich początkujących.
 - 🗓️ **Zaplanowane wpisy** — pisanie „na zapas" z przyszłą datą + codzienny auto-build
 - 🔍 **SEO** — tytuły i opisy per strona, Open Graph, sitemap, robots.txt
 - 📊 **Analityka** — Cloudflare Web Analytics (bez ciasteczek, bez bannera)
-- 🐰 **Komponent `<Hare>`** z 12 typami badge'y
+- 🐰 **Komponent `<Hare>`** z 13 typami badge'y
 
 ## Stack
 
@@ -46,7 +46,7 @@ npm run preview  # podgląd buildu lokalnie
 ```
 src/
 ├── assets/          # grafiki optymalizowane przez Astro (hero, badge'y)
-│   └── hare/        # 12 badge'y Senior Hare'a
+│   └── hare/        # 13 badge'y Senior Hare'a
 ├── components/      # Nav, Hare, Comments
 ├── content/blog/    # wpisy w .mdx
 ├── layouts/         # Layout.astro (szkielet strony)
@@ -80,7 +80,7 @@ updatedDate: 2026-10-11  # opcjonalnie — po istotnej edycji (trafia do sitemap
 
 ## Komponent `<Hare>`
 
-W treści MDX można wołać Senior Hare'a z jednym z 12 typów. Każdy ma własny badge i nagłówek:
+W treści MDX można wołać Senior Hare'a z jednym z 13 typów. Każdy ma własny badge i nagłówek:
 
 ```
 <Hare type="tip">
@@ -90,14 +90,15 @@ W treści MDX można wołać Senior Hare'a z jednym z 12 typów. Każdy ma włas
 </Hare>
 ```
 
-| `type`    | Nagłówek                | `type`         | Nagłówek           |
-| --------- | ----------------------- | -------------- | ------------------ |
-| `explain` | Wyjaśnienie             | `works`        | Działa!            |
-| `code`    | Kod                     | `debug`        | Debugowanie        |
-| `tip`     | Wskazówka               | `learn`        | Nauka              |
-| `bug`     | Bug                     | `question`     | Pytanie            |
-| `why`     | Dlaczego to nie działa? | `simple`       | Proste rozwiązanie |
-| `success` | Sukces!                 | `architecture` | Architektura       |
+| `type`     | Nagłówek                | `type`         | Nagłówek           |
+| ---------- | ----------------------- | -------------- | ------------------ |
+| `explain`  | Wyjaśnienie             | `works`        | Działa!            |
+| `code`     | Kod                     | `debug`        | Debugowanie        |
+| `tip`      | Wskazówka               | `learn`        | Nauka              |
+| `bug`      | Bug                     | `question`     | Pytanie            |
+| `why`      | Dlaczego to nie działa? | `simple`       | Proste rozwiązanie |
+| `success`  | Sukces!                 | `architecture` | Architektura       |
+| `decision` | Dlaczego tak?           |                |                    |
 
 ## Roadmap
 
