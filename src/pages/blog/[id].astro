@@ -5,6 +5,7 @@ import Layout from "../../layouts/Layout.astro";
 import Comments from "../../components/Comments.astro";
 import SeriesNav from "../../components/SeriesNav.astro";
 import TableOfContents from "../../components/TableOfContents.astro";
+import CodeCopy from "../../components/CodeCopy.astro";
 
 // 1. Powiedz Astro, jakie strony zbudować — po jednej na wpis
 export async function getStaticPaths() {
@@ -36,6 +37,7 @@ const { prev, next } = await getSeriesNav(post);
     <TableOfContents headings={headings} />
     <Content />
   </article>
+  <CodeCopy />
   <SeriesNav prev={prev} next={next} />
   <Comments />
 </Layout>

@@ -1,0 +1,40 @@
+---
+---
+
+<script>
+  const blocks = document.querySelectorAll("article pre");
+  blocks.forEach((pre) => {
+    if (pre.closest(".code-block")) return; // już opakowany
+
+    // opakuj <pre> kontenerem, który nie przewija się w poziomie —
+    // dzięki temu przycisk zostaje w rogu nawet przy szerokim kodzie
+    const wrapper = document.createElement("div");
+    wrapper.className = "code-block";
+    pre.parentNode?.insertBefore(wrapper, pre);
+    wrapper.appendChild(pre);
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "copy-btn";
+    btn.setAttribute("aria-label", "Kopiuj kod");
+    btn.textContent = "Kopiuj";
+
+    btn.addEventListener("click", async () => {
+      const code =
+        pre.querySelector("code")?.textContent ?? pre.textContent ?? "";
+      try {
+        await navigator.clipboard.writeText(code);
+        btn.textContent = "Skopiowano!";
+        btn.dataset.copied = "true";
+      } catch {
+        btn.textContent = "Błąd";
+      }
+      setTimeout(() => {
+        btn.textContent = "Kopiuj";
+        delete btn.dataset.copied;
+      }, 2000);
+    });
+
+    wrapper.appendChild(btn);
+  });
+</script>
