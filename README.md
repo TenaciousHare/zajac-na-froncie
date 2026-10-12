@@ -114,15 +114,17 @@ W treści MDX można wołać Senior Hare'a z jednym z 12 typów. Każdy ma włas
 - [x] Czas czytania wpisu
 - [x] Własna strona 404 z Senior Hare'em
 - [x] SEO: lastmod w sitemapie
+- [x] Kotwice przy nagłówkach
+- [x] Spis treści (TOC) w wpisach
+- [x] Płynne przewijanie + przycisk powrotu na górę
+- [x] Przycisk „kopiuj" przy blokach kodu
+- [x] „Więcej z tej serii" / powiązane wpisy
+- [x] Zakładka Projekty / portfolio
 
 **W planach**
 
-- [ ] Spis treści (TOC) w wpisach
-- [ ] Zakładka Projekty / portfolio
 - [ ] Klikalne tagi → strony tagów
-- [ ] Przycisk „kopiuj" przy blokach kodu
-- [ ] Kotwice przy nagłówkach
-- [ ] „Więcej z serii" / powiązane wpisy
+- [ ] Nowa seria: podstawy (HTML/CSS/JS)
 
 ## Autor
 
