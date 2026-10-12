@@ -6,22 +6,19 @@ export async function getPublishedPosts() {
     .filter((post) => !post.data.draft && post.data.pubDate <= now)
     .sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime());
 }
-
-export async function getSeriesNav(current: CollectionEntry<"blog">) {
+export async function getSeriesParts(current: CollectionEntry<"blog">) {
   const { series, seriesPart } = current.data;
+  if (!series || seriesPart === undefined) return [];
 
-  if (!series || seriesPart === undefined) {
-    return { prev: undefined, next: undefined };
-  }
-
-  const parts = (await getPublishedPosts())
+  return (await getPublishedPosts())
     .filter((post) => post.data.series === series)
     .sort((a, b) => (a.data.seriesPart ?? 0) - (b.data.seriesPart ?? 0));
+}
 
+export async function getSeriesNav(current: CollectionEntry<"blog">) {
+  const parts = await getSeriesParts(current);
   const index = parts.findIndex((post) => post.id === current.id);
+  if (index === -1) return { prev: undefined, next: undefined };
 
-  return {
-    prev: parts[index - 1],
-    next: parts[index + 1],
-  };
+  return { prev: parts[index - 1], next: parts[index + 1] };
 }

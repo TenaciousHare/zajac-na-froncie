@@ -1,0 +1,49 @@
+---
+import type { CollectionEntry } from "astro:content";
+
+interface Props {
+  parts: CollectionEntry<"blog">[];
+  currentId: string;
+}
+
+const { parts, currentId } = Astro.props;
+---
+
+{parts.length > 1 && (
+  <section class="not-prose mt-12 border-t border-slate-200 pt-6 dark:border-slate-700">
+    <h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+      Więcej z tej serii
+    </h2>
+    <ol class="space-y-2">
+      {parts.map((part) =>
+        part.id === currentId ? (
+          <li>
+            <span
+              aria-current="true"
+              class="flex gap-3 rounded-lg border border-accent bg-accent/5 p-3 font-medium text-slate-900 dark:text-slate-100"
+            >
+              <span class="text-slate-400 dark:text-slate-500">
+                {part.data.seriesPart}.
+              </span>
+              <span>{part.data.title}</span>
+            </span>
+          </li>
+        ) : (
+          <li>
+            <a
+              href={`/blog/${part.id}`}
+              class="group flex gap-3 rounded-lg border border-slate-200 p-3 transition-colors hover:border-accent dark:border-slate-700"
+            >
+              <span class="text-slate-400 dark:text-slate-500">
+                {part.data.seriesPart}.
+              </span>
+              <span class="text-slate-700 group-hover:text-accent dark:text-slate-300">
+                {part.data.title}
+              </span>
+            </a>
+          </li>
+        ),
+      )}
+    </ol>
+  </section>
+)}
