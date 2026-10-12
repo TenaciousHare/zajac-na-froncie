@@ -1,0 +1,49 @@
+---
+---
+
+<a
+  href="#top"
+  id="back-to-top"
+  tabindex="-1"
+  aria-label="Wróć na górę strony"
+  class="pointer-events-none fixed bottom-6 right-6 z-50 flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-700 opacity-0 shadow-md backdrop-blur transition-opacity duration-200 hover:text-accent dark:border-slate-700 dark:bg-slate-800/90 dark:text-slate-200 [&.is-visible]:pointer-events-auto [&.is-visible]:opacity-100"
+>
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <line x1="12" y1="19" x2="12" y2="5" />
+    <polyline points="5 12 12 5 19 12" />
+  </svg>
+</a>
+
+<script>
+  const btn = document.getElementById("back-to-top");
+  if (btn) {
+    let ticking = false;
+    const update = () => {
+      const visible = window.scrollY > 400;
+      btn.classList.toggle("is-visible", visible);
+      btn.tabIndex = visible ? 0 : -1;
+      ticking = false;
+    };
+    window.addEventListener(
+      "scroll",
+      () => {
+        if (!ticking) {
+          requestAnimationFrame(update);
+          ticking = true;
+        }
+      },
+      { passive: true },
+    );
+    update();
+  }
+</script>
