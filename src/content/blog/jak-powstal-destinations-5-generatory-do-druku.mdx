@@ -1,0 +1,133 @@
+---
+title: "Jak powstał Destinations (cz. 5): generatory testów i CSS do druku"
+description: "To był cel całej aplikacji: szkoleniowiec generuje losowy test i drukuje go na papierze. Losowanie w JS i @media print, czyli CSS, o którym mało kto pamięta."
+pubDate: 2026-10-15
+tags: ["destinations", "css", "javascript"]
+series: "jak-powstal-destinations"
+seriesPart: 5
+---
+
+import Hare from "../../components/Hare.astro";
+
+Przez cztery części budowaliśmy *wokół* danych: pomysł i stack, typy, baza danych i logowanie, chronione trasy.
+Teraz powód, dla którego Destinations w ogóle powstało. Szkoleniowiec klika
+jeden przycisk, dostaje gotowy test i tabelę odpowiedzi, i drukuje. Na papierze,
+nie na ekranie.
+
+## Losowanie testu
+
+Test to zestaw losowych wartości z jednego pola destynacji — na przykład kilkanaście
+kodów IATA albo rozwinięć do rozpoznania. Napisałem do tego jedną funkcję:
+
+```ts
+import type { Destination } from "./../types";
+
+export function losoweWartosci(
+  tablica: Destination[],
+  ilosc: number,
+  klucz: keyof Destination,
+): string[] {
+  if (!tablica || !tablica.length || ilosc <= 0) return [];
+
+  const wylosowaneWartosci: string[] = [];
+  const pomocniczaTablica = [...tablica];
+
+  for (let i = 0; i < ilosc; i++) {
+    if (pomocniczaTablica.length === 0) break;
+    const losowyIndeks = Math.floor(Math.random() * pomocniczaTablica.length);
+    wylosowaneWartosci.push(pomocniczaTablica[losowyIndeks][klucz]);
+    pomocniczaTablica.splice(losowyIndeks, 1);
+  }
+  return wylosowaneWartosci;
+}
+```
+
+Na starcie krótki strażnik: jeśli tablica jest pusta albo `ilosc` jest zerowa czy
+ujemna, zwracam od razu `[]`. Potem kopiuję tablicę (`[...tablica]`, żeby nie
+ruszać oryginału z bazy) i `ilosc` razy losuję indeks, dorzucam wartość do wyniku,
+a wylosowany element **usuwam** przez `splice`.
+
+<Hare type="explain">
+`splice` jest tu sednem. Każdy wylosowany element znika z tablicy pomocniczej, więc kolejne losowanie nie może trafić w to samo. Dzięki temu w teście nie ma powtórek — to losowanie "bez zwracania", jak ciągnięcie kart z talii, a nie rzucanie kostką.
+</Hare>
+
+<Hare type="tip">
+Zwróć uwagę na `klucz: keyof Destination`. To nie jest zwykły `string` — TypeScript wymusza, żeby `klucz` był realną nazwą pola (`"abbreviation"`, `"expansion"`, `"country"`, `"zone"`). Literówka w stylu `"abreviation"` nie przejdzie przez kompilację. To dokładnie ta ochrona, o którą walczyliśmy w [części 2](/blog/jak-powstal-destinations-2-z-js-na-ts).
+</Hare>
+
+
+## Widok do druku
+
+W Destinations są właściwie dwa wydruki: **test** (Generator) i **tabele do
+nauki** (PrintTables). Oba odpala ten sam, natywny mechanizm — zwykły przycisk
+z `window.print()`, zero bibliotek:
+
+```tsx
+<button onClick={() => window.print()}>DRUKUJ</button>
+```
+
+`window.print()` otwiera systemowe okno drukowania przeglądarki. Cała robota jest
+w tym, żeby papier wyglądał inaczej niż ekran: bez przycisków, bez selecta, bez
+paska sterowania. I tym zajmuje się CSS.
+
+## CSS, o którym mało kto myśli: @media print
+
+Najpierw ustawiam samą kartkę, potem chowam na wydruku wszystko, co służy tylko
+do klikania:
+
+```css
+@page {
+  margin: 25mm;
+  size: a4 portrait;
+}
+
+@media print {
+  button,
+  select,
+  .controls {
+    display: none !important;
+  }
+}
+```
+
+<Hare type="explain">
+Dwie rzeczy:
+- `@page` ustawia format papieru — A4 pionowo, margines 25 mm. To reguła, która istnieje *tylko* z myślą o druku.
+- `@media print { ... display: none }` chowa sterowanie. Co ważne: nie musiałem dawać osobnej klasy każdemu przyciskowi — chowam hurtem wszystkie `button`, `select` i cały pasek `.controls`.
+</Hare>
+
+Druga sprawa to podział na strony, żeby treść nie urywała się w losowych miejscach:
+
+```css
+/* test: zadanie 2 zaczyna się od nowej kartki */
+.page:first-of-type {
+  page-break-after: always;
+}
+
+/* tabele: każda strefa na osobnej kartce */
+.schengen-container,
+.non-schengen-container {
+  break-after: page;
+}
+
+@media print {
+  tr {
+    break-inside: avoid;
+  }
+}
+```
+
+<Hare type="explain">
+`page-break-after` i `break-after: page` robią to samo (to drugie to nowsza nazwa): wymuszają koniec strony w konkretnym miejscu. W teście druga część zadania ląduje na nowej kartce, a w tabelach strefa Schengen i Non-Schengen są rozdzielone. `break-inside: avoid` na wierszu pilnuje z kolei, żeby pojedynczy `tr` (wiersz tabeli) nie został przecięty na pół między stronami.
+</Hare>
+
+<Hare type="tip">
+Jedna rzecz, której *nie* musiałem robić: wymuszać czarnego tekstu na białym tle. Destinations nie ma trybu ciemnego — `body` ma ustawiony czarny tekst na białym tle globalnie, więc wydruk nie wymaga żadnych sztuczek z kolorami. W aplikacji z trybem ciemnym trzeba by w `@media print` dodatkowo nadpisać kolory, bo inaczej drukarka próbowałaby wypluć ciemne tło.
+</Hare>
+
+## Koniec serii
+I to tyle. Przez pięć wpisów Destinations przeszło drogę od pomysłu (cz. 1), przez typy (cz. 2), bazę i logowanie (cz. 3), chronione trasy (cz. 4), aż po to, co użytkownik trzyma na końcu w ręku: wydrukowany test (cz. 5).
+
+<Hare type="works"> Chcesz zobaczyć efekt? Aplikacja żyje pod [destinations-test.netlify.app](https://destinations-test.netlify.app). Wygeneruj test z kierunków i podejrzyj wydruk (Ctrl+P albo Cmd+P). </Hare>
+
+W kolejnych seriach chcę trochę zwolnić i wrócić do fundamentów: HTML, CSS i JavaScript od podstaw. W końcu dobrze zbudowany dom stoi na mocnych fundamentach. Do zobaczenia w nowej serii!
