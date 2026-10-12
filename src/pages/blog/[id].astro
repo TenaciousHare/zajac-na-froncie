@@ -1,6 +1,11 @@
 ---
 import { render } from "astro:content";
-import { getPublishedPosts, getSeriesNav } from "../../utils/posts";
+import {
+  getPublishedPosts,
+  getSeriesNav,
+  getSeriesParts,
+} from "../../utils/posts";
+import SeriesParts from "../../components/SeriesParts.astro";
 import Layout from "../../layouts/Layout.astro";
 import Comments from "../../components/Comments.astro";
 import SeriesNav from "../../components/SeriesNav.astro";
@@ -22,6 +27,7 @@ const { Content, headings, remarkPluginFrontmatter } = await render(post);
 
 // Pobranie innych części wpisu, jeśli istnieją
 const { prev, next } = await getSeriesNav(post);
+const seriesParts = await getSeriesParts(post);
 ---
 
 <Layout
@@ -38,6 +44,7 @@ const { prev, next } = await getSeriesNav(post);
     <Content />
   </article>
   <CodeCopy />
+  <SeriesParts parts={seriesParts} currentId={post.id} />
   <SeriesNav prev={prev} next={next} />
   <Comments />
 </Layout>
