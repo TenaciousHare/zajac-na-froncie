@@ -5,17 +5,17 @@ const isActive = (href: string) =>
 ---
 
 <nav class="border-b border-slate-200 dark:border-slate-700">
-  <div class="mx-auto flex max-w-3xl items-center gap-6 px-4 py-4">
+  <div class="mx-auto flex max-w-3xl items-center gap-4 px-4 py-4 sm:gap-6">
     <a
       href="/"
-      class="font-semibold text-slate-900 hover:text-accent dark:text-slate-100"
+      class="font-semibold text-slate-900 hover:text-accent dark:text-slate-100 whitespace-nowrap"
     >
       Zając na Froncie
     </a>
     <a
       href="/blog"
       class:list={[
-        "transition hover:text-accent",
+        "whitespace-nowrap transition hover:text-accent",
         isActive("/blog")
           ? "text-accent font-semibold"
           : "text-slate-700 dark:text-slate-300",
@@ -26,7 +26,7 @@ const isActive = (href: string) =>
     <a
       href="/projects"
       class:list={[
-        "transition hover:text-accent",
+        "whitespace-nowrap transition hover:text-accent",
         isActive("/projects")
           ? "text-accent font-semibold"
           : "text-slate-700 dark:text-slate-300",
@@ -37,7 +37,7 @@ const isActive = (href: string) =>
     <a
       href="/about"
       class:list={[
-        "transition hover:text-accent",
+        "whitespace-nowrap transition hover:text-accent",
         isActive("/about")
           ? "text-accent font-semibold"
           : "text-slate-700 dark:text-slate-300",
