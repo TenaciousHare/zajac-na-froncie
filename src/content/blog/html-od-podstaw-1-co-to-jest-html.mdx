@@ -1,0 +1,101 @@
+---
+title: "HTML od podstaw (cz. 1): czym jest HTML (i czym nie jest)"
+description: "Startujemy z serią o podstawach. Element, tag, atrybut, szkielet dokumentu, lang i head vs body — a ponad wszystko myśl przewodnia: HTML to semantyka, nie wygląd."
+pubDate: 2026-10-16
+tags: ["html", "podstawy", "dostępność"]
+series: "html-od-podstaw"
+seriesPart: 1
+---
+
+import Hare from "../../components/Hare.astro";
+
+Buduję różne projekty, a na blogu piszę o tym, jak powstają — ale między tymi seriami o projektach chciałbym co jakiś czas wracać do **fundamentów**. Im więcej Reacta, Astro, komponentów, tym wyraźniej widzę, że wszystko opiera się na jednej, często lekceważonej warstwie: HTML.
+
+Zaczynamy od pytania pozornie banalnego: **czym właściwie jest ten cały HTML?**
+
+## HTML opisuje znaczenie, nie wygląd
+
+To będzie myśl przewodnia całej serii, więc przytoczę ją na starcie: HTML nie służy do tego, żeby coś było niebieskie, wyśrodkowane albo pogrubione. HTML mówi, **czym dana rzecz jest**: że to nagłówek, lista, odnośnik albo przycisk. Zapamiętaj więc jedno: HTML odpowiada za semantykę — czyli znaczenie.
+
+<Hare type="explain">
+  Trzy warstwy strony dzielą się rolami: **HTML** to znaczenie i struktura (co to jest), **CSS** to wygląd (jak coś wygląda), **JavaScript** to zachowanie (na przykład co się dzieje po kliknięciu). Mieszanie tych ról — np. używanie `<div>` tam, gdzie pasuje `<button>` — to źródło większości późniejszych problemów z dostępnością.
+
+  Gdybyśmy mieli zamodelować gumową kaczkę według tych ról: **HTML** to opis budowy (dziób, skrzydła, tułów), **CSS** to wygląd — żółty korpus, pomarańczowy dziób, proporcje i rozmiary — a **JS**? To on sprawia, że kaczka kwaknie, gdy ją ściśniesz.
+</Hare>
+
+## Element, tag, atrybut — trzy słowa, które warto rozróżniać
+
+Na początku łatwo je mylić, a to różne rzeczy:
+
+- **Tag** to zapis w nawiasach ostrokątnych: `<p>` (otwierający) i `</p>` (zamykający).
+- **Element** to całość: tag otwierający + **treść** + tag zamykający.
+- **Atrybut** to dodatkowa informacja w tagu otwierającym, w formie nazwa="wartość".
+
+Na przykładzie odnośnika:
+
+```html
+<a href="https://developer.mozilla.org">dokumentacja MDN</a>
+```
+
+Tutaj:
+- `<a>dokumentacja MDN</a>` to **element**,
+- `<a>` i `</a>` to **tagi**, 
+- `href="…"` to **atrybut**, który mówi, dokąd prowadzi link.
+
+<Hare type="tip">
+  Kiedy usłyszysz „otwórz tag” i „zamknij tag”, a ktoś inny mówi „element” — zwykle chodzi o to samo miejsce w kodzie, tylko z różnej perspektywy. Ale gdy czytasz dokumentację, ta precyzja się przydaje: atrybut *zawsze* siedzi w tagu otwierającym, nigdy w zamykającym.
+</Hare>
+
+## Najmniejszy sensowny dokument
+
+Każda strona ma ten sam szkielet. Oto absolutne minimum:
+
+```html
+<!doctype html>
+<html lang="pl">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Moja strona</title>
+    </head>
+    <body>
+        <p>Cześć!</p>
+    </body>
+</html>
+```
+
+Kilka rzeczy, na które warto tu zwrócić uwagę:
+
+- `<!doctype html>` — mówi przeglądarce „to jest nowoczesny HTML”, włącza tryb standardowy (czyli renderuje stronę zgodnie z aktualnymi specyfikacjami W3C/WHATWG).
+- `<html lang="pl">` — korzeń dokumentu, z atrybutem języka. Czemu korzeń? Bo wszystko z niego "wyrasta". 
+- `<head>` vs `<body>` — dlaczego głowa i ciało? Patrz niżej. 
+
+### `head` vs `body`
+
+- **`<head>`** to **metadane**, czyli informacje o stronie, których użytkownik nie widzi w treści: tytuł karty (`<title>`), kodowanie znaków, opisy dla Google (SEO), linki do stylów.
+- **`<body>`** to **treść strony**, którą faktycznie widać w oknie przeglądarki.
+
+<Hare type="architecture">
+  Pomyśl o tym jak o książce: `head` to okładka z danymi (tytuł, opis, autor), a `body` to treść tej książki, rozdziały, akapity, poszczególne wiersze. Jedno i drugie jest potrzebne, ale pełni inną rolę.
+</Hare>
+
+### `lang="pl"` — mały atrybut, duże znaczenie
+
+Łatwo go pominąć, a robi sporo: czytniki ekranu wiedzą, **jakim głosem i wymową** czytać stronę, przeglądarki trafniej proponują tłumaczenie, a wyszukiwarki wiedzą, komu stronę pokazać.
+
+## Walidator — darmowy recenzent Twojego HTML
+
+Przeglądarki są wyrozumiałe: gdy zapomnisz zamknąć tag, zwykle „domyślą się”, o co chodziło. To wygodne, ale usypia czujność — błąd zostaje, tylko go nie widać. Dlatego warto wrzucać kod do **walidatora W3C**, który wytknie każdą niedomkniętą czy źle zagnieżdżoną rzecz.
+
+<Hare type="learn">
+  Źródło prawdy o HTML to [**MDN Web Docs**](https://developer.mozilla.org) — darmowa, rzetelna dokumentacja (dostępna też po polsku). A do sprawdzania swojego kodu: [**validator.w3.org**](https://validator.w3.org/). Oba będą towarzyszyć nam przez całą serię.
+</Hare>
+
+## Co nam to daje?
+
+Na koniec każdej części będę wracał do tego samego twierdzenia — bo **semantyczny** HTML to nie sztuka dla sztuki. To realne korzyści:
+
+- **Dostępność (a11y / accessibility):** czytnik ekranu rozumie stronę, w której nagłówek jest nagłówkiem, a przycisk przyciskiem.
+- **SEO:** wyszukiwarki czytają strukturę, nie kolory. Poprawny szkielet to lepsze zrozumienie treści.
+- **Utrzymanie:** kod, który mówi *czym* są dane rzeczy, czyta się po pół roku dużo łatwiej — także Tobie z przyszłości.
+
+W **części 2** zejdziemy poziom niżej, do samej treści w body: hierarchia nagłówków, listy i różnica między `<strong>`/`<em>` a `<b>`/`<i>` — czyli jak nadawać tekstowi znaczenie, nie tylko wygląd.
