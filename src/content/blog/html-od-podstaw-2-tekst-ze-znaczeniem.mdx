@@ -1,0 +1,87 @@
+---
+title: "HTML od podstaw (cz. 2): tekst ze znaczeniem"
+description: "Nagłówki, listy i wyróżnienia — jak nadawać tekstowi znaczenie, nie tylko wygląd. Hierarchia h1–h6, ul/ol oraz strong/em kontra b/i."
+pubDate: 2026-10-17
+tags: ["html", "podstawy", "dostępność"]
+series: "html-od-podstaw"
+seriesPart: 2
+---
+
+import Hare from "../../components/Hare.astro";
+
+W [części 1](/blog/html-od-podstaw-1-co-to-jest-html) ustaliliśmy jedną rzecz: HTML to semantyka — opisuje znaczenie, nie wygląd. Teraz zejdźmy do najczęstszej treści każdej strony: **tekstu**. Mamy trzy narzędzia, żeby nadać mu znaczenie — nagłówki, listy i wyróżnienia. Po kolei.
+
+## Nagłówki to spis treści, nie rozmiary czcionek
+
+HTML daje sześć poziomów nagłówków, od `<h1>` do `<h6>`. To **hierarchia**: `<h1>` to główny temat strony (zwykle jeden), `<h2>` to główne sekcje, `<h3>` to ich podsekcje i tak dalej. Dokładnie jak spis treści książki.
+
+Najczęstszy błąd początkującego: wybieranie poziomu „bo ładnie wygląda" — `<h3>`, bo jest mniejszy. Ale rozmiar to robota CSS; poziom nagłówka to **znaczenie**.
+
+<Hare type="explain">
+  Wyobraź sobie, że ktoś czyta Twoją stronę samymi nagłówkami — bo tak właśnie robią użytkownicy czytników ekranu, przeskakując `h1 → h2 → h3`, żeby ogarnąć strukturę. Gdy poziomy są poukładane, dostają czytelny spis treści. Gdy skaczą losowo (`h2`, zaraz potem `h5`), to jak spis treści z powyrywanymi stronami.
+</Hare>
+
+Dwie zasady na start:
+
+- **Jeden `<h1>` na stronę** — główny temat.
+- **Nie przeskakuj poziomów** — po `<h2>` idzie `<h3>`, nie `<h5>`.
+
+<Hare type="tip">
+  Kusi Cię mniejszy nagłówek, bo `<h3>` „lepiej leży" niż `<h2>`? To znak, że chcesz zmienić **wygląd**, a nie **znaczenie**. Zostaw poziom zgodny z hierarchią, a rozmiar ustaw w CSS.
+</Hare>
+
+## Listy — gdy coś jest zbiorem
+
+Gdy chcesz stworzyć **listę**, to w HTML robisz to tak:
+
+- `<ul>` — to lista nieuporządkowana, gdy kolejność nie ma znaczenia (składniki na liście zakupów, cechy).
+- `<ol>` — to lista uporządkowana, gdy kolejność **ma** znaczenie (kroki przepisu, ranking).
+- `<li>` — pojedynczy element, wewnątrz `<ul>` albo `<ol>`.
+
+```html
+<ol>
+    <li>Rozgrzej patelnię</li>
+    <li>Wbij jajka</li>
+    <li>Posól</li>
+</ol>
+```
+
+
+Czemu nie wymienić rzeczy po prostu od myślnika w akapicie? Albo je ponumerować? Bo czytnik ekranu wtedy nie zapowie „lista, 3 elementy", a w przypadku zastosowania odpowiednich tagów od razu dajesz użytkownikowi kontekst, ile rzeczy go czeka.
+
+<Hare type="decision">
+  `<ul>` czy `<ol>`? Zadaj jedno pytanie: **czy zmiana kolejności zmienia sens?** Przepis krok po kroku — tak, więc `<ol>`. Lista zakupów — nie, więc `<ul>`. Wybierasz znaczeniem; kropki czy numerki i tak możesz podmienić w CSS.
+</Hare>
+
+## `<strong>`/`<em>` kontra `<b>`/`<i>` — bliźniaki o różnych rolach
+
+Domyślnie wyglądają identycznie: `<strong>` i `<b>` pogrubiają, `<em>` i `<i>` pochylają. Ale **znaczą** co innego:
+
+- `<strong>` — treść **ważna**: ostrzeżenie, kluczowy warunek.
+- `<em>` — **emfaza**, nacisk, który potrafi zmienić sens zdania.
+- `<b>` — wyróżnienie **czysto wizualne**, bez wagi (np. słowo kluczowe).
+- `<i>` — kursywa **bez emfazy** (nazwa obca, termin, myśl bohatera).
+
+Że `<em>` naprawdę zmienia sens, najlepiej widać na przykładzie:
+
+Porównaj: „*Ja* tego nie powiedziałem" (nacisk na „ja" — to nie ja, ktoś inny)
+z „Ja tego nie *powiedziałem*" (nacisk na „powiedziałem" — co najwyżej
+pomyślałem). To samo zdanie, inny nacisk, zupełnie inny sens.
+
+Czytnik ekranu może oddać tę emfazę głosem. Przy `<i>` już nie, bo `<i>` nie niesie nacisku — tylko pochyla.
+
+<Hare type="decision">
+  Zanim pogrubisz słowo, wróć do pytania z cz. 1: **chodzi o znaczenie czy o wygląd?** Coś jest *ważne* → `<strong>`. Chcesz tylko, żeby było grube „dla oka" → to robota CSS (a gdy naprawdę musi być w treści, `<b>`).
+</Hare>
+
+<Hare type="learn">
+  Pełną listę elementów — z zaznaczeniem, które niosą znaczenie — masz w [referencji elementów HTML na MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element). Warto tam zajrzeć, zanim odruchowo sięgniesz po `<div>`.
+</Hare>
+
+## Co nam to daje?
+
+- **Dostępność (a11y):** czytnik zapowiada poziomy nagłówków i długość list, a emfazę potrafi oddać głosem — osoba niewidoma „słyszy" strukturę strony.
+- **SEO:** nagłówki to mapa treści dla wyszukiwarek, a `<strong>` podpowiada, co jest istotne.
+- **Utrzymanie:** gdy znaczenie siedzi w HTML, cały wygląd zmieniasz w CSS — bez dotykania treści.
+
+W **części 3** zajmiemy się dwoma filarami każdej strony: **linkami i obrazami** — `<a>` i atrybut `href`, `<img>` oraz (często pomijany, a kluczowy) atrybut `alt`.
