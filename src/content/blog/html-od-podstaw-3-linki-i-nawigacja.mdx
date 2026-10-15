@@ -1,0 +1,131 @@
+---
+title: "HTML od podstaw (cz. 3): linki i nawigacja"
+description: "Element a i atrybut href, sensowny tekst linku, nowa karta (target), a kontra button oraz nav jako punkt orientacyjny — czyli nawigacja ze znaczeniem."
+pubDate: 2026-10-18
+tags: ["html", "podstawy", "dostępność", "nawigacja"]
+series: "html-od-podstaw"
+seriesPart: 3
+---
+
+import Hare from "../../components/Hare.astro";
+
+W części 2 nadawaliśmy znaczenie tekstowi. Teraz zajmiemy się czymś, bez czego HTML nie byłby… HTML-em. Skrót rozwija się do *HyperText* Markup Language (pl. Hipertekstowy Język Znaczników), a **hipertekst** to po prostu tekst połączony odnośnikami. Bez linków mielibyśmy stos osobnych dokumentów zamiast sieci.
+
+Dziś omówimy **linki i nawigację**: jak działa `<a>`, kiedy zamiast linku użyć przycisku i jak oznaczyć menu, żeby dało się po nim wygodnie poruszać.
+
+## `<a>` i `href` — kotwica, która dokądś prowadzi
+
+Element `<a>` to skrót od *anchor*, czyli kotwica. Sam z siebie niczego nie robi — o tym, **dokąd** prowadzi, decyduje atrybut `href` (od *hypertext reference*):
+
+```html
+<a href="https://developer.mozilla.org">dokumentacja MDN</a>
+```
+
+
+Wartością `href` może być kilka rzeczy:
+
+```html
+<!-- inna strona (adres bezwzględny) -->
+<a href="https://developer.mozilla.org">MDN</a>
+
+<!-- inna podstrona tego samego serwisu (ścieżka względna) -->
+<a href="/blog/">Wszystkie wpisy</a>
+
+<!-- skok do elementu z id="kontakt" na tej samej stronie -->
+<a href="#kontakt">Przejdź do kontaktu</a>
+
+<!-- mail i telefon -->
+<a href="mailto:ja@example.com">Napisz do mnie</a>
+<a href="tel:+48123456789">Zadzwoń</a>
+ ```
+
+
+Jedna pułapka: `<a>` **bez** `href` nie jest linkiem. Nie da się go sfokusować klawiaturą ani kliknąć jak odnośnika — to zwykły, nic nieznaczący element.
+
+## Nowa karta: `target="_blank"`
+
+Domyślnie link otwiera się w tej samej karcie; `target="_blank"` otwiera go w **nowej**. Współczesne przeglądarki obecnie same dbają o bezpieczeństwo (traktują takie linki tak, jakby dopisano im atrybut `rel="noopener"`, ale to temat na inny wpis), więc nie musisz niczego łatać. Pamiętaj jednak o tym, by **nie nadużywać** atrybutu nowej karty. Odbierasz tym samym użytkownikowi wybór, a on i tak potrafi otworzyć link w nowej karcie sam. Gdy już to robisz, **uprzedź o tym w tekście linku**.
+
+## Tekst linku ma mieć sens poza kontekstem
+
+```html
+<!-- słabo -->
+<p>Więcej o produktach przeczytasz <a href="/produkty">tutaj</a>.</p>
+
+<!-- dobrze -->
+<p>Przeczytaj <a href="/produkty">więcej o naszych produktach</a>.</p>
+```
+
+
+<Hare type="explain">
+  Czytniki ekranu potrafią wyświetlić **samą listę linków** ze strony — bez otaczających je zdań. Jeśli siedem z nich nazywa się „tutaj" albo „kliknij", użytkownik dostaje listę siedmiu zagadek. Dobry test: wyobraź sobie, że z całej strony zostały tylko teksty linków. Czy wciąż wiadomo, dokąd prowadzą?
+</Hare>
+
+## `<a>` czy `<button>` — dokąd idziesz, a co robisz
+
+To pytanie z części 1 w praktyce: chodzi o znaczenie, nie o wygląd.
+
+- **Link (`<a href>`)** *prowadzi*. Nawigujesz pod adres: inna strona, inna podstrona, inne miejsce na stronie.
+- **Przycisk (`<button>`)** *działa*. Coś się dzieje na obecnej stronie: otwiera się modal, wysyła formularz, rozwija menu.
+
+<Hare type="decision">
+  Pytanie kontrolne: **czy po kliknięciu zmieni się adres (URL) albo miejsce na stronie?** Tak? → `<a>`. 
+  Nie? Tylko „coś się dzieje" → `<button>`. A to, że link ma wyglądać jak duży, kolorowy przycisk? Spokojnie — wygląd to robota CSS. Wybiegając w świat frameworków - np. w React jest podobnie: `<Link>` z biblioteki routingu pod spodem i tak renderuje na koniec zwykłe `<a href>`.
+</Hare>
+
+Dlaczego nie zrobić „przycisku" z `<div>` albo linku z pustym `href`?
+
+```html
+<!-- ❌ wygląda jak przycisk, ale nim nie jest -->
+<div class="btn menu-toggle">Menu</div>
+<a href="#" class="menu-toggle">Menu</a>
+
+<!-- ✅ -->
+<button type="button" class="menu-toggle">Menu</button>
+```
+
+
+<Hare type="bug">
+  `<a href="#">` to klasyczny „fałszywy przycisk": kliknięcie dopisuje `#` do adresu i potrafi przewinąć stronę na górę, a czytnik zapowiada go jako link, choć nic nie nawiguje. Z kolei `<div>` w ogóle nie łapie fokusu z klawiatury, nie reaguje na Enter ani Spację i nie ma roli „przycisk". Wszystko, co `<button>` dostaje za darmo, musiałbyś dopisywać ręcznie.
+</Hare>
+
+Co dostajesz z prawdziwym elementem za darmo:
+
+- **Klawiatura:** link aktywuje Enter, przycisk — Enter **i** Spacja.
+- **Menu kontekstowe i środkowy klik:** „otwórz w nowej karcie" i „kopiuj adres linku" działają tylko przy prawdziwym linku.
+- **Formularze:** `<button>` w `<form>` domyślnie wysyła formularz. Jeśli to nie ma być wysyłka, dopisz `type="button"`.
+
+## `<nav>` — oznacz główną nawigację
+
+`<nav>` oznacza **główny blok nawigacji**: menu serwisu, okruszki, paginację. Czytniki ekranu pozwalają przeskakiwać między takimi „punktami orientacyjnymi" (*landmarks*) tak jak między nagłówkami. Nie każda grupa linków potrzebuje `<nav>` — kilka odnośników w stopce czy link w środku akapitu zwykle nie.
+
+Menu to **lista linków**, więc łączymy je z `<ul>` z części 2:
+
+```html
+<nav aria-label="Główna">
+    <ul>
+        <li><a href="/">Start</a></li>
+        <li><a href="/blog/">Blog</a></li>
+        <li><a href="/o-mnie/">O mnie</a></li>
+    </ul>
+</nav>
+```
+
+
+`aria-label="Główna"` przydaje się, gdy na stronie jest więcej niż jeden `<nav>` (np. menu i okruszki) — nazwa pozwala je odróżnić.
+
+<Hare type="tip">
+  W etykiecie nie pisz słowa „nawigacja" — czytnik i tak zapowie „nawigacja" od siebie, więc wyszłoby „Główna nawigacja, nawigacja". Wystarczy „Główna". I nie dopisuj `role="navigation"` do `<nav>` — ta rola już w nim siedzi.
+</Hare>
+
+<Hare type="learn">
+  Szczegóły w MDN: [element `<a>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a) i [element `<nav>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/nav).
+</Hare>
+
+## Co nam to daje?
+
+- **Dostępność:** osoba na klawiaturze lub czytniku listuje linki i przeskakuje do bloków nawigacji, a prawdziwy link i prawdziwy przycisk działają bez jednej linijki JS.
+- **SEO:** wyszukiwarki odkrywają kolejne podstrony przez `<a href>` i czytają tekst linku. „Link" zrobiony z `<div onclick>` takiego znaczenia nie niesie.
+- **Utrzymanie:** natywne elementy mają obsługę klawiatury i fokusu wbudowaną — nie piszesz jej od nowa przy każdym menu i przycisku.
+
+W **części 4** zajmiemy się drugim filarem każdej strony — **obrazami**: `<img>` i (często pomijany, a kluczowy) atrybut `alt`, podpisy przez `<figure>` oraz leniwe ładowanie.
