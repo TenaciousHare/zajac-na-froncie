@@ -1,0 +1,117 @@
+---
+title: "HTML od podstaw (cz. 4): obrazy i tekst alternatywny"
+description: "Element img oraz atrybuty src, alt, width i height. Jak pisać dobry tekst alternatywny, czym jest figure z podpisem i po co loading=lazy."
+pubDate: 2026-10-19
+tags: ["html", "podstawy", "dostępność", "obrazy"]
+series: "html-od-podstaw"
+seriesPart: 4
+---
+
+import Hare from "../../components/Hare.astro";
+
+W części 3 łączyliśmy strony linkami. Teraz drugi filar treści — **obrazy**. Zobaczymy, jak wstawić obraz tak, żeby dało się go „przeczytać" bez patrzenia na ekran, a także jak dodać podpis i nie spowalniać strony.
+
+## `<img>`, `alt`, `width` i `height`
+
+Obraz wstawiasz elementem `<img>`. Nie ma tagu zamykającego, za to ma kilka atrybutów, które warto podawać zawsze:
+
+```html
+<img
+    src="zajac.jpg"
+    alt="Zając w okularach siedzi przed laptopem"
+    width="800"
+    height="533"
+/>
+```
+
+- `src` — adres pliku.
+- `alt` — tekst zastępczy: czytnik ekranu odczyta go na głos, a przeglądarka pokaże, gdy obraz się nie wczyta.
+- `width` i `height` — wymiary w pikselach (same liczby, bez „px"). Dzięki nim przeglądarka zna proporcje **zanim** pobierze plik, rezerwuje miejsce i strona nie „skacze" po załadowaniu obrazka.
+
+To nie psuje responsywności: `max-width: 100%; height: auto;` w CSS nadal skaluje obraz, a proporcje zostają.
+
+## Jak pisać `alt`
+
+`alt` jest obowiązkowy, a jego treść zależy od tego, **po co** obraz jest na stronie. Jeśli:
+
+- **Niesie treść** → opisz zwięźle, co przedstawia i po co tu jest. Nie zaczynaj od „zdjęcie…" i nie wklejaj nazwy pliku.
+- **To tylko ozdoba** → `alt=""`. Pusty, ale **obecny** — czytnik go pominie. Gdy atrybutu w ogóle zabraknie, niektóre czytniki odczytają nazwę pliku, np. „IMG 20261015 jpg".
+- **Jest linkiem** → opisz **cel** linku, nie wygląd (tak jak tekst linku w części 3).
+- **Jest na nim tekst** → powtórz go w `alt`.
+
+```html
+<!-- niesie treść -->
+<img src="wynik.png" alt="Wynik dostępności w Lighthouse: 100 na 100" width="800" height="450" />
+
+<!-- czysta ozdoba -->
+<img src="fala.svg" alt="" width="1200" height="80" />
+
+<!-- obraz w linku: opisz cel, nie wygląd -->
+<a href="/">
+    <img src="logo.svg" alt="Zając na Froncie — strona główna" width="160" height="40" />
+</a>
+```
+
+<Hare type="decision">
+  Pytanie kontrolne: **gdyby tego obrazka nie było, co powinno stać w jego miejscu?** Jeśli da się to powiedzieć zdaniem — to Twój `alt`. Jeśli odpowiedź brzmi „nic, to ozdoba" — wpisz `alt=""`. I pamiętaj: atrybut `title` to nie `alt` i go nie zastępuje.
+</Hare>
+
+## `<figure>` i `<figcaption>` — obraz z podpisem
+
+`<figure>` opakowuje **samodzielną treść**, na którą można się powołać z tekstu (jak „rys. 1" w książce): obraz, diagram, fragment kodu. Opcjonalny `<figcaption>` to jej podpis — pierwsze albo ostatnie dziecko `<figure>`.
+
+```html
+<figure>
+    <img
+        src="push-ok.png"
+        alt="Terminal z komunikatem o udanym git push"
+        width="800"
+        height="300"
+    />
+    <figcaption>Wreszcie: <code>git push</code> przeszedł. Po godzinie.</figcaption>
+</figure>
+```
+
+Dwie uwagi:
+
+- **Nie każdy obraz potrzebuje `<figure>`.** Użyj go, gdy obraz ma podpis albo żyje własnym życiem. Ozdobny obrazek w akapicie zostaje zwykłym `<img>`.
+- **`alt` i podpis się nie powtarzają.** `alt` mówi, **co widać**; podpis — **po co to tu jest** albo co z tego wynika.
+
+## `loading="lazy"` — nie ładuj tego, czego nikt jeszcze nie widzi
+
+Domyślnie przeglądarka pobiera wszystkie obrazy od razu, także te na samym dole długiego artykułu. `loading="lazy"` mówi jej: „poczekaj, aż użytkownik zbliży się do tego miejsca":
+
+```html
+<img
+    src="wizyty.jpg"
+    alt="Wykres liczby wizyt na blogu w ostatnim miesiącu"
+    width="800"
+    height="450"
+    loading="lazy"
+/>
+```
+
+Zasady są proste:
+
+- **Obraz poza ekranem na starcie** (dalsza część wpisu, galeria) → `loading="lazy"`.
+- **Obraz widoczny od razu** (baner, logo, zdjęcie nad treścią) → zostaw domyślne ładowanie; opóźnianie najważniejszego elementu tylko spowolni stronę.
+
+<Hare type="bug">
+  Leniwe ładowanie bez `width` i `height` to pułapka: niezaładowany obraz ma rozmiar 0×0, więc strona „skacze" po jego pojawieniu się. Wymiary z pierwszej sekcji rozwiązują problem — podawaj je zawsze.
+</Hare>
+
+<Hare type="tip">
+  Używasz Astro? Komponent `<Image>` z `astro:assets` sam wylicza `width` i `height` lokalnych obrazów oraz dopisuje `loading` i `decoding`. Zając na tym blogu (zbudowanym właśnie w Astro) też jest wyświetlany przez `<Image>` — ale warto wiedzieć, co dzieje się pod spodem.
+</Hare>
+
+<Hare type="learn">
+  Szczegóły w MDN: [`<img>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img) i [`<figure>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/figure).
+</Hare>
+
+## Co nam to daje?
+
+- **Dostępność:** dzięki `alt` osoba korzystająca z czytnika wie, co jest na obrazie — a ozdoby (`alt=""`) jej nie zagadują.
+- **SEO:** wyszukiwarki czytają `alt`, żeby zrozumieć, co przedstawia obraz.
+- **Wydajność:** `loading="lazy"` oszczędza transfer, a `width` i `height` powstrzymują skakanie strony.
+
+Kiedyś jeszcze wrócimy do obrazów od strony **wydajności** (różne rozmiary i formaty: `srcset`, `<picture>`), ale to już bardziej zaawansowane tematy. Natomiast w kolejnej części podstaw zbudujemy **semantyczny szkielet strony** — `header`, `main`, `section`, `article`, `footer`.
