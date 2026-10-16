@@ -73,3 +73,8 @@ a.heading-anchor:focus-visible {
   color: #3fb950; /* GitHub success green = skopiowano */
   border-color: #3fb950;
 }
+
+.prose code::before,
+.prose code::after {
+  content: none;
+}
