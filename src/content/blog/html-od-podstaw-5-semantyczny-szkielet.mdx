@@ -1,0 +1,159 @@
+---
+title: "HTML od podstaw (cz. 5): semantyczny szkielet strony"
+description: "header, nav, main, article, section, aside i footer zamiast morza divów. Jak podzielić stronę na regiony, które rozumie przeglądarka i czytnik ekranu."
+pubDate: 2026-10-20
+tags: ["html", "podstawy", "dostępność", "semantyka"]
+series: "html-od-podstaw"
+seriesPart: 5
+---
+
+import Hare from "../../components/Hare.astro";
+
+Do tej pory nadawaliśmy znaczenie pojedynczym kawałkom treści: nagłówkom, listom, linkom i obrazom. Dziś krok dalej — **cała strona**. Prawie każda witryna ma te same regiony: nagłówek z logo, menu, treść główną, czasem pasek boczny i stopkę. HTML ma na każdy z nich osobny element.
+
+## Morze divów
+
+Tak wygląda strona, w której o strukturze wie tylko autor CSS-a:
+
+```html
+<div class="header">
+  <div class="menu">…</div>
+</div>
+<div class="content">
+  <div class="post">…</div>
+</div>
+<div class="footer">…</div>
+```
+
+Nazwy klas brzmią sensownie, ale **przeglądarka ich nie czyta**. Dla niej to pięć identycznych, nic nieznaczących pudełek. Ta sama strona ze znaczeniem:
+
+```html
+<header>
+  <nav>…</nav>
+</header>
+<main>
+  <article>…</article>
+</main>
+<footer>…</footer>
+```
+
+Wygląd może być identyczny — różnica jest w tym, co strona **mówi** o sobie.
+
+## Siedem elementów, siedem ról
+
+- `<header>` — wstęp: logo, tytuł, często menu. Może być nagłówkiem całej strony albo pojedynczego artykułu.
+- `<nav>` — główny blok nawigacji (znasz go z części 3).
+- `<main>` — **główna treść** strony, ta unikalna dla tej podstrony. Jeden na stronę.
+- `<article>` — samodzielna całość, którą dałoby się wyjąć i opublikować gdzie indziej: wpis na blogu, komentarz, karta produktu.
+- `<section>` — tematyczny fragment większej całości, zwykle z własnym nagłówkiem.
+- `<aside>` — treść poboczna, powiązana z główną, ale niekonieczna: ramka „zobacz też”, pasek boczny.
+- `<footer>` — stopka: autor, prawa, linki pomocnicze. Też może należeć do strony albo do artykułu.
+
+<Hare type="architecture">
+  Pomyśl o stronie jak o gazecie. `header` to winieta z tytułem, `nav` to spis działów, `main` to strony z artykułami, każdy `article` to osobny tekst, który mógłby ukazać się w innym wydaniu, `section` to śródtytuł w tekście, `aside` to ramka z ciekawostką obok, a `footer` to stopka redakcyjna.
+</Hare>
+
+## Punkty orientacyjne dla czytnika
+
+Niektóre z tych elementów przeglądarka zamienia w  tak zwane **landmarks** — punkty orientacyjne, między którymi czytnik ekranu pozwala skakać jednym skrótem. `header` (strony), `nav`, `main`, `aside` i `footer` (strony) to dokładnie te regiony. Użytkownik nie musi przechodzić przez menu na każdej podstronie — wskakuje od razu do `main`.
+
+<Hare type="explain">
+  To ta sama idea co nagłówki z części 2, tylko poziom wyżej. Nagłówki to spis treści **tekstu**, a landmarki to mapa **całej strony**. Osoba korzystająca z czytnika najpierw orientuje się w regionach, a potem w nagłówkach wewnątrz nich.
+</Hare>
+
+<Hare type="bug">
+  Dwa częste błędy: **kilka `<main>` na jednej stronie** (powinien być jeden widoczny) oraz **`main` wewnątrz `header`, `article` albo `aside`**. `main` to treść główna — nie może być częścią czegoś pobocznego czy pomniejszego.
+</Hare>
+
+## `article`, `section` czy `div`?
+
+To pytanie zadasz sobie najczęściej. Odpowiedź wynika ze znaczenia:
+
+```html
+<main>
+  <article>
+    <h1>HTML od podstaw (cz. 5)</h1>
+
+    <section>
+      <h2>Morze divów</h2>
+      <p>…</p>
+    </section>
+
+    <section>
+      <h2>Siedem elementów</h2>
+      <p>…</p>
+    </section>
+  </article>
+</main>
+```
+
+<Hare type="decision">
+  Trzy pytania po kolei. **Czy to ma sens samo w sobie, poza tą stroną?** Tak → `article`. **Czy to tematyczny fragment z własnym nagłówkiem?** Tak → `section`. **Potrzebujesz pudełka tylko po to, żeby coś ostylować albo ułożyć?** → `div`. I to jest w porządku: `div` nie jest zakazany, on po prostu nic nie znaczy — więc używaj go tam, gdzie nic znaczyć nie musi.
+</Hare>
+
+<Hare type="tip">
+  `section` bez nagłówka to często znak, że tak naprawdę potrzebujesz `div`. Jeśli nie umiesz nadać sekcji tytułu, prawdopodobnie nie jest osobną sekcją, tylko opakowaniem do stylowania.
+</Hare>
+
+## Cały szkielet w jednym miejscu
+
+Łącząc to z poprzednimi częściami — tak wygląda szkielet tej strony, którą właśnie czytasz (w uproszczeniu, bez klas i treści):
+
+```html
+<body>
+  <header>
+    <a href="/">Zając na Froncie</a>
+    <nav aria-label="Główna">
+      <ul>
+        <li><a href="/blog">Blog</a></li>
+        <li><a href="/projects">Projekty</a></li>
+        <li><a href="/about">O mnie</a></li>
+      </ul>
+    </nav>
+    <button type="button" aria-label="Przełącz motyw">…</button>
+  </header>
+
+  <main>
+    <article>
+      <h1>HTML od podstaw (cz. 5): semantyczny szkielet strony</h1>
+      <nav aria-label="Spis treści">…</nav>
+      <h2>Morze divów</h2>
+      <p>…</p>
+    </article>
+
+    <section>
+      <h2>Więcej z tej serii</h2>
+      <ol>…</ol>
+    </section>
+
+    <nav aria-label="Części serii">…</nav>
+  </main>
+
+  <footer>
+    <p>© 2026 Zając na Froncie</p>
+    <a href="/rss.xml">RSS</a>
+  </footer>
+</body>
+```
+
+Kilka rzeczy wartych zauważenia:
+
+- Na jednej stronie są **aż trzy `<nav>`**: menu, spis treści i przejścia między częściami. Dlatego każdy ma własną etykietę (pamiętasz z części 3?).
+- Przycisk zmiany motywu stoi w `header`, ale **poza** `nav` — bo to akcja, a nie nawigacja. To pytanie „link czy przycisk” z części 3, tylko w skali całej strony.
+- „Więcej z tej serii” to `section` z nagłówkiem: tematyczny fragment tej podstrony. Równie dobrze mógłby to być `aside` — treść powiązana, ale poboczna. Oba wybory da się obronić.
+
+<Hare type="tip">
+  Chcesz zobaczyć landmarki na żywo? W Chrome otwórz DevTools → **Elements** → panel **Accessibility** i włącz „Enable full-page accessibility tree”. Na tej stronie znajdziesz `banner` (header), trzy nazwane `navigation`, `main` i `contentinfo` (footer).
+</Hare>
+
+<Hare type="learn">
+  Szczegóły w MDN: [`<main>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/main), [`<article>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/article), [`<section>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/section), [`<aside>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/aside), [`<nav>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/nav), [`<header>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/header) oraz [`<footer>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/footer).
+</Hare>
+
+## Co nam to daje?
+
+- **Dostępność:** czytnik ekranu dostaje mapę strony i pozwala skakać prosto do treści, z pominięciem menu na każdej podstronie.
+- **SEO:** wyszukiwarki łatwiej odróżniają treść główną od nawigacji, stopki i dodatków.
+- **Utrzymanie:** `<main>` czyta się szybciej niż `<div class="content-wrapper-inner">` — także Tobie za pół roku.
+
+W **części 6** zajmiemy się elementami, z którymi użytkownik naprawdę rozmawia: **formularzami**. Zobaczymy, dlaczego `placeholder` to nie `label` i jak połączyć pole z jego opisem.
