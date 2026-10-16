@@ -10,7 +10,10 @@ const { prev, next } = Astro.props;
 ---
 
 {(prev || next) && (
-  <nav class="not-prose mt-12 grid grid-cols-2 gap-4 border-t border-slate-200 pt-6 dark:border-slate-700">
+  <nav
+    aria-label="Części serii"
+    class="not-prose mt-12 grid grid-cols-2 gap-4 border-t border-slate-200 pt-6 dark:border-slate-700"
+  >
     {prev ? (
       <a
         href={`/blog/${prev.id}`}
