@@ -22,3 +22,23 @@ export async function getSeriesNav(current: CollectionEntry<"blog">) {
 
   return { prev: parts[index - 1], next: parts[index + 1] };
 }
+
+// wszystkie unikalne tagi + ile wpisów ma każdy, posortowane alfabetycznie (po polsku)
+export async function getAllTags() {
+  const posts = await getPublishedPosts();
+  const counts = new Map<string, number>();
+  for (const post of posts) {
+    for (const tag of post.data.tags) {
+      counts.set(tag, (counts.get(tag) ?? 0) + 1);
+    }
+  }
+  return [...counts.entries()]
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => a.tag.localeCompare(b.tag, "pl"));
+}
+
+export async function getPostsByTag(tag: string) {
+  return (await getPublishedPosts()).filter((post) =>
+    post.data.tags.includes(tag),
+  );
+}
