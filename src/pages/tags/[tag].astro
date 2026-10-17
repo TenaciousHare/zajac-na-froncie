@@ -1,0 +1,42 @@
+---
+import PostCard from "../../components/PostCard.astro";
+import Layout from "../../layouts/Layout.astro";
+import { getAllTags, getPostsByTag } from "../../utils/posts";
+
+// Po jednej stronie na każdy istniejący tag
+export async function getStaticPaths() {
+  const tags = await getAllTags();
+  return Promise.all(
+    tags.map(async ({ tag }) => ({
+      params: { tag },
+      props: { posts: await getPostsByTag(tag) },
+    })),
+  );
+}
+
+const { tag } = Astro.params;
+const { posts } = Astro.props;
+---
+
+<Layout
+  title={`#${tag} — Zając na Froncie`}
+  description={`Wpisy oznaczone tagiem #${tag} na blogu Zając na Froncie.`}
+>
+  <p class="mb-6">
+    <a
+      href="/tags"
+      class="text-sm text-slate-500 transition hover:text-accent dark:text-slate-400"
+    >
+      ← Wszystkie tagi
+    </a>
+  </p>
+  <h1 class="mb-6 text-3xl font-bold text-slate-900 dark:text-slate-100">
+    #{tag}
+  </h1>
+
+  <ul class="space-y-6">
+    {posts.map((post) => (
+      <PostCard post={post} />
+    ))}
+  </ul>
+</Layout>

@@ -11,6 +11,7 @@ import Comments from "../../components/Comments.astro";
 import SeriesNav from "../../components/SeriesNav.astro";
 import TableOfContents from "../../components/TableOfContents.astro";
 import CodeCopy from "../../components/CodeCopy.astro";
+import TagList from "../../components/TagList.astro";
 
 // 1. Powiedz Astro, jakie strony zbudować — po jednej na wpis
 export async function getStaticPaths() {
@@ -43,6 +44,7 @@ const seriesParts = await getSeriesParts(post);
     <TableOfContents headings={headings} />
     <Content />
   </article>
+  <TagList tags={post.data.tags} />
   <CodeCopy />
   <SeriesParts parts={seriesParts} currentId={post.id} />
   <SeriesNav prev={prev} next={next} />
