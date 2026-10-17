@@ -1,5 +1,5 @@
 ---
-import { Image } from "astro:assets";
+import { Picture } from "astro:assets";
 import Layout from "../layouts/Layout.astro";
 import notFoundLight from "../assets/not-found_light.png";
 import notFoundDark from "../assets/not-found_dark.png";
@@ -12,17 +12,23 @@ import notFoundDark from "../assets/not-found_dark.png";
   <section class="w-screen ml-[calc(50%-50vw)] mr-[calc(50%-50vw)] bg-white dark:bg-slate-900">
     <h1 class="sr-only">404 — nie znaleźliśmy tej strony</h1>
 
-    <Image
+    <Picture
       src={notFoundLight}
+      formats={["avif", "webp"]}
+      width={1024}
+      densities={[1, 2]}
       alt="Senior Hare rozparty w fotelu z nogami na biurku — strona nie znaleziona"
+      loading="eager"
       class="mx-auto w-full max-w-4xl dark:hidden"
-      loading="eager"
     />
-    <Image
+    <Picture
       src={notFoundDark}
+      formats={["avif", "webp"]}
+      width={1024}
+      densities={[1, 2]}
       alt="Senior Hare rozparty w fotelu z nogami na biurku — strona nie znaleziona"
-      class="mx-auto hidden w-full max-w-4xl dark:block"
       loading="eager"
+      class="mx-auto hidden w-full max-w-4xl dark:block"
     />
   </section>
 
