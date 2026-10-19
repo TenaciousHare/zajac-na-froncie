@@ -1,0 +1,91 @@
+---
+title: 'HTML od podstaw (cz. 7): tabele'
+description: 'thead, tbody, th ze scope i caption — jak zbudować tabelę, którą rozumie czytnik ekranu. I dlaczego tabela to nie narzędzie do układania strony.'
+pubDate: 2026-10-22
+tags: ['html', 'podstawy', 'dostępność', 'tabele']
+series: 'html-od-podstaw'
+seriesPart: 7
+---
+
+import Hare from "../../components/Hare.astro";
+
+W części 6 rozmawialiśmy z użytkownikiem przez formularze. Dziś coś, co ma złą sławę jeszcze z lat 2000, gdy budowano na tym całe strony: **tabele**. Źle użyte to koszmar, ale do tego, do czego są stworzone — **danych w rzędach i kolumnach** — nie ma lepszego narzędzia. Myśl przewodnia: tabela jest do **danych**, nie do wyglądu.
+
+## Tabela nie służy do układania strony
+
+Kiedyś `<table>` używano, żeby ustawić elementy obok siebie. Dziś od tego jest CSS (grid, flexbox — temat na serię o CSS).
+
+<Hare type="bug">
+Gdy zbudujesz układ strony z tabeli, czytnik ekranu potraktuje ją jak **dane**: „tabela, 3 kolumny, 5 wierszy” — i zacznie czytać menu czy stopkę jak arkusz. Dla użytkownika to bełkot. Układ rób CSS-em, tabelę zostaw danym.
+</Hare>
+
+## Szkielet tabeli
+
+Weźmy coś z mojego podwórka — fragment listy kierunków (jak w [Destinations](/blog/jak-powstal-destinations-1-pomysl-domena-stack)):
+
+~~~html
+<table>
+  <caption>Kierunki w strefie Non-Schengen</caption>
+  <thead>
+    <tr>
+      <th scope="col">Kod</th>
+      <th scope="col">Miasto</th>
+      <th scope="col">Kraj</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th scope="row">STN</th>
+      <td>Londyn Stansted</td>
+      <td>Wielka Brytania</td>
+    </tr>
+    <tr>
+      <th scope="row">BGY</th>
+      <td>Bergamo</td>
+      <td>Włochy</td>
+    </tr>
+  </tbody>
+</table>
+~~~
+
+- `<table>` — cała tabela,
+- `<caption>` — jej tytuł (więcej niżej),
+- `<thead>` / `<tbody>` — grupują wiersze nagłówka i treści,
+- `<tr>` — wiersz,
+- `<th>` — komórka nagłówkowa,
+- `<td>` — komórka z danymi.
+
+## `<th>` i `scope` — serce dostępnej tabeli
+
+`<th>` to komórka **nagłówkowa**. Domyślnie jest pogrubiona i wyśrodkowana, ale — jak zwykle w tej serii — nie o wygląd chodzi, tylko o **znaczenie**. Atrybut `scope` mówi, czego dany nagłówek dotyczy:
+
+- `scope="col"` — nagłówek **kolumny** (Kod, Miasto, Kraj),
+- `scope="row"` — nagłówek **wiersza** (tu: kod lotniska).
+
+<Hare type="decision">
+Dzięki `scope` czytnik, czytając komórkę „Londyn Stansted”, potrafi zapowiedzieć ją razem z nagłówkami: „Miasto, Londyn Stansted, wiersz STN”. Bez tego czytnik musi zgadywać, a przy bardziej złożonych tabelach często zgaduje źle.
+</Hare>
+
+## `<caption>` — tytuł tabeli
+
+`<caption>` to pierwszy element wewnątrz `<table>`. Czytnik odczyta go, zanim wejdzie w dane — użytkownik od razu wie, na co patrzy, i może zdecydować, czy tabela go interesuje.
+
+<Hare type="tip">
+Lepiej dać tytuł w `<caption>` niż w zwykłym `<p>` lub np. `<h2>` nad tabelą. `caption` jest **częścią** tabeli, więc czytnik wiąże go z nią i zapowiada jako jej nazwę.
+</Hare>
+
+## `<thead>`, `<tbody>`, `<tfoot>`
+
+Te trzy grupują wiersze według roli: nagłówek, treść, podsumowanie. Poza czytelnym kodem dają praktyczny bonus: przy druku długiej tabeli (pamiętasz `@media print` z serii o Destinations?) przeglądarka potrafi **powtórzyć `<thead>`** na każdej stronie.
+
+<Hare type="learn">
+Szczegóły w MDN, z przykładami zastosowań: [`<table>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/table), [`<thead>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/thead), [`<tbody>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/tbody), [`<tfoot>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/tfoot), [`<tr>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/tr), [`<th>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/th), [`<td>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/td) i [`<caption>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/caption).
+</Hare>
+
+## Co nam to daje?
+
+- **Dostępność:** `scope` wiąże komórki z nagłówkami, a `caption` zapowiada temat — czytnik nie gubi się w danych.
+- **SEO i czytelność:** struktura danych jest jasna dla wyszukiwarek i dla Ciebie.
+- **Utrzymanie:** `thead`/`tbody` czyta się lepiej niż zbiór divów udających tabelę gridem.
+
+W **części 8** — finale serii — zbierzemy to, co wspólne dla wszystkich elementów: **atrybuty globalne** (`id`, `class`, `data-*`, `tabindex`) oraz **ARIA** — czyli jak dopowiedzieć czytnikowi ekranu to, czego HTML nie potrafi powiedzieć sam. I kiedy lepiej tego nie robić.
