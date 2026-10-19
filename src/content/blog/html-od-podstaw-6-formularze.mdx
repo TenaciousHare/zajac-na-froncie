@@ -1,0 +1,136 @@
+---
+title: 'HTML od podstaw (cz. 6): formularze, z którymi da się rozmawiać'
+description: 'label kontra placeholder, powiązanie etykiety z polem, typy input, fieldset/legend i natywna walidacja — formularze dostępne bez linijki JavaScriptu.'
+pubDate: 2026-10-21
+tags: ['html', 'podstawy', 'dostępność', 'formularze']
+series: 'html-od-podstaw'
+seriesPart: 6
+---
+
+import Hare from "../../components/Hare.astro";
+
+W części 5 zbudowaliśmy szkielet strony. Teraz zajmiemy się elementami, z którymi użytkownik naprawdę **rozmawia** — formularzami. To tu wpisuje e-mail, wybiera spośród opcji czy wysyła wiadomość. I to tu najłatwiej odciąć od strony osoby pracujące na klawiaturze czy czytniku ekranu. Myśl na dziś: **pole bez etykiety to niewiadoma**.
+
+## `<form>`, `<label>`, `<input>` — podstawowa trójca
+
+~~~html
+<form action="/szukaj" method="get">
+  <label for="q">Szukaj</label>
+  <input id="q" name="q" type="search" />
+  <button type="submit">Szukaj</button>
+</form>
+~~~
+
+- `<form>` opakowuje całość formularza i dzięki odpowiednim atrybutom wie, dokąd (`action`) i jak (`method`) wysłać dane.
+- `<input>` zbiera dane od użytkownika, mogą być różnego typu, o tym później.
+- `<label>` **nazywa** pole — i tego elementu właśnie najczęściej się nie docenia.
+
+## Etykieta musi być powiązana z polem
+
+Są dwa poprawne sposoby:
+
+~~~html
+<!-- 1. przez for / id - pamiętaj, że muszą mieć tę samą wartość -->
+<label for="email">E-mail</label>
+<input id="email" name="email" type="email" />
+
+<!-- 2. przez zawinięcie pola w label (wtedy for/id są zbędne) -->
+<label>
+  E-mail
+  <input name="email" type="email" />
+</label>
+~~~
+
+<Hare type="decision">
+Powiązana etykieta robi trzy rzeczy naraz: czytnik odczyta „E-mail", gdy wejdziesz w pole; kliknięcie w napis **ustawia kursor** w polu (większy, wygodniejszy cel — ważne na telefonie); a przeglądarka wie, co z czym się łączy.
+</Hare>
+
+<Hare type="bug">
+Pole bez powiązanej etykiety czytnik zapowie jako „pole edycji, puste" — i tyle. Użytkownik nie wie, czy wpisać imię, e-mail czy PESEL. To jedna z najczęstszych barier w formularzach.
+</Hare>
+
+## `placeholder` to **nie** `label`
+
+`placeholder` to szary tekst-podpowiedź w pustym polu. Kuszące, żeby zrobić z niego etykietę — ALE:
+
+- **znika**, gdy tylko zaczniesz pisać,
+- ma **słaby kontrast**,
+- bywa **pomijany** przez czytniki ekranu.
+
+~~~html
+<!-- ❌ placeholder zamiast etykiety -->
+<input type="email" placeholder="E-mail" />
+
+<!-- ✅ etykieta na stałe + placeholder jako przykład -->
+<label for="email">E-mail</label>
+<input id="email" type="email" placeholder="np. jan@example.com" />
+~~~
+
+<Hare type="question">
+Test kontrolny: zasłoń w myślach wszystkie placeholdery. Czy nadal wiadomo, co wpisać w każde pole? Jeśli nie — brakuje etykiet. `placeholder` to **przykład**, nie nazwa.
+</Hare>
+
+## Typy `input` robią robotę za Ciebie
+
+~~~html
+<input type="email" />    <!-- klawiatura mobilna z @ -->
+<input type="tel" />      <!-- klawiatura numeryczna -->
+<input type="number" />   <!-- liczba -->
+<input type="date" />     <!-- natywny kalendarz -->
+<input type="password" /> <!-- maskowanie znaków -->
+~~~
+Typów dla inputa jest oczywiście więcej, jeśli jesteś ciekaw, co nam natywnie daje HTML, sprawdź [dokumentację MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/input).
+
+<Hare type="tip">
+Dobierz `type` do danych, a dostajesz za darmo odpowiednią klawiaturę na telefonie, natywny kalendarz czy maskowanie hasła. Mniej pracy, lepszy UX. 
+</Hare>
+
+## `fieldset` i `legend` — grupowanie powiązanych pól
+
+Gdy kilka pól tworzy jedną całość (np. grupa przycisków radio), opakuj je w `<fieldset>`, a wspólny opis daj w `<legend>`:
+
+~~~html
+<fieldset>
+  <legend>Preferowany kontakt</legend>
+  <label><input type="radio" name="kontakt" value="mail" /> E-mail</label>
+  <label><input type="radio" name="kontakt" value="tel" /> Telefon</label>
+</fieldset>
+~~~
+
+Czytnik odczyta wtedy „Preferowany kontakt" przy każdej opcji — użytkownik wie, do czego należy ten wybór.
+
+## Natywna walidacja — zanim sięgniesz po JavaScript
+
+~~~html
+<label for="wiek">Wiek</label>
+<input id="wiek" name="wiek" type="number" min="0" max="120" required />
+~~~
+
+- `required` — pole wymagane,
+- `type="email"` — musi wyglądać jak e-mail,
+- `min` / `max` / `maxlength` / `pattern` — zakresy i wzorce.
+
+<Hare type="success">
+Przeglądarka sama zablokuje wysyłkę i pokaże komunikat. To nie znaczy, że walidacja po stronie serwera jest zbędna — ale jako pierwszą linię obrony masz ją **za darmo**, bez JavaScriptu.
+</Hare>
+
+## Przycisk, który wysyła
+
+Pamiętasz `<a>` kontra `<button>` z części 3? W formularzu dochodzi kolejny niuans: `<button>` domyślnie **wysyła** formularz. Jeśli to przycisk „do czegoś innego" (np. pokaż/ukryj hasło), dopisz `type="button"`:
+
+~~~html
+<button type="submit">Wyślij</button>
+<button type="button">Pokaż hasło</button>
+~~~
+
+<Hare type="learn">
+Szczegóły w MDN: [`<form>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/form), [`<label>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/label), [`<input>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/input), [`<fieldset>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/fieldset) i [`<legend>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/legend).
+</Hare>
+
+## Co nam to daje?
+
+- **Dostępność:** powiązana etykieta, grupy opisane przez `legend`, większy cel kliknięcia — formularz da się wypełnić z poziomu klawiatury i czytnika ekranu.
+- **UX:** właściwy `type` to lepsza klawiatura mobilna, a natywna walidacja — komunikaty bez sekundy pisania w JS.
+- **Mniej kodu:** im więcej robi za Ciebie HTML, tym mniej masz do napisania (i zepsucia) w JavaScripcie.
+
+W **części 7** zajmiemy się danymi w rzędach i kolumnach: **tabelami** — `thead`, `tbody`, `th` ze `scope` i `caption`. I odpowiemy na pytanie dlaczego tabela to nie narzędzie do układania strony.
