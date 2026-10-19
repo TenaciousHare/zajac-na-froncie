@@ -1,0 +1,93 @@
+---
+title: 'HTML od podstaw (cz. 8): atrybuty globalne i ARIA w pigułce'
+description: 'id, class, title, hidden, lang, data-* i tabindex — atrybuty wspólne dla wszystkich elementów. Plus pierwsza zasada ARIA: najlepsza ARIA to brak ARIA.'
+pubDate: 2026-10-23
+tags: ['html', 'podstawy', 'dostępność', 'aria']
+series: 'html-od-podstaw'
+seriesPart: 8
+---
+
+import Hare from "../../components/Hare.astro";
+
+Dotarliśmy do **finału serii**. Przez siedem części szliśmy element po elemencie. Dziś spojrzymy za to na **atrybuty globalne**, które działają na każdym elemencie, oraz na **ARIA** — zestaw atrybutów do dostępności, których... lepiej nie nadużywać.
+
+## Atrybuty globalne — działają wszędzie
+
+Niektóre atrybuty możesz dać dowolnemu elementowi:
+
+- `id` — unikalny identyfikator (np. kotwice z części 3, wskazuje na niego `for` etykiety z części 6).
+- `class` — hak dla CSS i JS.
+- `hidden` — ukrywa element całkowicie, także przed czytnikiem.
+- `title` — podpowiedź po najechaniu (ale **nie** polegaj na nim przy ważnych treściach — nie zastąpi `label` ani `alt`).
+- `lang` — język fragmentu, gdy różni się od strony (np. cytat po angielsku na polskiej stronie).
+
+<Hare type="tip">
+`id` musi być **unikalny** na całej stronie — to on łączy etykietę z polem (`for`/`id`) i jest celem linków-kotwic (`#sekcja`). Dwa te same `id` to częste, ciche źródło błędów.
+</Hare>
+
+## `data-*` — Twoje własne dane w HTML
+
+Gdy chcesz zapisać w elemencie informację, której HTML nie przewiduje, użyj `data-*`:
+
+~~~html
+<button data-id="42" data-akcja="usun">Usuń</button>
+~~~
+
+W JavaScripcie odczytasz je przez `element.dataset.id` i `element.dataset.akcja`.
+
+<Hare type="decision">
+`data-*` to miejsce na **Twoje** dane, nie na obejścia. Jeśli coś ma własny, prawdziwy atrybut (`href`, `value`, `type`) — użyj go. `data-*` jest dla rzeczy, których w HTML po prostu brakuje.
+</Hare>
+
+## `tabindex` — z tym ostrożnie!
+
+`tabindex` steruje kolejnością fokusu z klawisza Tab:
+
+- `tabindex="0"` — dodaje element do naturalnej kolejności Tab (dla własnych, interaktywnych elementów).
+- `tabindex="-1"` — element można sfokusować z JS, ale **nie** Tabem.
+- `tabindex="1"` (i wyżej) — **antywzorzec**. Wymusza sztuczną kolejność i niemal zawsze psuje nawigację klawiaturą.
+
+<Hare type="bug">
+Dodatni `tabindex` to pułapka: wyrywa element przed wszystkie inne i rozjeżdża kolejność Tab na całej stronie. Jeśli kolejność fokusu jest zła, zwykle rozwiązaniem jest **zmiana kolejności w HTML**, a nie łatanie `tabindexem`.
+</Hare>
+
+## ARIA: pierwsza zasada brzmi „nie używaj ARIA”
+
+ARIA (Accessible Rich Internet Applications) to atrybuty, które **dokładają role i etykiety** dla technologii asystujących — np. `role`, `aria-label`, `aria-expanded`. Brzmi jak lekarstwo na wszystko, ale ma haczyk:
+
+<Hare type="architecture">
+Oficjalna **pierwsza zasada ARIA**: jeśli istnieje natywny element HTML, który robi to, czego potrzebujesz — użyj go, a nie ARIA. ARIA **nie dodaje zachowania**: `<div role="button">` nie łapie Entera, Spacji ani fokusu. `<button>` daje to wszystko za darmo. Źle użyta ARIA potrafi pogorszyć dostępność, nie poprawić. Pamiętasz z części 3 radę, żeby nie dopisywać `role="navigation"` do `<nav>`? To była właśnie ta zasada — zanim poznaliśmy jej nazwę.
+</Hare>
+
+To właśnie puenta całej serii: `<button>`, `<nav>`, `<label>`, `<table>` ze `scope` — natywny HTML niesie znaczenie i zachowanie, zanim dotkniesz ARIA.
+
+## Kiedy ARIA jednak pomaga
+
+Gdy natywnie **się nie da** — najczęściej chodzi o etykietę tam, gdzie nie ma widocznego tekstu:
+
+~~~html
+<!-- przycisk-ikona bez widocznego napisu -->
+<button type="button" aria-label="Zamknij">×</button>
+
+<!-- rozróżnienie dwóch nawigacji (znasz z części 3 i 5) -->
+<nav aria-label="Okruszki">…</nav>
+~~~
+
+- `aria-label` — nadaje etykietę, gdy nie ma widocznego tekstu,
+- `aria-labelledby` — wskazuje istniejący element jako etykietę (przez `id`),
+- `aria-current="page"` — oznacza aktywny link w nawigacji (tu natywny HTML nie ma odpowiednika),
+- `aria-expanded` — stan rozwinięcia, głównie przy własnych widżetach (menu, akordeon).
+
+<Hare type="learn">
+Szczegóły w MDN: [atrybuty globalne](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Global_attributes) oraz [ARIA](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA).
+</Hare>
+
+## Co nam to daje? (i koniec serii)
+
+- **Dostępność:** atrybuty globalne i **rozsądna** ARIA dopinają to, czego natywny HTML nie wyraża — ale dopiero, gdy natywny się skończy.
+- **Porządek:** `data-*` trzyma Twoje dane w jednym, przewidywalnym miejscu.
+- **Niezawodność:** mniej ARIA i `tabindexu` to mniej rzeczy, które można zepsuć.
+
+I to tyle — **koniec serii „HTML od podstaw”**. Przeszliśmy drogę od pytania „czym jest HTML” (cz. 1), przez tekst (2), linki (3), obrazy (4), szkielet strony (5), formularze (6) i tabele (7), aż po atrybuty i ARIA (8). Przez cały czas wracało jedno zdanie: **HTML to znaczenie, nie wygląd**. Jeśli zapamiętasz z tej serii tylko to — i tak wygrałeś.
+
+A skoro fundament strony już mamy, czas na kolejną warstwę: w kolejnej serii bierzemy się za **CSS od podstaw**. Do zobaczenia! 
