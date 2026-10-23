@@ -1,0 +1,171 @@
+---
+title: 'CSS od podstaw (cz. 2): selektory i kaskada'
+description: 'Jak wskazać element (selektory, kombinatory, pseudoklasy) i kto wygrywa, gdy dwie reguły chcą czegoś innego (kaskada, specyficzność, dziedziczenie).'
+pubDate: 2026-10-25
+tags: ['css', 'podstawy', 'selektory']
+series: 'css-od-podstaw'
+seriesPart: 2
+---
+
+import Hare from "../../components/Hare.astro";
+
+W części 1 poznaliśmy anatomię reguły: selektor, a w klamrach deklaracje. Dziś dwa pytania, które pojawiają się zaraz potem: **jak precyzyjnie wskazać element** i **co się dzieje, gdy dwie reguły chcą dla niego czegoś innego**.
+
+## Podstawowe selektory
+
+Weźmy kawałek HTML:
+
+~~~html
+<nav class="menu">
+  <a href="/" id="logo">Start</a>
+  <a href="/blog" class="active">Blog</a>
+  <a href="https://github.com" target="_blank">GitHub</a>
+</nav>
+~~~
+
+Na każdy z tych linków możesz wskazać na kilka sposobów:
+
+~~~css
+/* typ: wszystkie linki */
+a { }
+/* klasa: elementy z class="active" */
+.active { }
+/* id: jeden element z id="logo" */
+#logo { }
+/* atrybut: linki otwierane w nowej karcie */
+[target="_blank"] { }
+/* wszystko */
+* { }
+~~~
+
+<Hare type="decision">
+Na co dzień stylujesz **klasami**. Klasa jest wielokrotnego użytku (ten sam wygląd na wielu elementach) i ma umiarkowaną „siłę” — łatwo ją potem nadpisać. `id` zostaw do tego, do czego służy w HTML: kotwic i łączenia etykiet z polami. Za chwilę zobaczysz, dlaczego styl na `id` bywa kłopotliwy.
+</Hare>
+
+## Łączenie selektorów
+
+Selektory możesz składać. Każdy znak — albo jego brak — zmienia znaczenie:
+
+~~~css
+.menu a { }    /* spacja: <a> gdziekolwiek w .menu (potomek) */
+.menu > a { }  /* >: tylko bezpośrednie dzieci .menu */
+a.active { }   /* bez spacji: <a>, który SAM ma klasę .active */
+h1, h2 { }     /* przecinek: h1 ALBO h2 — lista selektorów */
+~~~
+
+Najważniejsza różnica jest między ostatnimi dwoma: **sklejone** selektory znaczą „jednocześnie” (element, który spełnia oba warunki), a **przecinek** znaczy „albo” (dwa różne selektory dostają te same reguły).
+
+<Hare type="why">
+Prawdziwa historia z mojej apki Destinations. Chciałem `cursor: pointer;` tylko na nagłówkach tabeli w panelu admina, ale nie w tabeli do druku. Napisałem:
+
+~~~css
+.admin-table thead th,
+:not .compact-table { }
+~~~
+
+Dwa błędy naraz. Przecinek zrobił z tego listę „to **albo** tamto”, a `:not` bez nawiasów to błąd składni — i tu CSS jest bezlitosny: **jeden niepoprawny selektor na liście wyrzuca całą regułę**. Kursor zniknął wszędzie. Poprawnie, wszystko o jednym elemencie `<table>`, sklejone:
+
+~~~css
+.admin-table:not(.compact-table) thead th { }
+~~~
+</Hare>
+
+## Pseudoklasy — stan elementu
+
+Pseudoklasa (zaczyna się od `:`) wskazuje element w **określonym stanie** albo miejscu:
+
+- `:hover` — kursor jest nad elementem,
+- `:focus-visible` — element ma fokus z klawiatury (Tab), więc trzeba to pokazać,
+- `:not(…)` — element, który **nie** pasuje do selektora w nawiasie,
+- `:first-child` — pierwsze dziecko swojego rodzica.
+
+~~~css
+/* :hover — kursor nad linkiem:
+   podkreślenie robi się grubsze */
+a:hover {
+  text-decoration-thickness: 2px;
+}
+
+/* :focus-visible — przycisk wybrany Tabem:
+   pomarańczowy obrys pokazuje, gdzie jesteś */
+button:focus-visible {
+  outline: 2px solid #c2410c;
+}
+
+/* :not() — wszystkie przyciski OPRÓCZ .danger
+   dostają szare tło (.danger ma własne, czerwone) */
+button:not(.danger) {
+  background: #e2e8f0;
+}
+
+/* :first-child — linia oddziela pozycje listy… */
+li {
+  border-top: 1px solid #e2e8f0;
+}
+
+/* …ale pierwsza pozycja jej nie potrzebuje,
+   bo nad nią nic nie ma */
+li:first-child {
+  border-top: none;
+}
+~~~
+
+Uwaga na `:first-child`: to nie „pierwszy z wybranych elementów”, tylko element, który jest **pierwszym dzieckiem swojego rodzica**. `li:first-child` działa w każdej liście osobno — jeśli na stronie są trzy listy, linia zniknie przy pierwszej pozycji w każdej z nich.
+
+<Hare type="tip">
+Czemu `:focus-visible`, a nie `:focus`? `:focus` zapala się także po kliknięciu myszą — i wtedy wiele osób po prostu usuwa obrys, psując nawigację klawiaturą. `:focus-visible` przeglądarka włącza wtedy, gdy obrys jest **potrzebny**. Wygląd i dostępność w jednym.
+</Hare>
+
+## Kaskada — kto wygrywa?
+
+Często kilka reguł pasuje do tego samego elementu i ustawia tę samą właściwość. Wtedy przeglądarka rozstrzyga spór po kolei, aż któryś etap da wynik:
+
+1. **`!important`** — deklaracja z tym dopiskiem wygrywa ze zwykłymi,
+2. **styl inline** — atrybut `style` na elemencie (to dlatego w części 1 „wygrywał z resztą”),
+3. **specyficzność** — „siła” selektora,
+4. **kolejność** — przy remisie wygrywa reguła zapisana **później**.
+
+## Specyficzność — siła selektora
+
+Specyficzność to trzy liczby, porównywane od lewej — jak tabela medalowa igrzysk, gdzie najpierw liczą się złote medale, potem srebrne, potem brązowe:
+
+- **id** (`#logo`) — pierwsza liczba,
+- **klasy, atrybuty, pseudoklasy** (`.active`, `[target]`, `:hover`) — druga,
+- **typy** (`a`, `h1`) — trzecia.
+
+~~~css
+a { }                  /* 0-0-1 */
+.menu a { }            /* 0-1-1 */
+a.active { }           /* 0-1-1 */
+#logo { }              /* 1-0-0 — bije wszystkie powyżej */
+~~~
+
+Jeden `id` wygrywa z dowolnie długim łańcuchem klas — dlatego styl na `id` jest potem tak trudny do nadpisania. Gwiazdka `*` i znaki łączące (spacja, `>`) nie liczą się wcale, a `:not()` liczy się jak to, co ma w nawiasie. Mój selektor z Destinations, `.admin-table:not(.compact-table) thead th`, to więc **0-2-2**: dwie klasy i dwa typy.
+
+<Hare type="bug">
+`!important` kusi jako szybkie „wygraj ten spór”. Problem w tym, że **jedyne, co go pokona, to kolejny `!important`** — i po kilku tygodniach masz ich w arkuszu dziesiątki. Gdy styl nie działa, najpierw sprawdź w DevTools (pamiętasz przekreślone deklaracje z części 1?), **kto** wygrywa i **dlaczego** — i popraw selektor, a nie dokładaj siły.
+</Hare>
+
+<Hare type="architecture">
+W nowoczesnym CSS jest jeszcze jeden etap, **przed** specyficznością: **warstwy** (`@layer`). Style w niższej warstwie przegrywają z wyższymi — a styl **spoza** warstw wygrywa ze wszystkimi warstwowymi, bez względu na specyficzność. Tailwind trzyma swoje klasy w warstwach, więc na tym blogu zwykła reguła w `global.css` potrafi pokonać klasę z Tailwinda, nawet jeśli wygląda na „słabszą”. Na start wystarczy wiedzieć, że warstwy istnieją — gdy kiedyś specyficzność „nie będzie się zgadzać”, to pierwszy trop.
+</Hare>
+
+## Dziedziczenie
+
+Niektóre właściwości **przechodzą na dzieci** same z siebie — głównie te o tekście: `color`, `font-family`, `font-size`, `line-height`. Dlatego wystarczy ustawić kolor tekstu na `<body>`, a dostaną go wszystkie akapity.
+
+Inne **nie dziedziczą się**: `margin`, `padding`, `border`, `background`. I dobrze — wyobraź sobie, że ramka z `<article>` pojawia się też wokół każdego akapitu w środku.
+
+Styl odziedziczony zawsze przegrywa z regułą, która wskazuje element bezpośrednio — nawet z najsłabszym selektorem typu `p { }`.
+
+<Hare type="learn">
+Szczegóły w MDN: [selektory CSS](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_selectors), [specyficzność](https://developer.mozilla.org/en-US/docs/Web/CSS/Specificity), [kaskada](https://developer.mozilla.org/en-US/docs/Web/CSS/Cascade) i [dziedziczenie](https://developer.mozilla.org/en-US/docs/Web/CSS/Inheritance).
+</Hare>
+
+## Co nam to daje?
+
+- **Precyzja:** wskazujesz dokładnie te elementy, które chcesz — bez dokładania klas wszędzie.
+- **Przewidywalność:** wiesz, która reguła wygra, zanim odświeżysz stronę.
+- **Mniej walki z własnym kodem:** klasy zamiast `id` i zero `!important` to arkusz, który da się rozwijać.
+
+W **części 3** zajrzymy do środka każdego elementu: **model pudełkowy**, czyli skąd biorą się odstępy i dlaczego `width: 100%` potrafi nie mieścić się w ekranie. Do zobaczenia!
