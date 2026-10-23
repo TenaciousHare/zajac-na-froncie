@@ -9,8 +9,11 @@ const { post } = Astro.props;
 ---
 
 <li>
-  <article class="group relative rounded-xl border border-slate-200 p-6 transition hover:-translate-y-0.5 hover:border-accent hover:shadow-md dark:border-slate-700 dark:bg-slate-800">
-    <h2 class="text-xl font-semibold text-slate-900 group-hover:text-accent dark:text-slate-100">
+  <article
+    class="group relative rounded-xl border border-slate-200 p-6 transition hover:-translate-y-0.5 hover:border-accent hover:shadow-md dark:border-slate-700 dark:bg-slate-800 focus-within:border-accent
+group-hover:text-link group-focus-within:text-link"
+  >
+    <h2 class="text-xl font-semibold text-slate-900 group-hover:text-link dark:text-slate-100">
       <a href={`/blog/${post.id}`} class="after:absolute after:inset-0">
         {post.data.title}
       </a>
