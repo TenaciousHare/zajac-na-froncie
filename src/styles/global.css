@@ -4,13 +4,9 @@
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 @theme {
-  --color-brand: #4d7c0f; /* oliwkowa zieleń — koszula (kolor dodatkowy) */
-  --color-brand-dark: #3f6212;
   --color-accent: #ea580c; /* pomarańcz — "Froncie" (GŁÓWNY akcent) */
   --color-accent-dark: #c2410c; /* ciemniejszy — pod hover / lepszy kontrast */
-  --color-denim: #2563eb; /* niebieski */
-  --color-sneaker: #dc2626; /* czerwień trampek */
-  --color-link: #c2410c; /* accent-dark — jasny motyw */
+  --color-link: var(--color-accent-dark); /* accent-dark — jasny motyw */
 }
 [data-theme="dark"] {
   --color-link: #fb923c; /* orange-400 — ciemny motyw */
