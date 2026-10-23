@@ -20,9 +20,9 @@ const { prev, next } = Astro.props;
         class="group flex flex-col rounded-lg border border-slate-200 p-4 transition-colors hover:border-accent dark:border-slate-700"
       >
         <span class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-          ← Poprzednia część
+          <span aria-hidden="true">←</span> Poprzednia część
         </span>
-        <span class="mt-1 font-medium text-slate-900 group-hover:text-accent dark:text-slate-100">
+        <span class="mt-1 font-medium text-slate-900 group-hover:text-link dark:text-slate-100">
           {prev.data.title}
         </span>
       </a>
@@ -36,9 +36,9 @@ const { prev, next } = Astro.props;
         class="group flex flex-col rounded-lg border border-slate-200 p-4 text-right transition-colors hover:border-accent dark:border-slate-700"
       >
         <span class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-          Następna część →
+          Następna część <span aria-hidden="true">→</span>
         </span>
-        <span class="mt-1 font-medium text-slate-900 group-hover:text-accent dark:text-slate-100">
+        <span class="mt-1 font-medium text-slate-900 group-hover:text-link dark:text-slate-100">
           {next.data.title}
         </span>
       </a>

@@ -18,11 +18,11 @@ const tags = await getAllTags();
       <li>
         <a
           href={`/tags/${tag}`}
-          class="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-4 py-1.5 text-sm font-medium text-accent-dark transition hover:bg-accent/20 dark:bg-accent/20 dark:text-accent dark:hover:bg-accent/30"
+          class="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-4 py-1.5 text-sm font-medium text-link transition hover:bg-accent/20 dark:bg-accent/20 dark:hover:bg-accent/30"
         >
           #{tag}
-          <span class="text-xs text-slate-500 dark:text-slate-400">
-            {count}
+          <span class="text-xs text-slate-600 dark:text-slate-400">
+            <span class="sr-only">liczba wpisów:</span> {count}
           </span>
         </a>
       </li>
