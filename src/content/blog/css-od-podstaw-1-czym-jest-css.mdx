@@ -1,0 +1,113 @@
+---
+title: 'CSS od podstaw (cz. 1): czym jest CSS'
+description: 'Reguła, selektor i deklaracja — anatomia CSS. Trzy sposoby podpięcia stylów do strony i DevTools, czyli Twój najlepszy przyjaciel przy stylowaniu.'
+pubDate: 2026-10-24
+tags: ['css', 'podstawy', 'devtools']
+series: 'css-od-podstaw'
+seriesPart: 1
+---
+
+import Hare from "../../components/Hare.astro";
+
+Przez osiem części serii [HTML od podstaw](/blog/html-od-podstaw-1-co-to-jest-html) powtarzaliśmy jedno zdanie: **HTML to znaczenie, nie wygląd**. Skoro znaczenie już mamy, czas na wygląd. Myśl przewodnia nowej serii: **HTML nadaje treści znaczenie, CSS — wygląd.**
+
+CSS (Cascading Style Sheets, kaskadowe arkusze stylów) to język, którym opisujesz kolory, odstępy, czcionki i układ strony. Ten sam HTML z innym CSS-em może wyglądać zupełnie inaczej — i właśnie o to chodzi.
+
+## Anatomia reguły
+
+Cały CSS składa się z **reguł**. Każda wygląda tak samo:
+
+~~~css
+h1 {
+  color: #c2410c;
+  font-size: 2rem;
+}
+~~~
+
+- `h1` — **selektor**: mówi, *do czego* stosujesz styl (tu: do wszystkich nagłówków `<h1>`),
+- `{ … }` — **blok deklaracji**: lista tego, co ma się zmienić,
+- `color: #c2410c;` — **deklaracja**: para **właściwość** (`color`) i **wartość** (`#c2410c`), rozdzielone dwukropkiem i zakończone średnikiem.
+
+Ten pomarańcz to nie przypadek — to kolor linków na tym blogu w jasnym motywie. Do tego, dlaczego akurat ten odcień, a nie jaśniejszy, wrócimy w części o kolorach i kontraście.
+
+<Hare type="why">
+CSS jest **wyrozumiały** — i to bywa zdradliwe. Gdy zgubisz średnik, przeglądarka nie pokaże błędu. Potraktuje dwie deklaracje jak jedną, nie zrozumie jej i **po cichu ją pominie**:
+
+~~~css
+h1 {
+  /* brak średnika… */
+  color: #c2410c
+  /* …więc ta deklaracja też przestaje działać */
+  font-size: 2rem;
+}
+~~~
+
+Jeśli „styl nie działa”, zanim zaczniesz szukać skomplikowanych przyczyn — sprawdź średniki i literówki w nazwach właściwości.
+</Hare>
+
+Komentarze w CSS piszesz między `/*` a `*/` — przeglądarka je ignoruje.
+
+## Trzy sposoby podpięcia CSS
+
+Styl możesz dodać do strony na trzy sposoby.
+
+**1. Atrybut `style` (inline)** — bezpośrednio na elemencie:
+
+~~~html
+<p style="color: #c2410c;">Pomarańczowy akapit</p>
+~~~
+
+**2. Element `<style>`** — w `<head>` dokumentu:
+
+~~~html
+<head>
+  <style>
+    p {
+      color: #c2410c;
+    }
+  </style>
+</head>
+~~~
+
+**3. Osobny plik przez `<link>`** — też w `<head>`:
+
+~~~html
+<head>
+  <link rel="stylesheet" href="style.css" />
+</head>
+~~~
+
+<Hare type="decision">
+Domyślnie wybieraj **osobny plik**. Jeden arkusz obsługuje wszystkie strony, przeglądarka pobiera go raz i trzyma w pamięci podręcznej, a HTML zostaje czysty — znaczenie w jednym miejscu, wygląd w drugim. Atrybut `style` zostaw na wyjątki. Styl wpisany prosto w element trudno potem nadpisać, a gdy takich miejsc jest dużo, wygląd strony zamiast w jednym pliku jest rozsiany po całym HTML-u.
+</Hare>
+
+Na tym blogu też jest jeden główny arkusz — `global.css`, importowany w szablonie strony, z którego korzystają wszystkie wpisy. Dlaczego styl inline „wygrywa” z resztą — to już **kaskada**, czyli temat części 2.
+
+## DevTools — Twój najlepszy przyjaciel
+
+Każda przeglądarka ma wbudowane narzędzia deweloperskie. Kliknij prawym przyciskiem na dowolny element strony i wybierz **Zbadaj** (albo <kbd>⌘</kbd> <kbd>⌥</kbd> <kbd>I</kbd> na Macu, <kbd>F12</kbd> na Windowsie).
+
+Zobaczysz dwie najważniejsze rzeczy:
+
+- **Elements** — to, co przeglądarka zrozumiała z Twojego HTML-u,
+- **Styles** — wszystkie reguły CSS, które dotyczą zaznaczonego elementu, i plik, z którego pochodzą.
+
+W panelu Styles możesz **na żywo** zmieniać wartości, odhaczać deklaracje i dopisywać nowe. Nic się nie zapisze — po odświeżeniu strona wraca do normy — więc to idealny poligon do eksperymentów.
+
+<Hare type="tip">
+**Przekreślona** deklaracja w panelu Styles to nie błąd — to znak, że inna reguła ją **nadpisała**. Gdy styl „nie działa”, zacznij od DevTools: zobaczysz, czy reguła w ogóle dotyczy elementu i kto wygrał.
+
+Przydaje się też zakładka Elements. Ostatnio szukałem strzałki, której „nie było widać” — okazało się, że przez pomyłkę wstawiłem `<span>` do środka `<select>`, a przeglądarka po cichu go wyrzuciła. W Elements po prostu go nie było.
+</Hare>
+
+<Hare type="learn">
+Szczegóły: [podstawy stylowania w MDN](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics), [dokumentacja CSS w MDN](https://developer.mozilla.org/en-US/docs/Web/CSS) i [praca z CSS w Chrome DevTools](https://developer.chrome.com/docs/devtools/css).
+</Hare>
+
+## Co nam to daje?
+
+- **Porządek:** HTML opisuje treść, CSS jej wygląd — każdy język robi swoje.
+- **Jedno źródło wyglądu:** zmiana w jednym pliku zmienia całą stronę.
+- **Mniej zgadywania:** DevTools pokazuje, które reguły działają, a które zostały nadpisane.
+
+W **części 2** zajmiemy się dwoma pytaniami, które za chwilę sobie pewnie zadasz: *jak precyzyjnie wskazać element* (selektory) i *co się dzieje, gdy dwie reguły chcą czegoś innego* (kaskada i specyficzność). Do zobaczenia!
