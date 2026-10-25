@@ -1,0 +1,152 @@
+---
+title: 'CSS od podstaw (cz. 3): model pudełkowy'
+description: 'Content, padding, border i margin — z czego składa się każdy element. Dlaczego width: 100% potrafi wyjść poza ekran, co robi box-sizing i czym różnią się block, inline i inline-block.'
+pubDate: 2026-10-26
+tags: ['css', 'podstawy', 'model-pudełkowy']
+series: 'css-od-podstaw'
+seriesPart: 3
+---
+
+import Hare from "../../components/Hare.astro";
+
+W części 2 nauczyliśmy się wskazywać elementy i rozstrzygać, która reguła wygrywa. Dziś zaglądamy **do środka** każdego elementu. Bo dla przeglądarki każdy element — akapit, link, obrazek, przycisk — to **prostokątne pudełko**. Jeśli zrozumiesz model pudełkowy, zrozumiesz, skąd biorą się odstępy.
+
+## Cztery warstwy pudełka
+
+Każde pudełko ma cztery warstwy, zaczynając od środka:
+
+- **content** — treść: tekst, obrazek,
+- **padding** — wewnętrzny odstęp między treścią a ramką,
+- **border** — ramka,
+- **margin** — zewnętrzny odstęp od sąsiadów.
+
+~~~css
+.card {
+  padding: 16px;
+  border: 2px solid #e2e8f0;
+  margin: 24px;
+}
+~~~
+
+Jak to zapamiętać? Karta wpisu na tym blogu: `padding` to miejsce między tytułem a ramką, `border` to szara obwódka, a `margin` to odstęp do kolejnej karty. Tło (`background`) wypełnia content i padding — ale nie margin. Margin jest zawsze przezroczysty.
+
+Padding i margin możesz ustawiać z każdej strony osobno (`padding-top`, `margin-left`…) albo skrótem:
+
+~~~css
+/* wszystkie strony */
+padding: 16px;
+/* góra-dół | lewo-prawo */
+padding: 8px 16px;
+/* góra | prawo | dół | lewo */
+padding: 8px 16px 4px 12px;
+~~~
+
+W wersji z czterema wartościami kolejność idzie **zgodnie z ruchem wskazówek zegara**, od góry.
+
+<Hare type="tip">
+Pamiętasz DevTools z części 1? Zaznacz dowolny element w zakładce **Elements** i zajrzyj do zakładki **Computed** — na górze zobaczysz kolorowy diagram pudełka z liczbami dla każdej warstwy. Po najechaniu na element strona też go podświetla: niebieski to content, zielony padding, pomarańczowy margin. Więc gdy pojawia się odstęp, od razu widać, skąd się bierze.
+</Hare>
+
+## Dlaczego `width: 100%` wychodzi poza ekran?
+
+Obiecałem to w części 2. Spójrz na takie pole formularza:
+
+~~~css
+input {
+  width: 100%;
+  padding: 0 12px;
+  border: 2px solid #e2e8f0;
+}
+~~~
+
+Wygląda niewinnie, a pole wystaje poza element nadrzędny.
+
+<Hare type="why">
+Domyślnie `width` dotyczy **tylko contentu**. Padding i border są doliczane z zewnątrz:
+
+~~~css
+/* faktyczna szerokość: */
+/* 100% + 12 + 12 + 2 + 2 */
+/* = 100% + 28px */
+~~~
+
+Czyli pole jest szersze od rodzica o 28 pikseli. Na telefonie oznacza to poziomy scroll dla całej strony.
+</Hare>
+
+Rozwiązaniem tego problemu jest jedna właściwość: **`box-sizing`**.
+
+~~~css
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+~~~
+
+- `content-box` (domyślne) — `width` to sam content, reszta się dolicza,
+- `border-box` — `width` obejmuje content **razem z** paddingiem i ramką. Padding „zjada” miejsce od środka, zamiast rozpychać element.
+
+<Hare type="decision">
+Ustawiaj `border-box` na wszystko, na samym początku arkusza — to najczęstszy reset w całym CSS. Wtedy `width: 100%` znaczy dokładnie „tyle, ile ma rodzic”, a dodanie paddingu nie psuje układu.
+
+Na tym blogu robi to za mnie Tailwind. Jego reset (*preflight*) zaczyna się właśnie od `box-sizing: border-box` dla wszystkich elementów.
+</Hare>
+
+## Zapadanie się marginesów
+
+Tu CSS potrafi zaskoczyć. Dwa akapity jeden pod drugim:
+
+~~~css
+p {
+  margin-top: 16px;
+  margin-bottom: 24px;
+}
+~~~
+
+Intuicja mówi: między akapitami będzie 24 + 16 = 40px. A naprawdę będzie **24px**. Dlaczego? Pionowe marginesy sąsiadujących bloków **zapadają się** (*margin collapsing*) — zostaje tylko większy z nich.
+
+To celowe zachowanie. Dzięki niemu tekst wygląda równo: nagłówek z marginesem dolnym i akapit z marginesem górnym nie tworzą podwójnej dziury w tekście. Warto jednak znać zasady:
+
+- zapadają się tylko marginesy **pionowe** (góra i dół), poziome nigdy,
+- tylko między zwykłymi blokami — **wewnątrz flexboksa i grida nie zapadają się** wcale,
+- margines dziecka może „wyciec” przez rodzica, jeśli rodzic nie ma paddingu ani ramki.
+
+<Hare type="debug">
+Ostatni punkt to klasyka. Dajesz pierwszemu nagłówkowi w karcie `margin-top`, a odsuwa się… **cała karta**, nie nagłówek w jej środku. Margines dziecka zapadł się z marginesem rodzica i wyszedł na zewnątrz.
+
+Najprostsza poprawka: zamiast marginesu na dziecku daj **padding na rodzicu**. Padding nie zapada się nigdy.
+</Hare>
+
+## `display`: block, inline i inline-block
+
+Pudełka zachowują się różnie w zależności od wartości `display`. Na start wystarczą trzy:
+
+- **`block`** — zajmuje całą szerokość i zaczyna się od nowej linii. Respektuje `width`, `height`, padding i margin. Domyślnie: `<p>`, `<h1>`, `<div>`, `<section>`, `<ul>`,
+- **`inline`** — zachowuje się w tekście jak słowo, ma szerokość swojej treści. **Ignoruje** `width` i `height`, a pionowy padding i margin nie odsuwają sąsiednich linii. Domyślnie: `<a>`, `<strong>`, `<span>`, `<kbd>`,
+- **`inline-block`** — hybryda: stoi w linii jak `inline`, ale szanuje wymiary i odstępy jak `block`.
+
+<Hare type="decision">
+Tagi pod tym wpisem to linki, czyli elementy `inline`. Bez zmian pionowy padding „pigułki” wychodziłby poza linijkę i nachodził na tekst powyżej. Dlatego mają `inline-block`:
+
+~~~html
+<a class="inline-block px-3 py-1">
+  #css
+</a>
+~~~
+
+Teraz `py-1` (padding góra-dół) naprawdę zajmuje miejsce, a pigułki wciąż stoją obok siebie w jednej linii.
+</Hare>
+
+Zmiana `display` zmienia tylko **wygląd**, nie znaczenie. `<a>` z `display: block` dalej jest linkiem — HTML mówi, czym element jest, CSS decyduje, jak się układa. To ta sama myśl przewodnia, co w całej serii.
+
+<Hare type="learn">
+Szczegóły w MDN: [model pudełkowy](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Box_model), [box-sizing](https://developer.mozilla.org/en-US/docs/Web/CSS/box-sizing), [zapadanie się marginesów](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_box_model/Mastering_margin_collapsing) i [display](https://developer.mozilla.org/en-US/docs/Web/CSS/display).
+</Hare>
+
+## Co nam to daje?
+
+- **Przewidywalne wymiary:** z `border-box` szerokość znaczy dokładnie to, co widzisz — bez liczenia pikseli z każdej strony.
+- **Mniej zagadek z odstępami:** wiesz, kiedy marginesy się sumują, a kiedy zapadają.
+- **Świadomy układ:** wybierasz `block`, `inline` albo `inline-block` zależnie od tego, jak element ma się zachowywać.
+
+W **części 4** zajmiemy się tym, co w pudełku najważniejsze dla czytelnika: **tekstem, kolorami i jednostkami**. Dowiesz się, czym `rem` różni się od `px` — i jak odkryłem, że pomarańcz na tym blogu był za jasny na tekst. Do zobaczenia!
