@@ -22,11 +22,15 @@ Blog jest po polsku, z myślą o polskich początkujących.
 - 🗓️ **Zaplanowane wpisy** — pisanie „na zapas" z przyszłą datą + codzienny auto-build
 - 🔍 **SEO** — tytuły i opisy per strona, Open Graph, sitemap, robots.txt
 - 📊 **Analityka** — Cloudflare Web Analytics (bez ciasteczek, bez bannera)
+- 🏷️ **Tagi** — klikalne tagi we wpisach, lista wszystkich tagów i strona dla każdego tagu
+- 📚 **Serie wpisów** — nawigacja poprzedni–następny i lista części serii
+- 📑 **Wygoda czytania** — spis treści, czas czytania, kotwice przy nagłówkach, przycisk „kopiuj” przy kodzie
+- 📡 **RSS** — kanał z wpisami
 - 🐰 **Komponent `<Hare>`** z 13 typami badge'y
 
 ## Stack
 
-- **[Astro 5](https://astro.build/)** — framework, zero JS domyślnie, szybki statyczny output
+- **[Astro 7](https://astro.build/)** — framework, zero JS domyślnie, szybki statyczny output
 - **MDX** — Markdown + komponenty w treści wpisów
 - **Tailwind CSS v4** (+ plugin `@tailwindcss/typography`) — stylowanie
 - **TypeScript** — bezpieczeństwo typów
@@ -47,13 +51,15 @@ npm run preview  # podgląd buildu lokalnie
 src/
 ├── assets/          # grafiki optymalizowane przez Astro (hero, badge'y)
 │   └── hare/        # 13 badge'y Senior Hare'a
-├── components/      # Nav, Hare, Comments
+├── components/      # Nav, Hare, Comments, PostCard, TagList, SeriesNav, TOC…
 ├── content/blog/    # wpisy w .mdx
 ├── layouts/         # Layout.astro (szkielet strony)
-├── pages/           # routing: index, about, blog/[id]
+├── lib/             # plugin remark: czas czytania
+├── pages/           # routing: index, blog, blog/[id], tags, tags/[tag], projects, about, 404, rss.xml
 ├── styles/          # global.css (Tailwind + motyw)
-├── utils/           # getPublishedPosts (filtr daty)
+├── utils/           # posts.ts: opublikowane wpisy (filtr daty), serie, tagi
 └── content.config.ts # schemat kolekcji wpisów
+netlify/functions/   # scheduled-rebuild: codzienny auto-build (07:00 czasu polskiego)
 ```
 
 ## Jak dodać wpis
@@ -121,11 +127,18 @@ W treści MDX można wołać Senior Hare'a z jednym z 13 typów. Każdy ma włas
 - [x] Przycisk „kopiuj" przy blokach kodu
 - [x] „Więcej z tej serii" / powiązane wpisy
 - [x] Zakładka Projekty / portfolio
+- [x] Klikalne tagi → strony tagów
+- [x] Seria „HTML od podstaw” (8 części)
+- [x] Seria „Jak powstał Destinations” i „Jak powstał METAR”
+
+**W trakcie**
+
+- [ ] Seria „CSS od podstaw” (cz. 1–3 opublikowane, w planach do cz. 9)
 
 **W planach**
 
-- [ ] Klikalne tagi → strony tagów
-- [ ] Nowa seria: podstawy (HTML/CSS/JS)
+- [ ] Seria „JavaScript od podstaw”
+- [ ] Kolejne serie „Jak powstał [projekt]”, na przemian z seriami podstaw
 
 ## Autor
 
