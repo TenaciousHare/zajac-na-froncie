@@ -9,7 +9,7 @@ seriesPart: 4
 
 import Hare from "../../components/Hare.astro";
 
-W części 3 rozebraliśmy model pudełkowy na warstwy. Dziś zajmiemy się tym, co jest w nim najważniejsze dla czytelnika: **tekstem**. Jaką ma wielkość, jakim krojem jest napisany, jak szeroka jest kolumna i czy da się go w ogóle przeczytać. Po drodze opowiem, jak odkryłem, że kolor przewodni tego bloga nie nadaje się do tekstu.
+W części 3 rozebraliśmy model pudełkowy na warstwy. Dziś zajmiemy się tym, co jest w pudełku najważniejsze dla czytelnika: **tekstem**. Jaką ma wielkość, jakim krojem jest napisany, jak szeroka jest kolumna i czy da się go w ogóle przeczytać. Po drodze opowiem, jak odkryłem, że kolor przewodni tego bloga nie nadaje się do tekstu.
 
 ## Jednostki: `px`, `rem`, `em`, `%` i `ch`
 
@@ -20,7 +20,7 @@ Tu wchodzą tak zwane jednostki względne:
 - **`rem`** — wielokrotność rozmiaru czcionki dla elementu `<html>`. Domyślnie to 16px, więc `1rem = 16px`, a `1.5rem = 24px`. Gdy użytkownik zwiększy czcionkę do 20px, `1rem` urośnie razem z nią,
 - **`em`** — wielokrotność rozmiaru czcionki **bieżącego** elementu (a przy `font-size` — elementu-rodzica),
 - **`%`** — procent czegoś w rodzicu: przy `width` jego szerokości, przy `font-size` jego czcionki,
-- **`ch`** *(od character)* — szerokość znaku „0” w danym kroju. Przydaje się do długości linii tekstu. 
+- **`ch`** (od ang. *character*) — szerokość znaku „0” w danym kroju. Przydaje się do długości linii tekstu.
 
 ~~~css
 html {
@@ -126,4 +126,4 @@ Szczegóły w MDN: [jednostki CSS](https://developer.mozilla.org/en-US/docs/Lear
 - **Wygodne czytanie:** interlinia bez jednostki i kolumna około 65 znaków.
 - **Kolory dla wszystkich:** sprawdzony kontrast w obu motywach i sygnały, które nie opierają się na samym kolorze.
 
-W **części 5** przestaniemy układać pudełka jedno pod drugim i zaczniemy stawiać je obok siebie. Dowiemy się czym jest jedna z metod układania layoutu na stronie: **Flexbox**. Pokażę Ci też, dlaczego blok kodu w calloucie z zającem rozpychał mi ramkę. Do zobaczenia!
+W **części 5** przestaniemy układać pudełka jedno pod drugim i zaczniemy stawiać je obok siebie. Dowiemy się, czym jest jedna z metod układania layoutu na stronie: **Flexbox**. Pokażę Ci też, dlaczego blok kodu w calloucie z zającem rozpychał mi ramkę. Do zobaczenia!
