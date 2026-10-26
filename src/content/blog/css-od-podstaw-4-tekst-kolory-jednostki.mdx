@@ -1,0 +1,129 @@
+---
+title: 'CSS od podstaw (cz. 4): tekst, kolory i jednostki'
+description: 'Czym różni się rem od px, em i ch, jak dobrać krój, interlinię i szerokość kolumny tekstu — i dlaczego pomarańcz na tym blogu był za jasny, żeby nim pisać.'
+pubDate: 2026-10-27
+tags: ['css', 'podstawy', 'typografia', 'dostępność']
+series: 'css-od-podstaw'
+seriesPart: 4
+---
+
+import Hare from "../../components/Hare.astro";
+
+W części 3 rozebraliśmy model pudełkowy na warstwy. Dziś zajmiemy się tym, co jest w nim najważniejsze dla czytelnika: **tekstem**. Jaką ma wielkość, jakim krojem jest napisany, jak szeroka jest kolumna i czy da się go w ogóle przeczytać. Po drodze opowiem, jak odkryłem, że kolor przewodni tego bloga nie nadaje się do tekstu.
+
+## Jednostki: `px`, `rem`, `em`, `%` i `ch`
+
+We wpisie o modelu pudełkowym często używałem zapisu typu `16px`. Piksel jest prosty i przewidywalny, ale ma jedną wadę: **nie słucha użytkownika**. Jeśli ktoś ustawi w przeglądarce większą czcionkę, bo słabiej widzi, tekst w pikselach zostanie taki sam.
+
+Tu wchodzą tak zwane jednostki względne:
+
+- **`rem`** — wielokrotność rozmiaru czcionki dla elementu `<html>`. Domyślnie to 16px, więc `1rem = 16px`, a `1.5rem = 24px`. Gdy użytkownik zwiększy czcionkę do 20px, `1rem` urośnie razem z nią,
+- **`em`** — wielokrotność rozmiaru czcionki **bieżącego** elementu (a przy `font-size` — elementu-rodzica),
+- **`%`** — procent czegoś w rodzicu: przy `width` jego szerokości, przy `font-size` jego czcionki,
+- **`ch`** *(od character)* — szerokość znaku „0” w danym kroju. Przydaje się do długości linii tekstu. 
+
+~~~css
+html {
+  font-size: 100%; /* czyli tyle, ile ustawił użytkownik */
+}
+h1 {
+  font-size: 2.25rem; /* 36px przy domyślnych ustawieniach */
+}
+~~~
+
+<Hare type="bug">
+`em` potrafi się **mnożyć**. Lista w liście w liście, każda z `font-size: 0.9em`:
+
+~~~css
+li {
+  font-size: 0.9em;
+}
+/* poziom 1: 0.9 × 16 = 14.4px */
+/* poziom 2: 0.9 × 14.4 = 13px */
+/* poziom 3: 0.9 × 13 = 11.7px */
+~~~
+
+Każde zagnieżdżenie liczy od rodzica, więc tekst kurczy się z każdym poziomem. `rem` zawsze liczy od `<html>`, więc tego problemu nie ma.
+</Hare>
+
+<Hare type="decision">
+Moja zasada: **`rem` do rozmiarów czcionek i odstępów**, `em` tylko tam, gdzie coś ma rosnąć razem z tekstem obok (np. ikonka w przycisku), a `px` do cienkich rzeczy, które nie muszą się skalować — jak 1-pikselowa ramka. Tailwind myśli tak samo: `p-4` to `1rem`, `text-xl` to `1.25rem`.
+</Hare>
+
+## Krój, interlinia i szerokość kolumny
+
+Trzy właściwości robią większość roboty przy czytelnym tekście:
+
+~~~css
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.75;
+}
+article {
+  max-width: 65ch;
+}
+~~~
+
+**`font-family`** to lista krojów w kolejności preferencji. Przeglądarka bierze pierwszy, który ma, a na końcu zawsze stoi ogólna rodzina (`sans-serif`, `serif`, `monospace`) jako koło ratunkowe. Na tym blogu nie ładuję żadnej czcionki z sieci — Tailwind domyślnie daje stos krojów **systemowych**, więc na Macu widzisz San Francisco, a na Windowsie Segoe UI. Zero dodatkowych plików, a tekst wygląda „natywnie”.
+
+**`line-height`** to interlinia, czyli wysokość linii. Zwróć uwagę, że piszę ją **bez jednostki**. `1.75` znaczy „1,75 × rozmiar czcionki tego elementu” i dziedziczy się jako mnożnik. Gdybym napisał `28px`, nagłówek z czcionką 36px dostałby linię niższą niż litery.
+
+**Szerokość kolumny** to coś, czego długo nie zauważałem. Zbyt długie linie męczą oko — trudno trafić na początek następnej. Za wygodną długość uważa się mniej więcej **45–75 znaków**, i tu przydaje się `ch`.
+
+<Hare type="explain">
+Na tym blogu działają dwie granice naraz. Cała strona ma `max-w-3xl` (48rem, czyli 768px), żeby nawigacja, treść i stopka stały w jednej kolumnie. A sam wpis ma klasę `prose` z wtyczki typograficznej Tailwinda, która ustawia `max-width: 65ch`, `font-size: 1rem` i `line-height: 1.75`. Dlatego ten tekst nie rozlewa się na cały monitor, nawet na szerokim ekranie.
+</Hare>
+
+## Kolory i kontrast
+
+Kolor w CSS możesz zapisać na kilka sposobów — `#c2410c`, `rgb(194 65 12)`, `oklch(…)` — ale ważniejsze od zapisu jest **kontrast**, czyli różnica jasności między tekstem a tłem. Wyrażamy go jako stosunek, od 1:1 (ten sam kolor) do 21:1 (czarny na białym). Wytyczne dostępności (WCAG) mówią:
+
+- **4.5:1** — minimum dla zwykłego tekstu,
+- **3:1** — dla dużego tekstu i dla grafiki: ramek, ikon, obrysów fokusu.
+
+<Hare type="debug">
+23 października zrobiłem audyt kontrastu tego bloga. Akcent „Froncie” to pomarańcz `#ea580c` — i nim były pisane linki. Wynik na białym tle: **3.6:1**. Ładnie wygląda, ale jako tekst nie przechodzi.
+
+Poprawka nie polegała na wyrzuceniu koloru, tylko na podziale ról:
+
+- tekst i linki dostały ciemniejszy `#c2410c` — **5.2:1**,
+- ramki kart zostały w `#ea580c`, bo dla grafiki wystarcza 3:1,
+- przyciski mają tło `#c2410c` z białym napisem.
+
+Kontrast sprawdzisz w DevTools: kliknij kwadracik koloru przy `color` w zakładce **Styles**, a przeglądarka pokaże stosunek i czy spełnia normę.
+</Hare>
+
+Potem przyszedł ciemny motyw i niespodzianka. Ten sam `#c2410c`, który na białym był idealny, na granatowym tle ma ledwie **3.5:1**. Kontrast to zawsze para kolorów, nie jeden kolor. Dlatego w `global.css` link ma osobny odcień dla każdego motywu:
+
+~~~css
+@theme {
+  --color-link: #c2410c; /* jasny motyw */
+}
+[data-theme="dark"] {
+  --color-link: #fb923c; /* ciemny motyw: ~7.9:1 */
+}
+~~~
+
+(Te `--color-…` to zmienne CSS — wrócimy do nich w finale serii.)
+
+## Kolor to nie jedyny sygnał
+
+Jest jeszcze jedna zasada, o której łatwo zapomnieć: **informacja nie może być przekazywana samym kolorem**. Część osób nie rozróżnia barw, a na słońcu ekran telefonu i tak wszystko spłaszcza.
+
+<Hare type="tip">
+Dlatego linki w treści tego bloga mają **stałe podkreślenie**, a nie tylko inny kolor. Po najechaniu podkreślenie robi się grubsze (`text-decoration-thickness`), więc sygnał „to jest link” nie zależy od tego, czy widzisz pomarańcz.
+
+Działa to też w drugą stronę: **kolorowy tekst, który nie jest linkiem, udaje link**. Skróty klawiszowe zapisuję więc w `<kbd>`, jak np. <kbd>F12</kbd>, zamiast barwić je na pomarańczowo. Znowu ta sama myśl: HTML mówi, czym coś jest, CSS tylko to pokazuje.
+</Hare>
+
+<Hare type="learn">
+Szczegóły w MDN: [jednostki CSS](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Values_and_units), [podstawy stylowania tekstu](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Text_styling/Fundamentals), [line-height](https://developer.mozilla.org/en-US/docs/Web/CSS/line-height) i [kontrast kolorów](https://developer.mozilla.org/en-US/docs/Web/Accessibility/Guides/Understanding_WCAG/Perceivable/Color_contrast).
+</Hare>
+
+## Co nam to daje?
+
+- **Tekst, który słucha użytkownika:** `rem` zamiast `px` szanuje ustawienia przeglądarki.
+- **Wygodne czytanie:** interlinia bez jednostki i kolumna około 65 znaków.
+- **Kolory dla wszystkich:** sprawdzony kontrast w obu motywach i sygnały, które nie opierają się na samym kolorze.
+
+W **części 5** przestaniemy układać pudełka jedno pod drugim i zaczniemy stawiać je obok siebie. Dowiemy się czym jest jedna z metod układania layoutu na stronie: **Flexbox**. Pokażę Ci też, dlaczego blok kodu w calloucie z zającem rozpychał mi ramkę. Do zobaczenia!
