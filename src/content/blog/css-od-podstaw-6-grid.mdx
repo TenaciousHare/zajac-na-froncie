@@ -1,0 +1,131 @@
+---
+title: 'CSS od podstaw (cz. 6): Grid'
+description: 'Układ w dwóch wymiarach: grid-template-columns, jednostka fr, repeat(), minmax() i auto-fit. Na przykładzie kart projektów i mapy miejsc w samolocie, która wygląda jak tabela, ale tabelą nie jest.'
+pubDate: 2026-10-29
+tags: ['css', 'podstawy', 'grid']
+series: 'css-od-podstaw'
+seriesPart: 6
+---
+
+import Hare from "../../components/Hare.astro";
+
+W części 5 Flexbox ustawiał elementy w **jednym** rzędzie albo w **jednej** kolumnie. Ale co, jeśli potrzebujesz rzędów i kolumn naraz — siatki kart, kalendarza, mapy miejsc w samolocie? Tu wchodzi **CSS Grid**.
+
+## Flex czy Grid?
+
+Prosta zasada na start:
+
+- **Flexbox** — układ w **jednym wymiarze**. Treść decyduje, ile miejsca zajmie każdy element (nawigacja, pigułki tagów, callout).
+- **Grid** — układ w **dwóch wymiarach**. Najpierw rysujesz siatkę, potem wkładasz w nią elementy (karty, galerie, plansze).
+
+Jedno nie wyklucza drugiego. Bardzo często kontener jest gridem, a każda karta w środku — flexem.
+
+## Pierwsza siatka
+
+Tak jak przy Flexboksie, wszystko zaczyna się na **rodzicu**:
+
+~~~css
+.projects {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+~~~
+
+**`grid-template-columns`** mówi, ile ma być kolumn i jak szerokich. Każda wartość to jedna kolumna. Dzieci same rozkładają się w kolejne komórki, wiersz po wierszu, a nowe wiersze tworzą się automatycznie.
+
+**`gap`** znasz już z Flexboksa — tu działa tak samo: odstęp między kolumnami i między wierszami.
+
+## Jednostka `fr`
+
+`fr` to nowa jednostka, która istnieje tylko w gridzie: **ułamek wolnego miejsca**. `1fr 1fr` to dwie równe kolumny. `2fr 1fr` — pierwsza dwa razy szersza od drugiej.
+
+Czym to się różni od `50% 50%`? Procenty nie wiedzą o `gap`. Dwie kolumny po 50% plus odstęp między nimi dają ponad 100% i siatka wystaje poza rodzica — to ten sam problem, co z `width: 100%` w części 3. `fr` dzieli to, co **zostaje** po odjęciu odstępów, więc zawsze się mieści.
+
+<Hare type="explain">
+Strona **Projekty** na tym blogu to właśnie taka siatka. W Tailwindzie: `grid gap-6 sm:grid-cols-2`. Pod spodem `grid-cols-2` to `grid-template-columns: repeat(2, minmax(0, 1fr))`. Prefiks `sm:` sprawia, że dwie kolumny pojawiają się dopiero na szerszym ekranie, a na telefonie karty stoją jedna pod drugą. Jak to działa, pokażę w części 8.
+
+To samo robią przyciski „Poprzednia część” i „Następna część” pod tym wpisem: `grid grid-cols-2 gap-4`, czyli dwie równe połówki.
+</Hare>
+
+## `repeat()` i `minmax()`
+
+Pisanie `1fr 1fr 1fr 1fr` szybko się nudzi. Od tego jest **`repeat()`**:
+
+~~~css
+grid-template-columns: repeat(4, 1fr);
+~~~
+
+A **`minmax(min, max)`** mówi kolumnie: „nie bądź węższa niż X i nie szersza niż Y”:
+
+~~~css
+grid-template-columns: repeat(3, minmax(200px, 1fr));
+~~~
+
+## `auto-fit` — siatka, która sama się dopasowuje
+
+Teraz najlepsza sztuczka w całym gridzie. Zamiast liczby kolumn wpisujesz `auto-fit`:
+
+~~~css
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1.5rem;
+}
+~~~
+
+Czytaj to tak: „zmieść tyle kolumn, ile się da, każda co najmniej 16rem, a resztę miejsca podziel po równo”. Na telefonie wyjdzie jedna kolumna, na tablecie dwie, na monitorze trzy albo cztery — **bez ani jednego media query**.
+
+<Hare type="tip">
+Gdy grid robi coś dziwnego, otwórz DevTools. W zakładce **Elements** przy kontenerze gridu jest mały znaczek `grid` — kliknij go, a przeglądarka narysuje na stronie linie siatki z numerami kolumn i wierszy. Od razu widać, gdzie który element wylądował.
+</Hare>
+
+## Element na kilka komórek
+
+Dziecko może zająć więcej niż jedną komórkę:
+
+~~~css
+.featured {
+  grid-column: span 2; /* dwie kolumny szerokości */
+}
+.header {
+  grid-column: 1 / -1; /* od pierwszej linii do ostatniej */
+}
+~~~
+
+Linie siatki są numerowane od 1, a `-1` oznacza ostatnią. `1 / -1` to więc „cała szerokość”, niezależnie od liczby kolumn.
+
+## Z życia: mapa miejsc w samolocie
+
+W części 7 serii HTML pisałem, że tabela jest do **danych**, a nie do układania rzeczy obok siebie. Przykład, nad którym teraz myślę: **Pre-Seating Game**, gra szkoleniowa, w której na czas usadzasz pasażerów w samolocie. Mapa miejsc wygląda jak tabela — rzędy i kolumny. Ale to nie są dane do porównywania, tylko **plansza**. Dlatego to robota dla gridu.
+
+Typowy wąskokadłubowiec ma układ 3-3: trzy fotele, przejście, trzy fotele. W gridzie to jedna linijka:
+
+~~~css
+.cabin {
+  display: grid;
+  grid-template-columns: repeat(3, 2.5rem) 1.5rem repeat(3, 2.5rem);
+  gap: 0.25rem;
+}
+~~~
+
+Siedem kolumn: A, B, C, wąska kolumna na przejście, D, E, F. Każdy rząd samolotu to po prostu kolejny wiersz siatki.
+
+<Hare type="decision">
+Grid zmienia tylko **wygląd**. Każdy fotel to w HTML-u `<button>` z czytelną etykietą, np. „Rząd 12, miejsce A, przy oknie”. Dzięki temu da się po nich przechodzić klawiszem <kbd>Tab</kbd>, a czytnik ekranu powie, gdzie jesteś — czego „tabela udająca planszę” by nie dała.
+</Hare>
+
+Uwaga, tak jak przy Flexboksie: grid pozwala ustawić elementy w dowolnej kolejności na ekranie (`grid-column`, `grid-row`, `order`). Klawiatura i czytnik ekranu dalej idą w kolejności z HTML. Przestawiaj więc z głową.
+
+<Hare type="learn">
+Szczegóły w MDN: [podstawy Grida](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/CSS_layout/Grids), [grid-template-columns](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-template-columns), [minmax()](https://developer.mozilla.org/en-US/docs/Web/CSS/minmax) i [repeat()](https://developer.mozilla.org/en-US/docs/Web/CSS/repeat).
+Bonus, gra do nauki Grida - [Grid Garden](https://cssgridgarden.com/#pl).
+</Hare>
+
+## Co nam to daje?
+
+- **Dwa wymiary naraz:** rzędy i kolumny w jednym kontenerze, bez zagnieżdżania flexów w flexach.
+- **Mniej liczenia:** `fr` sam dzieli wolne miejsce i pamięta o odstępach.
+- **Responsywność „za darmo”:** `repeat(auto-fit, minmax(…))` dopasowuje liczbę kolumn do ekranu.
+
+Flexbox i Grid ustawiają elementy **w przepływie** strony. W **części 7** wyjmiemy je z niego: **pozycjonowanie**, czyli jak cała karta wpisu stała się klikalna i skąd w rogu ekranu bierze się przycisk powrotu na górę. Do zobaczenia!
