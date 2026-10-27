@@ -1,0 +1,131 @@
+---
+title: 'CSS od podstaw (cz. 5): Flexbox'
+description: 'Jak ustawić elementy obok siebie: oś główna i poprzeczna, justify-content, align-items, gap i flex-wrap. Plus pułapka min-width: auto, przez którą kod w calloucie rozpychał mi ramkę.'
+pubDate: 2026-10-28
+tags: ['css', 'podstawy', 'flexbox']
+series: 'css-od-podstaw'
+seriesPart: 5
+---
+
+import Hare from "../../components/Hare.astro";
+
+Do tej pory nasze pudełka grzecznie stały **jedno pod drugim** — tak układają się elementy blokowe, które poznaliśmy w części 3. Ale prawie każdy interfejs potrzebuje czegoś innego: logo po lewej i menu po prawej, zając obok tekstu w calloucie, pigułki tagów w jednym rzędzie. Do tego służy **Flexbox**.
+
+## `display: flex` — jedna linijka, nowy układ
+
+Wystarczy jedna deklaracja na **rodzicu**:
+
+~~~css
+.callout {
+  display: flex;
+}
+~~~
+
+Od tej chwili rodzic staje się **kontenerem flex**, a jego bezpośrednie dzieci — **elementami flex** (*flex items*). Stają obok siebie w rzędzie, mają szerokość swojej treści i rozciągają się na wysokość najwyższego z nich.
+
+Najważniejsza rzecz do zrozumienia to **dwie osie**:
+
+- **oś główna** — kierunek, w którym elementy się układają. Domyślnie poziomo, od lewej do prawej (`flex-direction: row`),
+- **oś poprzeczna** — prostopadła do głównej. Przy rzędzie: pionowa.
+
+Zmienisz `flex-direction` na `column` — i osie zamieniają się miejscami. Elementy stają jeden pod drugim, ale dalej rządzi nimi Flexbox.
+
+## Wyrównanie: `justify-content` i `align-items`
+
+Dwie właściwości, dwie osie:
+
+~~~css
+.nav {
+  display: flex;
+  justify-content: space-between; /* oś główna */
+  align-items: center; /* oś poprzeczna */
+}
+~~~
+
+- **`justify-content`** rozkłada elementy wzdłuż osi głównej: `flex-start`, `center`, `flex-end`, `space-between` (skrajne przy brzegach, wolne miejsce między nimi),
+- **`align-items`** ustawia je na osi poprzecznej: `stretch` (domyślne), `center`, `flex-start`, `flex-end`.
+
+<Hare type="tip">
+Jak zapamiętać, które jest które? **justify = wzdłuż, align = w poprzek**. A słynne „wyśrodkuj diva w pionie i w poziomie”, z którego żartowano latami, to dziś trzy linijki: `display: flex`, `justify-content: center` i `align-items: center`. Wszystkie trzy ustawiasz na rodzicu elementu, który chcesz wyśrodkować, a nie na nim samym.
+</Hare>
+
+## `gap` zamiast marginesów
+
+Pamiętasz zapadające się marginesy z części 3? We Flexboksie marginesy się nie zapadają, ale jest coś lepszego: **`gap`**. Ustawiasz go na rodzicu i dostajesz odstęp **tylko między** elementami — bez dodatkowej dziury przed pierwszym i za ostatnim.
+
+~~~css
+.tags {
+  display: flex;
+  gap: 0.5rem;
+}
+~~~
+
+## `flex-wrap` — gdy brakuje miejsca
+
+Domyślnie Flexbox upycha wszystko w **jednym rzędzie**, nawet jeśli ma ściskać elementy albo wypychać je poza ekran. Jeśli wolisz, żeby nadmiar przeszedł do nowej linii:
+
+~~~css
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+~~~
+
+<Hare type="decision">
+Tak są zrobione tagi pod tym wpisem — w Tailwindzie `flex flex-wrap gap-2`. Na szerokim ekranie stoją w jednym rzędzie, na telefonie łamią się do kolejnych. A `gap` działa wtedy w obu kierunkach: odstęp jest i między pigułkami, i między rzędami.
+</Hare>
+
+## Kto rośnie, a kto się kurczy
+
+Do tej pory wszystkim sterował rodzic. Ale każde dziecko może powiedzieć, jak ma się zachować, gdy miejsca jest za dużo albo za mało:
+
+- **`flex-grow`** — czy element ma zabrać wolne miejsce (`1` = tak, `0` = nie - to wartość domyślna),
+- **`flex-shrink`** — czy może się zwęzić, gdy miejsca brakuje (`1` = tak, domyślnie),
+- **`flex-basis`** — od jakiego rozmiaru zaczyna, zanim cokolwiek urośnie lub się skurczy.
+
+W praktyce najczęściej piszesz skrót `flex: 1` („zabierz całe wolne miejsce”) albo `flex-shrink: 0` („nie zwężaj mnie”).
+
+<Hare type="explain">
+Callout z zającem, który właśnie czytasz, to podręcznikowy przykład:
+
+~~~html
+<aside class="flex items-center gap-4">
+  <img class="w-16 shrink-0" />
+  <div class="flex-1 min-w-0">…</div>
+</aside>
+~~~
+
+Obrazek ma stałą szerokość i `shrink-0`, żeby długi tekst go nie ścisnął. Tekst ma `flex-1`, więc zabiera całą resztę. A `items-center` ustawia zająca na środku wysokości.
+
+Jest jeszcze jedno miejsce: na stronie **Projekty** każda karta to `flex flex-col`, a opis ma `grow`. Opis „puchnie”, więc linki do repo zawsze lądują na dole karty, nawet gdy opisy mają różną długość.
+</Hare>
+
+## Pułapka: `min-width: auto`
+
+A teraz o tym `min-w-0` w calloucie. Dopisałem go dopiero przy pisaniu części 1 tej serii, gdy długa linijka kodu w calloucie **wypchnęła ramkę** poza kolumnę tekstu.
+
+<Hare type="bug">
+Elementy flex mają domyślnie `min-width: auto`. W praktyce znaczy to: „nie zwężaj mnie poniżej mojej najszerszej zawartości”. A blok kodu z długą linijką jest bardzo szeroki — więc `div` z tekstem nie chciał się skurczyć, nawet z `flex-1`, i rozpychał cały callout.
+
+Poprawka to jedna klasa: `min-w-0`, czyli `min-width: 0`. Teraz element może się zwęzić, a długi kod przewija się w poziomie **wewnątrz** swojego bloku, zamiast łamać układ strony.
+</Hare>
+
+Zapamiętaj ten objaw: jeśli coś we Flexboksie uparcie wychodzi poza rodzica, choć „powinno się zmieścić”, pierwszy trop to `min-width: 0` na dziecku.
+
+## Kolejność wizualna to nie kolejność w HTML
+
+Flexbox potrafi też odwrócić kolejność (`flex-direction: row-reverse`) albo przestawić pojedynczy element (`order`). Używaj tego ostrożnie. Czytnik ekranu i klawisz <kbd>Tab</kbd> idą zawsze **w kolejności z HTML**, nie z ekranu. Jeśli wizualnie przestawisz przyciski, osoba nawigująca klawiaturą będzie skakać po stronie w kółko. Znowu ta sama myśl: kolejność i znaczenie ustala HTML, CSS tylko je pokazuje.
+
+<Hare type="learn">
+Szczegóły w MDN: [podstawy Flexboksa](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/CSS_layout/Flexbox), [wyrównanie w kontenerze flex](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_flexible_box_layout/Aligning_items_in_a_flex_container), [gap](https://developer.mozilla.org/en-US/docs/Web/CSS/gap) i [flex](https://developer.mozilla.org/en-US/docs/Web/CSS/flex).
+Bonus, gra do nauki Flexboksa [Flexbox Froggy](https://flexboxfroggy.com/#pl)
+</Hare>
+
+## Co nam to daje?
+
+- **Układ w rzędzie bez sztuczek:** jedna linijka `display: flex` zamiast pływających elementów (`float`) i ujemnych marginesów.
+- **Wyrównanie w dwóch osiach:** `justify-content` wzdłuż, `align-items` w poprzek.
+- **Elastyczność:** `gap`, `flex-wrap` i `flex: 1` same dopasowują układ do miejsca — a `min-w-0` ratuje, gdy coś nie chce się zmieścić.
+
+Flexbox myśli w **jednym wymiarze**: rząd albo kolumna. W **części 6** poznamy jego partnera, który ogarnia rzędy i kolumny naraz: **CSS Grid**. Pokażę Ci na nim mapę miejsc w samolocie. Do zobaczenia!
