@@ -1,0 +1,133 @@
+---
+title: 'CSS od podstaw (cz. 7): pozycjonowanie i warstwy'
+description: 'position: relative, absolute, fixed i sticky, właściwość inset i z-index. Jak cała karta wpisu stała się klikalna bez linku w linku i skąd w rogu ekranu bierze się przycisk powrotu na górę.'
+pubDate: 2026-10-30
+tags: ['css', 'podstawy', 'pozycjonowanie']
+series: 'css-od-podstaw'
+seriesPart: 7
+---
+
+import Hare from "../../components/Hare.astro";
+
+Flexbox i Grid z poprzednich części układają elementy **w przepływie** strony (*normal flow*): każdy zajmuje swoje miejsce, a sąsiedzi robią mu przestrzeń. Czasem jednak potrzebujesz, żeby coś **wyszło z szeregu**: przycisk przyklejony do rogu ekranu, plakietka na rogu karty, nakładka na całą powierzchnię. Do tego służy **`position`**.
+
+## Pięć wartości `position`
+
+- **`static`** — domyślna. Element stoi tam, gdzie wypada w przepływie. `top`, `left` i spółka nie działają,
+- **`relative`** — element zostaje w przepływie, ale możesz go przesunąć względem jego normalnego miejsca. Ważniejsze: staje się **punktem odniesienia** dla dzieci z `absolute`,
+- **`absolute`** — element **wypada z przepływu** (sąsiedzi zachowują się, jakby go nie było) i ustawiasz go względem najbliższego przodka, który ma `position` inne niż `static`,
+- **`fixed`** — jak `absolute`, ale punktem odniesienia jest **okno przeglądarki**. Nie przewija się razem ze stroną,
+- **`sticky`** — hybryda: zachowuje się jak `relative`, dopóki nie dojedziesz do progu, a potem „przykleja się” jak `fixed`, ale tylko w obrębie rodzica.
+
+Gdzie dokładnie ma stanąć element, mówisz właściwościami `top`, `right`, `bottom`, `left` — albo skrótem **`inset`**:
+
+~~~css
+.overlay {
+  position: absolute;
+  inset: 0; /* top, right, bottom i left = 0 */
+}
+~~~
+
+`inset: 0` to „rozciągnij się na całego rodzica” — zapamiętaj to, za chwilę się przyda.
+
+## Duet `relative` + `absolute`
+
+To najczęstszy wzorzec w całym pozycjonowaniu. Rodzic dostaje `relative`, dziecko `absolute` — i dziecko ustawiasz względem rodzica:
+
+~~~css
+.code-block {
+  position: relative;
+}
+.copy-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+}
+~~~
+
+To prawdziwy fragment z `global.css` tego bloga: przycisk **„Kopiuj”** przy blokach kodu. Kod w bloku płynie normalnie, a przycisk unosi się nad nim w prawym górnym rogu.
+
+<Hare type="bug">
+Klasyczny błąd: dajesz dziecku `absolute`, a ono ląduje w rogu… **całej strony**. Powód? Żaden przodek nie ma ustawionego `position`, więc element szuka punktu odniesienia aż do samej góry dokumentu. Brakowało jednego `position: relative` na rodzicu.
+</Hare>
+
+## Z życia: klikalna cała karta
+
+Na stronie głównej każda karta wpisu jest klikalna w całości. Pierwszy pomysł: owinąć całą kartę w `<a>`. Problem w tym, że w karcie są też **tagi**, które same są linkami — a **link w linku jest w HTML nieprawidłowy**.
+
+Rozwiązanie to wzorzec **stretched link** (rozciągnięty link):
+
+~~~html
+<article class="relative">
+  <h2>
+    <a href="/blog/…" class="after:absolute after:inset-0">Tytuł</a>
+  </h2>
+  <p>Opis…</p>
+  <ul class="relative z-10">…tagi…</ul>
+</article>
+~~~
+
+<Hare type="explain">
+Krok po kroku:
+
+1. `<article>` dostaje `relative` — staje się punktem odniesienia,
+2. link w tytule dostaje pseudoelement `::after` z `absolute` i `inset: 0` — niewidzialną nakładkę na **całą kartę**. Kliknięcie gdziekolwiek trafia w nakładkę, czyli w link,
+3. lista tagów dostaje `relative` i `z-index: 10` — wychodzi **ponad** nakładkę, więc każdy tag da się kliknąć osobno.
+
+W HTML-u jest jeden link do wpisu i osobne linki do tagów. Czytnik ekranu nie słyszy całej karty jako jednego wielkiego linku, a dla myszki cała karta jest klikalna.
+</Hare>
+
+## `z-index` — kto na wierzchu
+
+Gdy elementy nachodzą na siebie, **`z-index`** decyduje, który jest bliżej Ciebie. Większa liczba = wyżej. Ale są dwie zasady, które oszczędzą Ci sporo nerwów:
+
+- `z-index` działa tylko na elementach **pozycjonowanych** (`relative`, `absolute`, `fixed`, `sticky`) oraz dzieciach flexa i grida. Na zwykłym `static` nie robi nic. Dlatego tagi w karcie mają `relative` **i** `z-10`, a nie samo `z-10`,
+- `z-index` porównuje się tylko w obrębie tego samego **kontekstu nakładania** (*stacking context*).
+
+<Hare type="why">
+Kontekst nakładania to „pudełko z własną numeracją warstw”. Tworzy go m.in. element pozycjonowany z `z-index`, a także `opacity` mniejsze niż 1 czy `transform`. Dziecko z `z-index: 9999` nie wyjdzie ponad sąsiada swojego rodzica, jeśli rodzic sam leży niżej — jego 9999 liczy się tylko w środku. Gdy więc `z-index` „nie działa”, nie dokładaj zer, tylko sprawdź, w czyim kontekście siedzi element.
+</Hare>
+
+## `fixed` — przycisk powrotu na górę
+
+Po przewinięciu tego wpisu w prawym dolnym rogu pojawi się okrągły przycisk ze strzałką. To `fixed`:
+
+~~~css
+.back-to-top {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 50;
+}
+~~~
+
+Okno przeglądarki jest punktem odniesienia, więc przycisk stoi w miejscu, a strona przewija się pod nim. `z-index: 50` trzyma go ponad treścią, także ponad kartami z ich `z-10`.
+
+## `sticky` — przyklej, ale z umiarem
+
+`sticky` jest świetny do nagłówków tabel albo spisu treści, który ma zostać na ekranie podczas czytania:
+
+~~~css
+thead th {
+  position: sticky;
+  top: 0;
+}
+~~~
+
+Dwie rzeczy, bez których nie zadziała: musisz podać próg (`top: 0`), a żaden przodek nie może mieć `overflow: hidden` — wtedy element przykleja się do tego przodka, a nie do okna.
+
+<Hare type="tip">
+Uważaj, ile elementów przyklejasz. Na telefonie każdy przyklejony pasek zjada ekran, a przy powiększeniu tekstu potrafi zasłonić połowę treści. Dlatego przycisk powrotu na tym blogu jest mały i umieszczony w rogu.
+</Hare>
+
+<Hare type="learn">
+Szczegóły w MDN: [pozycjonowanie](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/CSS_layout/Positioning), [position](https://developer.mozilla.org/en-US/docs/Web/CSS/position), [inset](https://developer.mozilla.org/en-US/docs/Web/CSS/inset) i [kontekst nakładania](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_positioned_layout/Stacking_context).
+</Hare>
+
+## Co nam to daje?
+
+- **Elementy poza szeregiem:** `absolute` i `fixed` ustawiają rzeczy dokładnie tam, gdzie chcesz, bez rozpychania sąsiadów.
+- **Klikalne karty bez łamania HTML:** stretched link to `relative` + `absolute` + `inset: 0`.
+- **Mniej walki z warstwami:** wiesz, kiedy `z-index` działa, a kiedy blokuje go kontekst nakładania.
+
+Mamy już wszystkie klocki układu. W **części 8** sprawimy, że będą się dobrze zachowywać na każdym ekranie — i nie tylko na ekranie: **responsywność i media queries**, od telefonu po wydruk. Do zobaczenia!
