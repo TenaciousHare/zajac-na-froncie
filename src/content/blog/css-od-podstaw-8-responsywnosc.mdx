@@ -1,0 +1,135 @@
+---
+title: 'CSS od podstaw (cz. 8): responsywność i media queries'
+description: 'Mobile-first, @media (min-width) i prefiksy sm:/md: w Tailwindzie. Plus media queries, które nie pytają o szerokość ekranu: ciemny motyw, ograniczony ruch i wydruk.'
+pubDate: 2026-10-31
+tags: ['css', 'podstawy', 'responsywność', 'dostępność']
+series: 'css-od-podstaw'
+seriesPart: 8
+---
+
+import Hare from "../../components/Hare.astro";
+
+Ten wpis czytasz może na telefonie w autobusie, może na laptopie, a może na dużym monitorze w pracy. Strona jest ta sama, HTML ten sam — zmienia się tylko to, jak CSS rozkłada klocki. To jest **responsywność**. Dziś zobaczysz, jak ją zbudować, i poznasz media queries, które pytają nie tylko o szerokość ekranu.
+
+## Zanim zaczniesz: znacznik viewport
+
+Bez jednej linijki w `<head>` żaden CSS responsywny nie zadziała na telefonie:
+
+~~~html
+<meta name="viewport" content="width=device-width" />
+~~~
+
+Bez niej telefon udaje ekran szerokości ok. 980px i pomniejsza całą stronę, żeby się zmieściła — dostajesz miniaturkę wersji z komputera. Z nią strona ma szerokość prawdziwego ekranu. Ten blog ma ją w głównym layoucie, więc każda podstrona dostaje ją automatycznie.
+
+## Media query — CSS z warunkiem
+
+**Media query** to blok reguł, który działa tylko wtedy, gdy spełniony jest warunek:
+
+~~~css
+.projects {
+  display: grid;
+  gap: 1.5rem;
+}
+
+@media (min-width: 40rem) {
+  .projects {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+~~~
+
+Czytaj: „domyślnie jedna kolumna; **od** 40rem szerokości — dwie”. Miejsce, w którym układ się zmienia, nazywa się **breakpointem**.
+
+<Hare type="tip">
+Pamiętasz `rem` z części 4? W media queries też go używaj. Jeśli ktoś powiększy w przeglądarce czcionkę, breakpoint w `rem` przesunie się razem z nią — i przy dużym tekście układ wcześniej przejdzie na jedną, wygodniejszą kolumnę.
+</Hare>
+
+## Mobile-first
+
+Zauważ, że w przykładzie wyżej najpierw piszę style dla **wąskiego** ekranu, a potem **dokładam** zmiany dla szerszych przez `min-width`. To podejście nazywa się **mobile-first**.
+
+Dlaczego tak, a nie odwrotnie (`max-width` i zabieranie rzeczy na telefonie)?
+
+- wersja na telefon jest zwykle **prostsza** — jedna kolumna, elementy jeden pod drugim. To dobry punkt wyjścia,
+- kolejne breakpointy tylko **dodają** układ, zamiast nadpisywać wszystko z powrotem,
+- najprostsza wersja działa nawet wtedy, gdy coś pójdzie nie tak.
+
+<Hare type="explain">
+Tailwind jest mobile-first z założenia. Klasa bez prefiksu działa zawsze, a prefiks to „**od** tej szerokości w górę”: `sm:` od 40rem (640px), `md:` od 48rem (768px), `lg:` od 64rem (1024px).
+
+Na tym blogu:
+
+- strona **Projekty**: `grid gap-6 sm:grid-cols-2` — jedna kolumna na telefonie, dwie od `sm`,
+- nawigacja: `gap-4 sm:gap-6` — na wąskim ekranie odstępy między linkami są mniejsze, żeby wszystko się zmieściło,
+- przycisk na stronie głównej: na telefonie stoi pod obrazkiem z zającem, a od `md` dostaje `md:absolute` i ląduje **na** obrazku, przy dolnej krawędzi. Pozycjonowanie z części 7 włączone dopiero od pewnej szerokości.
+</Hare>
+
+Jak dobrać breakpointy? Nie pod konkretne modele telefonów, tylko pod **treść**. Zwężaj okno przeglądarki i patrz, kiedy układ zaczyna się psuć. Tam jest Twój breakpoint.
+
+## Media queries, które nie pytają o szerokość
+
+Media query potrafi zapytać o dużo więcej niż rozmiar ekranu. Trzy, które warto znać od początku, dotyczą **preferencji użytkownika** i **rodzaju medium**.
+
+### `prefers-color-scheme` — jasny czy ciemny?
+
+System operacyjny wie, czy ktoś woli ciemny motyw. CSS też może to sprawdzić:
+
+~~~css
+@media (prefers-color-scheme: dark) {
+  body {
+    background: #0f172a;
+    color: #f1f5f9;
+  }
+}
+~~~
+
+<Hare type="decision">
+Na tym blogu jest jeszcze przełącznik motywu w nawigacji, więc sam media query nie wystarczy — trzeba pamiętać wybór użytkownika. Mały skrypt w `<head>` sprawdza najpierw zapisany wybór, a jeśli go nie ma, pyta o ten sam media query z poziomu JavaScriptu (`matchMedia("(prefers-color-scheme: dark)")`). Wynik ląduje w atrybucie `data-theme` na `<html>`, a style reagują na ten atrybut. Domyślnie szanuję ustawienie systemu, ale ostatnie słowo należy do Ciebie.
+</Hare>
+
+### `prefers-reduced-motion` — mniej ruchu
+
+U niektórych osób animacje i płynne przewijanie powodują zawroty głowy albo nudności. Mogą to wyłączyć w systemie, a CSS może to uszanować. Tak jest zrobione płynne przewijanie do nagłówków na tym blogu:
+
+~~~css
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+~~~
+
+Zwróć uwagę na logikę: nie „wyłącz animację, jeśli ktoś nie chce”, tylko „**włącz** ją, jeśli nikt nie prosił o mniej ruchu”. Domyślnie strona jest spokojna, a animacja to dodatek.
+
+### `@media print` — wersja na papier
+
+Ostatni media query nie dotyczy ekranu w ogóle. W aplikacji Destinations szkoleniowiec generuje test z kierunków i drukuje go dla kursantów. Przyciski i listy rozwijane na kartce nikomu się nie przydadzą:
+
+~~~css
+@media print {
+  button,
+  select,
+  .controls {
+    display: none;
+  }
+  tr {
+    break-inside: avoid; /* nie tnij wiersza między stronami */
+  }
+}
+~~~
+
+<Hare type="explain">
+Destinations nie ma ciemnego motywu, więc wydruk od razu był czarny na białym. Na tym blogu byłoby inaczej. Przeglądarki domyślnie nie drukują tła, więc w ciemnym motywie jasny tekst wylądowałby na białej kartce — prawie niewidoczny. W aplikacji z ciemnym motywem `@media print` powinien więc też **przywrócić kolory** — czarny tekst, białe tło. W Tailwindzie jest do tego wariant `print:`, np. `print:hidden` albo `print:text-black`.
+</Hare>
+
+<Hare type="learn">
+Szczegóły w MDN: [media queries](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_media_queries/Using_media_queries), [responsywny design](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/CSS_layout/Responsive_Design), [prefers-color-scheme](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-color-scheme) i [prefers-reduced-motion](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-reduced-motion).
+</Hare>
+
+## Co nam to daje?
+
+- **Jedna strona na każdy ekran:** mobile-first i `min-width` dokładają układ zamiast go odbierać.
+- **Szacunek dla ustawień:** ciemny motyw i ograniczony ruch zgodnie z tym, co ktoś wybrał w systemie.
+- **Nie tylko ekran:** `@media print` robi z aplikacji porządny wydruk bez żadnej biblioteki.
+
+W **części 9**, finałowej, zajrzymy pod maskę ciemnego motywu: **zmienne CSS**. Zobaczysz, jak jeden token zmienia kolor linków w całym blogu — i dlaczego, znając już CSS, dalej piszę w Tailwindzie. Do zobaczenia!
