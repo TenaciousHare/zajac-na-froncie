@@ -1,0 +1,144 @@
+---
+title: 'CSS od podstaw (cz. 9): zmienne CSS i most do Tailwinda'
+description: 'Finał serii: custom properties, :root i var(), ciemny motyw na jednym tokenie, nazwy według roli zamiast wyglądu — i odpowiedź na pytanie, po co mi Tailwind, skoro znam CSS.'
+pubDate: 2026-11-01
+tags: ['css', 'podstawy', 'zmienne-css', 'tailwind']
+series: 'css-od-podstaw'
+seriesPart: 9
+---
+
+import Hare from "../../components/Hare.astro";
+
+W części 4 pokazałem fragment `global.css`, w którym link ma inny kolor w jasnym i w ciemnym motywie, i obiecałem, że wrócimy do tych tajemniczych `--color-…`. Dziś finał serii — i właśnie o nich: **zmienne CSS**. To one spinają wszystko, czego się do tej pory nauczyliśmy, i to one są mostem do Tailwinda, w którym piszę ten blog.
+
+## Pierwsza zmienna
+
+Zmienna CSS (oficjalnie *custom property*) to właściwość, której nazwę wymyślasz sam. Zaczyna się od dwóch myślników:
+
+~~~css
+:root {
+  --color-accent: #ea580c;
+  --space: 1rem;
+}
+
+.button {
+  background: var(--color-accent);
+  padding: var(--space);
+}
+~~~
+
+- **`:root`** to pseudoklasa oznaczająca korzeń dokumentu, czyli `<html>`. Zmienne ustawione tam są dostępne na całej stronie,
+- **`var(--nazwa)`** odczytuje wartość. Możesz podać zapas: `var(--color-accent, orange)` — użyty, gdy zmiennej nie ma.
+
+Po co to wszystko? Kolor akcentu zmieniasz w **jednym** miejscu, a nie w czterdziestu regułach rozsianych po arkuszu.
+
+## Zmienne żyją w kaskadzie
+
+Tu jest różnica, która robi ze zmiennych CSS coś więcej niż „stałe”: one **dziedziczą się i podlegają kaskadzie**, dokładnie jak `color` z części 2. Możesz je nadpisać na dowolnym elemencie, a zmiana obejmie wszystkie jego dzieci — na żywo, w przeglądarce.
+
+I tak właśnie działa ciemny motyw na tym blogu:
+
+~~~css
+@theme {
+  --color-accent-dark: #c2410c;
+  --color-link: var(--color-accent-dark);
+}
+
+[data-theme="dark"] {
+  --color-link: #fb923c;
+}
+~~~
+
+Przełącznik w nawigacji zmienia tylko atrybut `data-theme` na `<html>` (pisałem o tym w części 8). Od tej chwili `--color-link` ma nową wartość, a każdy link na stronie, który jej używa, zmienia kolor — bez dotykania choćby jednej klasy.
+
+<Hare type="explain">
+Zwróć uwagę na `--color-link: var(--color-accent-dark)`. To **token wskazujący token**. Paleta (`accent`, `accent-dark`) mówi, jakie kolory w ogóle mamy, a `link` mówi, **do czego** jednego z nich używamy. Jeśli kiedyś zmienię odcień pomarańczu, linki pójdą za nim same.
+</Hare>
+
+## Z życia: ciemny motyw bez Tailwinda
+
+Żeby było jasne, że to nie jest magia Tailwinda — w mojej apce z pogodą lotniczą, **Avia Weather**, nie ma go wcale. Są zwykłe pliki CSS (moduły CSS w Reakcie), a ciemny motyw to dokładnie ten sam pomysł:
+
+~~~css
+:root {
+  --bg: #f8fafc; /* tło strony */
+  --card-bg: #ffffff; /* tło kart */
+  --text: #334155; /* tekst główny */
+  --muted: #64748b; /* opisy poboczne */
+  --border: #e2e8f0; /* ramki */
+}
+
+[data-theme="dark"] {
+  --bg: #0f172a;
+  --card-bg: #1e293b;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --border: #334155;
+}
+~~~
+
+Karty METAR i TAF, pole wyszukiwania, przycisk motywu — wszystkie piszą tylko `background: var(--card-bg)` czy `border: 1px solid var(--border)`. Żaden komponent nie wie, który motyw jest włączony. Przełącznik w Reakcie ustawia `data-theme` na `<html>` i zapisuje wybór w `localStorage`, a przy pierwszej wizycie pyta o `prefers-color-scheme` — tak samo jak na tym blogu.
+
+<Hare type="tip">
+Nie wszystko musi być zmienną. Surowy komunikat METAR w Avia Weather ma ciemne tło i jasny tekst **w obu motywach** — wygląda jak blok kodu, bo to w końcu zakodowana depesza. Skoro ten kolor nie zmienia się z motywem, wpisałem go wprost. Zmienna ma sens tam, gdzie wartość ma się zmieniać albo powtarza się w wielu miejscach.
+</Hare>
+
+Zauważ też, że `body` ma tam `transition: background 0.2s, color 0.2s`. Po kliknięciu przełącznika kolory nie przeskakują, tylko płynnie przechodzą — bo zmienia się wartość zmiennej, a przeglądarka animuje wynik.
+
+## Nazwy według roli, nie wyglądu
+
+Przy audycie kontrastu z części 4 usunąłem z bloga kilka nieużywanych kolorów. Jeden z nich nazywał się `sneaker`. Ładna nazwa, tylko co znaczy? Jakiego koloru jest but? I co, jeśli zmienię odcień — dalej będzie „sneaker”?
+
+<Hare type="decision">
+Dziś nazywam tokeny **według roli**: `link`, `accent`, `danger`, a nie `orange` czy `sneaker`. Rola się nie zmienia, nawet gdy zmienia się kolor — w ciemnym motywie `link` jest jaśniejszy, ale dalej jest linkiem.
+
+To działa też w drugą stronę. Pigułki z technologiami na stronie **Projekty** mają w ciemnym motywie `orange-400`, a nie `text-link`, choć kolor wygląda podobnie. Dlaczego? Bo pigułka **nie jest linkiem**. Gdybym kiedyś zmienił kolor linków, pigułki nie powinny zmienić się razem z nimi.
+</Hare>
+
+Zmienne w Avia Weather też są nazwane według roli: `--bg`, `--text`, `--muted`, `--border`.
+
+## Most do Tailwinda
+
+No właśnie: po co mi Tailwind, skoro po ośmiu częściach znam CSS?
+
+Odpowiedź jest prostsza, niż myślałem: **Tailwind to CSS**. Każda klasa to jedna deklaracja, którą już znasz:
+
+- `p-4` to `padding: 1rem` z części 3 i 4,
+- `flex flex-wrap gap-2` to Flexbox z części 5,
+- `grid sm:grid-cols-2` to Grid z części 6 i media query z części 8,
+- `relative z-10` i `after:absolute after:inset-0` to pozycjonowanie z części 7.
+
+Tailwind nie zwalnia z rozumienia CSS. On zakłada, że je rozumiesz, i daje krótszy zapis. Bez tej serii klasa `min-w-0` byłaby dla mnie zaklęciem. Teraz wiem, że to `min-width: 0`, i wiem, **dlaczego** ratuje callout.
+
+A w Tailwindzie v4 most jest dosłowny. Blok `@theme` z `global.css` to **zwykłe zmienne CSS**. Tailwind robi z nich dwie rzeczy: generuje klasy (`--color-link` → `text-link`, `bg-link`, `border-link`) i wypuszcza same zmienne do arkusza — przy tym tylko te, których naprawdę używasz.
+
+<Hare type="bug">
+Jest jedna pułapka, na którą wpadłem. Tailwind ma też wariant `@theme inline`. Wygląda niewinnie, ale robi coś innego: zamiast `color: var(--color-link)` wkleja do klasy `text-link` od razu **wartość** zmiennej. A wtedy nadpisanie `--color-link` w `[data-theme="dark"]` nic nie zmienia, bo klasa już o tej zmiennej nie wie.
+
+Dlatego tokeny, które mają się zmieniać z motywem, trzymaj zawsze w zwykłym `@theme`.
+</Hare>
+
+<Hare type="learn">
+Szczegóły w MDN: [zmienne CSS](https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties), [var()](https://developer.mozilla.org/en-US/docs/Web/CSS/var) i [:root](https://developer.mozilla.org/en-US/docs/Web/CSS/:root). A o `@theme` przeczytasz w [dokumentacji Tailwinda](https://tailwindcss.com/docs/theme).
+</Hare>
+
+## Morał całej serii
+
+Przez dziewięć części przeszliśmy drogę od pojedynczej reguły do motywu, który zmienia się jednym atrybutem:
+
+- **selektory i kaskada** mówią, który styl wygrywa,
+- **model pudełkowy** — skąd biorą się odstępy,
+- **tekst, kolory i jednostki** — jak pisać czytelnie i dla wszystkich,
+- **Flexbox, Grid i pozycjonowanie** — jak układać klocki,
+- **media queries** — jak dopasować się do ekranu, użytkownika i papieru,
+- **zmienne** — jak to wszystko utrzymać w porządku.
+
+Myśl przewodnia się nie zmieniła: **HTML nadaje treści znaczenie, CSS — wygląd.** A Tailwind to tylko wygodniejszy sposób na pisanie tego samego CSS — i jeszcze do niego wrócimy.
+
+## Co dalej?
+
+Mamy już znaczenie i wygląd. Brakuje trzeciego klocka: **zachowania**. Strona, która reaguje na kliknięcie, sama sprawdza formularz albo — jak przełącznik motywu z części 8 — pamięta Twój wybór, to już robota **JavaScriptu**. To on będzie bohaterem kolejnej serii na tym blogu.
+
+Jeśli nie chcesz jej przegapić, zajrzyj na mój [LinkedIn](https://www.linkedin.com/in/pawel-zajaczkowski91/), [Instagram](https://www.instagram.com/zajac.na.froncie/) albo dodaj [kanał RSS](/rss.xml) do swojego czytnika.
+
+Dziękuję za wspólną drogę przez całą serię! Do zobaczenia!
