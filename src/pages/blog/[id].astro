@@ -35,19 +35,23 @@ const seriesParts = await getSeriesParts(post);
   title={`${post.data.title} — Zając na Froncie`}
   description={post.data.description}
 >
-  <article
-    class="prose prose-slate dark:prose-invert
+  <!-- relative: punkt odniesienia dla bocznego spisu treści (desktop) -->
+  <div class="relative">
+    <article
+      class="prose prose-slate dark:prose-invert
   prose-a:text-link prose-a:underline prose-a:underline-offset-2
   prose-a:hover:decoration-2"
-  >
-    <h1>{post.data.title}</h1>
-    <p class="text-sm text-slate-500 dark:text-slate-400">
-      {post.data.pubDate.toLocaleDateString("pl-PL")} ·{" "}
-      {remarkPluginFrontmatter.minutesRead} min czytania
-    </p>
-    <TableOfContents headings={headings} />
-    <Content />
-  </article>
+    >
+      <h1>{post.data.title}</h1>
+      <p class="text-sm text-slate-500 dark:text-slate-400">
+        {post.data.pubDate.toLocaleDateString("pl-PL")} ·{" "}
+        {remarkPluginFrontmatter.minutesRead} min czytania
+      </p>
+      <TableOfContents headings={headings} />
+      <Content />
+    </article>
+    <TableOfContents headings={headings} variant="sidebar" />
+  </div>
   <TagList tags={post.data.tags} />
   <CodeCopy />
   <SeriesParts parts={seriesParts} currentId={post.id} />
