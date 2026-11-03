@@ -1,0 +1,131 @@
+---
+title: 'JavaScript od podstaw (cz. 1): czym jest JavaScript'
+description: 'HTML to znaczenie, CSS to wygląd, a JavaScript to zachowanie. Gdzie JS się wykonuje, jak go podpiąć do strony, konsola w DevTools i dlaczego ten blog działa nawet bez niego.'
+pubDate: 2026-11-04
+tags: ['javascript', 'podstawy', 'devtools']
+series: 'js-od-podstaw'
+seriesPart: 1
+---
+
+import Hare from "../../components/Hare.astro";
+
+Seria [CSS od podstaw](/blog/css-od-podstaw-1-czym-jest-css) skończyła się obietnicą: mamy już znaczenie i wygląd, brakuje trzeciego klocka — **zachowania**. Dziś zaczynamy trzecią serię podstaw, a myśl przewodnia trylogii dostaje swoje ostatnie słowo:
+
+**HTML nadaje treści znaczenie, CSS — wygląd, a JavaScript — zachowanie.**
+
+JavaScript (w skrócie JS) to język programowania, który sprawia, że strona **reaguje**: na kliknięcie, na przewijanie, na to, co wpiszesz w formularz. HTML i CSS opisują, *czym* coś jest i *jak* wygląda. JS mówi, *co ma się stać*, kiedy coś się wydarzy.
+
+## Trzy warstwy jednej strony
+
+Weźmy przycisk przełączania motywu w prawym górnym rogu tego bloga. Wygląda jak jedna rzecz, a to trzy warstwy:
+
+- **HTML:** `<button type="button" aria-label="Przełącz motyw">` — prawdziwy przycisk, który da się kliknąć myszką i obsłużyć z klawiatury,
+- **CSS:** ikonka księżyca albo słońca i kolory całej strony w jasnym i ciemnym motywie,
+- **JS:** reakcja na kliknięcie — odwróć motyw i **zapamiętaj** wybór na następną wizytę.
+
+<Hare type="explain">
+Każda warstwa robi swoje i nie wchodzi drugiej w paradę. JS **może** zmieniać kolory (`element.style.color = "red"`), ale nie powinien. Dużo lepiej, gdy JS przełącza **klasę albo atrybut**, a o tym, jak to wygląda, decyduje CSS.
+
+Tak działa motyw na tym blogu: JS zmienia tylko jeden atrybut na `<html>` (`data-theme="dark"`), a całą resztę robią zmienne CSS z [części 9 serii CSS](/blog/css-od-podstaw-9-zmienne-css). Rozbierzemy to na części w tej serii.
+</Hare>
+
+## Gdzie JavaScript się wykonuje?
+
+Najczęściej — w **przeglądarce**. Każda przeglądarka ma wbudowany silnik, który czyta i uruchamia kod JS, a do tego daje mu dostęp do strony, okna, pamięci przeglądarki czy schowka.
+
+Ale ten sam język działa też **na serwerze** — w środowisku **Node.js**. Język jest ten sam, zmienia się „otoczenie”: w przeglądarce masz `document` i `window`, na serwerze masz pliki, sieć i zmienne środowiskowe, ale nie masz żadnej strony.
+
+Na tym blogu widać oba światy. Gdy Astro buduje bloga, JS na serwerze liczy na przykład czas czytania każdego wpisu (te „X min” przy tytule). A gdy już czytasz wpis, JS w przeglądarce dokłada przycisk „Kopiuj” do bloków kodu. W [Avia Weather](/blog/jak-powstal-metar-2-dane-i-funkcja-serwerowa) jest podobnie: funkcja na serwerze pobiera pogodę z API, a JS w przeglądarce ją wyświetla.
+
+## Jak podpiąć JavaScript do strony
+
+Podobnie jak z CSS-em, masz kilka sposobów. Wszystkie opierają się na elemencie `<script>`.
+
+**1. Kod bezpośrednio w `<script>`:**
+
+~~~html
+<script>
+  console.log("Cześć z JavaScriptu!");
+</script>
+~~~
+
+**2. Osobny plik przez atrybut `src`:**
+
+~~~html
+<script src="main.js" defer></script>
+~~~
+
+**3. Moduł:**
+
+~~~html
+<script type="module" src="main.js"></script>
+~~~
+
+Kluczowe pytanie brzmi: **kiedy** ten kod się uruchomi? Przeglądarka czyta HTML od góry do dołu. Zwykły `<script>` zatrzymuje to czytanie: pobiera kod, wykonuje go i dopiero potem idzie dalej. Atrybut `defer` mówi: „pobierz w tle, a uruchom dopiero wtedy, gdy cały HTML jest już wczytany”. Skrypty z `type="module"` zachowują się tak samo jak `defer` — bez dopisywania czegokolwiek.
+
+<Hare type="bug">
+Klasyczny błąd na start: skrypt szuka elementu, którego **jeszcze nie ma**.
+
+~~~html
+<script>
+  const btn = document.querySelector("#theme-toggle");
+  console.log(btn); // null 😱
+</script>
+
+<button id="theme-toggle">Przełącz motyw</button>
+~~~
+
+Skrypt wykonał się, zanim przeglądarka doczytała przycisk, więc dostał `null` — czyli „nic”. Próba zrobienia czegokolwiek z `null` kończy się czerwonym błędem w konsoli. Rozwiązania: przenieś skrypt na koniec `<body>`, dodaj `defer` albo użyj `type="module"`.
+
+Astro robi to za mnie. Każdy `<script>` w komponencie zamienia na moduł, więc skrypt przycisku „Kopiuj” spokojnie znajduje wszystkie bloki kodu we wpisie.
+</Hare>
+
+Jest jeden wyjątek, na który świadomie się zgodziłem. W `<head>` tego bloga siedzi malutki skrypt z dopiskiem `is:inline` — Astro zostawia go dokładnie tam, gdzie jest, i nie zamienia w moduł. Ten skrypt **musi** zadziałać, zanim przeglądarka cokolwiek pomaluje. Inaczej, gdy wybrałeś ciemny motyw, przy każdym wejściu na stronę mignęłaby Ci na ułamek sekundy jasna wersja. Pełne wyjaśnienie dostaniesz w części 9.
+
+## Konsola — Twój notatnik i kalkulator
+
+W serii CSS najlepszym przyjacielem był panel Styles w DevTools. W JS jest nim **konsola**. Otwórz DevTools (<kbd>⌘</kbd> <kbd>⌥</kbd> <kbd>J</kbd> na Macu, <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>J</kbd> na Windowsie — od razu na zakładce Console) i wpisz:
+
+~~~js
+console.log("Zając na Froncie");
+2 + 2;
+document.title;
+~~~
+
+`console.log` wypisuje wartość w konsoli. To najprostsze i wciąż najczęściej używane narzędzie do sprawdzania, „co tu się właściwie dzieje”. Konsola przyjmuje też gołe wyrażenia — `2 + 2` od razu odda `4`, a `document.title` pokaże tytuł strony, na której jesteś.
+
+<Hare type="tip">
+Używaj konsoli jak **kalkulatora i notatnika**. Nie wiesz, co zwróci jakieś polecenie? Nie zgaduj — wpisz je w konsolę i zobacz. Wszystko, co tam napiszesz, znika po odświeżeniu strony, więc nic nie popsujesz.
+
+A czerwony tekst to nie wróg. Komunikat błędu zwykle mówi trzy rzeczy: **co** się stało (np. `TypeError: Cannot read properties of null`), **w którym pliku** i **w której linijce**. Przeczytaj go całego, zanim zaczniesz szukać w Google.
+</Hare>
+
+## Strona, która działa bez JavaScriptu
+
+Astro ma zasadę, która bardzo mi się podoba: domyślnie wysyła do przeglądarki **zero JavaScriptu**. Cały blog to czysty HTML i CSS, a JS dokładam tylko tam, gdzie naprawdę coś robi. Policzmy:
+
+- przełącznik motywu (i jego pamięć),
+- przycisk „Kopiuj” przy blokach kodu,
+- przycisk „do góry” w prawym dolnym rogu,
+- komentarze Giscus pod wpisem.
+
+Tyle. Cała reszta działa bez jednej linijki JS. To podejście nazywa się **progressive enhancement**: najpierw strona, która działa dla wszystkich, a potem JS, który tylko **dokłada wygodę**.
+
+Sprawdź to sam. W DevTools wciśnij <kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>P</kbd> (<kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>P</kbd> na Windowsie), wpisz „Disable JavaScript” i odśwież stronę. Wpis da się przeczytać, linki działają, nawigacja też. Znikają tylko dodatki: nie ma przycisków „Kopiuj”, nie ma komentarzy, a strona zostaje w jasnym motywie.
+
+<Hare type="explain">
+Ciekawy przypadek to przycisk „do góry”. W HTML-u to zwykły link `<a href="#top">` — a `#top` jest specjalny: przeglądarka sama wie, że ma przewinąć na samą górę strony, nawet jeśli nie ma elementu o takim `id`. JS w ogóle nie zajmuje się przewijaniem. Jego jedyna robota to **pokazać** przycisk, gdy zjedziesz kawałek w dół, i schować go, gdy jesteś na górze. Bez JS przycisku po prostu nie widać — ale nic się nie psuje.
+</Hare>
+
+<Hare type="learn">
+Szczegóły w MDN: [czym jest JavaScript](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Scripting/What_is_JavaScript), [element `<script>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/script) i [console.log()](https://developer.mozilla.org/en-US/docs/Web/API/console/log_static). Konsolę dobrze opisuje też [dokumentacja Chrome DevTools](https://developer.chrome.com/docs/devtools/console).
+</Hare>
+
+## Co nam to daje?
+
+- **Podział ról:** HTML to znaczenie, CSS to wygląd, JS to zachowanie — i JS nie powinien robić roboty CSS-a.
+- **Świadomość kolejności:** skrypt widzi tylko to, co przeglądarka już wczytała, więc `defer` i `type="module"` oszczędzą Ci wielu `null`-i.
+- **Konsola jako poligon:** najszybszy sposób, żeby sprawdzić, co robi dany kawałek kodu.
+- **Strona dla wszystkich:** JS dokłada wygodę, ale strona ma działać i bez niego.
+
+W **części 2** zaczynamy od gramatyki języka: **zmienne i typy danych**. Dowiesz się, czym różni się `const` od `let` i dlaczego `"5" + 1` to w JavaScripcie `"51"`. Do zobaczenia!
