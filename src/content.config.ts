@@ -3,7 +3,14 @@ import { glob } from "astro/loaders";
 
 const blog = defineCollection({
   // skąd brać wpisy: wszystkie .md z folderu src/content/blog
-  loader: glob({ base: "./src/content/blog", pattern: "**/*.{md,mdx}" }),
+  loader: glob({
+    base: "./src/content/blog",
+    pattern: "**/*.{md,mdx}",
+    // id = sama nazwa pliku, bez folderu → css-od-podstaw/css-od-podstaw-1-….mdx
+    // dalej daje adres /blog/css-od-podstaw-1-…/ (podfolder służy tylko porządkowi)
+    generateId: ({ entry }) =>
+      entry.replace(/^.*\//, "").replace(/\.mdx?$/, ""),
+  }),
 
   // jaki kształt MA MIEĆ frontmatter każdego wpisu:
   schema: z.object({

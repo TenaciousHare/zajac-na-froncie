@@ -14,8 +14,12 @@ import { readdirSync, readFileSync } from "node:fs";
 const blogDir = new URL("./src/content/blog/", import.meta.url);
 const lastmodBySlug = new Map();
 
-for (const file of readdirSync(blogDir)) {
-  const slug = file.match(/^(.+)\.mdx?$/)?.[1];
+// recursive: wpisy serii leżą w podfolderach (np. css-od-podstaw/), a slug to sama nazwa pliku
+for (const file of readdirSync(blogDir, {
+  recursive: true,
+  encoding: "utf8",
+})) {
+  const slug = file.match(/(?:^|\/)([^/]+)\.mdx?$/)?.[1];
   if (!slug) continue;
 
   const text = readFileSync(new URL(file, blogDir), "utf8");
