@@ -53,6 +53,8 @@ src/
 │   └── hare/        # 13 badge'y Senior Hare'a
 ├── components/      # Nav, Hare, Comments, PostCard, TagList, SeriesNav, TOC…
 ├── content/blog/    # wpisy w .mdx
+│   ├── css-od-podstaw/  # każda seria ma swój folder (html-, js-od-podstaw/, jak-powstal-…/)
+│   └── *.mdx            # pojedyncze wpisy spoza serii
 ├── layouts/         # Layout.astro (szkielet strony)
 ├── lib/             # plugin remark: czas czytania
 ├── pages/           # routing: index, blog, blog/[id], tags, tags/[tag], projects, about, 404, rss.xml
@@ -64,7 +66,9 @@ netlify/functions/   # scheduled-rebuild: codzienny auto-build (07:00 czasu pols
 
 ## Jak dodać wpis
 
-1. Utwórz plik w `src/content/blog/`, np. `moj-wpis.mdx`.
+1. Utwórz plik `.mdx`:
+   - pojedynczy wpis → `src/content/blog/moj-wpis.mdx`,
+   - wpis z serii → do folderu serii, np. `src/content/blog/js-od-podstaw/js-od-podstaw-2-zmienne-i-typy.mdx` (nowa seria = nowy folder o nazwie z pola `series`).
 2. Dodaj frontmatter zgodny ze schematem:
 
 ```
@@ -80,13 +84,23 @@ updatedDate: 2026-10-11  # opcjonalnie — po istotnej edycji (trafia do sitemap
 ---
 ```
 
-3. Nazwa pliku = slug wpisu (adres URL).
+3. Nazwa pliku = slug wpisu (adres URL). **Folder nie wchodzi do adresu**: `js-od-podstaw/js-od-podstaw-2-zmienne-i-typy.mdx` → `/blog/js-od-podstaw-2-zmienne-i-typy/`. Dlatego:
+   - nazwa pliku musi być unikalna w całym `content/blog`,
+   - przeniesienie wpisu do innego folderu nie psuje linków ani komentarzy (Giscus mapuje po adresie).
+4. Import Hare'a zależy od głębokości pliku (patrz niżej).
 
 > 💡 **Ukrywanie i planowanie:** `draft: true` chowa wpis. Data w **przyszłości** (`pubDate`) też go ukrywa — aż nadejdzie jej dzień, a codzienny automatyczny build opublikuje go sam.
 
 ## Komponent `<Hare>`
 
-W treści MDX można wołać Senior Hare'a z jednym z 13 typów. Każdy ma własny badge i nagłówek:
+W treści MDX można wołać Senior Hare'a z jednym z 13 typów. Każdy ma własny badge i nagłówek. Import na początku wpisu (po frontmatterze):
+
+```
+import Hare from "../../../components/Hare.astro"; // wpis w folderze serii
+import Hare from "../../components/Hare.astro";    // wpis bezpośrednio w content/blog
+```
+
+Przykład:
 
 ```
 <Hare type="tip">
@@ -123,6 +137,7 @@ W treści MDX można wołać Senior Hare'a z jednym z 13 typów. Każdy ma włas
 - [x] SEO: lastmod w sitemapie
 - [x] Kotwice przy nagłówkach
 - [x] Spis treści (TOC) w wpisach
+- [x] Serie wpisów w osobnych folderach (bez zmiany adresów)
 - [x] Płynne przewijanie + przycisk powrotu na górę
 - [x] Przycisk „kopiuj" przy blokach kodu
 - [x] „Więcej z tej serii" / powiązane wpisy
