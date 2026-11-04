@@ -1,0 +1,156 @@
+---
+title: 'JavaScript od podstaw (cz. 2): zmienne i typy danych'
+description: 'const czy let? Teksty, liczby, prawda i fałsz, null i undefined. Template literals, pułapka 0.1 + 0.2 i dlaczego "5" + 1 daje "51" — na przykładach z kodu tego bloga i Avia Weather.'
+pubDate: 2026-11-05
+tags: ['javascript', 'podstawy']
+series: 'js-od-podstaw'
+seriesPart: 2
+---
+
+import Hare from "../../../components/Hare.astro";
+
+W [części 1](/blog/js-od-podstaw-1-czym-jest-javascript) uruchomiliśmy pierwszy kod w konsoli. Zanim jednak JavaScript zacznie reagować na kliknięcia, musi umieć coś **zapamiętać**: przycisk, który ma obsłużyć, wybrany motyw, liczbę minut czytania. Do tego służą **zmienne**, a to, *co* w nich trzymamy, to **typy danych**.
+
+## Zmienna, czyli pudełko z etykietą
+
+Zmienna to nazwa, pod którą zapisujesz wartość, żeby użyć jej później. W nowoczesnym JS tworzysz ją na dwa sposoby:
+
+~~~js
+const blogName = "Zając na Froncie";
+let visits = 0;
+
+visits = visits + 1; // ✅ let można zmienić
+blogName = "Inny blog"; // ❌ TypeError: Assignment to constant variable.
+~~~
+
+- **`const`** (od *constant*, stała) — wartość przypisujesz raz i koniec,
+- **`let`** — wartość możesz później podmienić.
+
+Jest jeszcze trzecie słowo, **`var`**. Zobaczysz je w starszych tutorialach i na Stack Overflow, ale w nowym kodzie go nie używaj. `var` ma kilka dziwnych zachowań (np. „przecieka” poza blok `{ }`, w którym go stworzyłeś), a `let` i `const` powstały właśnie po to, żeby je naprawić.
+
+<Hare type="decision">
+Moja zasada: **domyślnie `const`**. Po `let` sięgam dopiero wtedy, gdy wiem, że wartość będzie się zmieniać.
+
+Dobrze to widać w skrypcie przycisku „do góry” na tym blogu:
+
+~~~js
+const btn = document.getElementById("back-to-top");
+let ticking = false;
+~~~
+
+`btn` to zawsze ten sam przycisk, więc `const`. A `ticking` to flaga, która co chwilę przeskakuje między `true` a `false` podczas przewijania — więc `let`. Kiedy czytasz cudzy kod, `const` mówi Ci od razu: „spokojnie, to się nie zmieni”. Jedna rzecz mniej do pilnowania.
+</Hare>
+
+Nazwy zmiennych w JS piszemy zwykle w **camelCase**: pierwsze słowo małą literą, każde kolejne wielką (`blogName`, `minutesRead`). Nazwa ma mówić, co jest w środku. `x` i `data2` za tydzień nie powiedzą Ci nic.
+
+## Typy danych
+
+Każda wartość w JS ma swój **typ**. Na start wystarczy Ci pięć:
+
+~~~js
+const title = "CSS od podstaw"; // string — tekst
+const seriesPart = 9; // number — liczba
+const isDraft = false; // boolean — prawda albo fałsz
+const comments = null; // null — celowo „nic”
+let theme; // undefined — jeszcze nic nie przypisano
+~~~
+
+- **`string`** — tekst w cudzysłowach. Pojedyncze `'…'` i podwójne `"…"` działają tak samo,
+- **`number`** — każda liczba, całkowita i z przecinkiem (który w kodzie jest kropką: `3.6`),
+- **`boolean`** — tylko `true` albo `false`. Na nich opiera się każda decyzja w kodzie (o tym w części 3),
+- **`null`** — „tu świadomie nic nie ma”. Np. `document.getElementById` zwraca `null`, gdy nie znajdzie elementu,
+- **`undefined`** — „tu jeszcze nic nie wpisano”. Zmienna istnieje, ale nie dostała wartości.
+
+Są jeszcze `bigint` (bardzo duże liczby całkowite) i `symbol` (unikalne identyfikatory), ale na początku nauki prawie się na nie nie natkniesz.
+
+Typ każdej wartości sprawdzisz operatorem **`typeof`** — wpisz w konsolę:
+
+~~~js
+typeof "Zając"; // "string"
+typeof 42; // "number"
+typeof true; // "boolean"
+typeof undefined; // "undefined"
+typeof null; // "object" 🤔
+~~~
+
+Ostatnia linijka to nie literówka. `typeof null` zwraca `"object"` — to błąd z pierwszej wersji JS z 1995 roku, którego nie da się już naprawić, bo popsułoby to pół internetu. Zapamiętaj go jako ciekawostkę.
+
+## Template literals, czyli tekst ze zmiennymi
+
+Teksty możesz sklejać plusem, ale szybko robi się nieczytelnie. Zamiast tego użyj **template literals** — tekstu w odwrotnych apostrofach `` ` ``, do którego wstawiasz zmienne przez `${…}`:
+
+~~~js
+const station = "EPWA";
+
+// sklejanie plusem
+const url1 = "https://avwx.rest/api/metar/" + station;
+
+// template literal
+const url2 = `https://avwx.rest/api/metar/${station}`;
+~~~
+
+Ta druga linijka pochodzi prosto z [funkcji serwerowej Avia Weather](/blog/jak-powstal-metar-2-dane-i-funkcja-serwerowa). Kod lotniska wstawiam do adresu API i gotowe — zmieniasz `"EPWA"` na `"EPKT"` i dostajesz pogodę z Katowic zamiast z Warszawy. Wewnątrz `${…}` możesz też liczyć: `` `${minutes} min czytania` `` albo `` `cz. ${seriesPart + 1}` ``.
+
+## Liczby w praktyce
+
+Przy każdym wpisie na tym blogu widzisz „X min” czytania. Liczy to mała wtyczka w czasie budowania strony, a sedno jest w jednej linijce:
+
+~~~js
+const minutesRead = Math.max(1, Math.round(readingTime.minutes));
+~~~
+
+Czytamy od środka:
+
+- **`Math.round`** zaokrągla do najbliższej liczby całkowitej (`3.4` → `3`, `3.6` → `4`),
+- **`Math.max`** wybiera większą z podanych liczb.
+
+Po co `Math.max(1, …)`? Bo bardzo krótki wpis mógłby wyjść jako `Math.round(0.4)`, czyli `0`. A „0 min czytania” wygląda dziwnie. `Math.max(1, 0)` daje `1` — minimum jedna minuta.
+
+<Hare type="bug">
+Wpisz w konsolę `0.1 + 0.2`. Wynik? `0.30000000000000004`.
+
+To nie jest błąd JavaScriptu, tylko tego, jak komputery zapisują ułamki w systemie dwójkowym — tak samo zachowują się Python czy Java. W praktyce: **nie porównuj ułamków wprost** (`0.1 + 0.2 === 0.3` daje `false`) i zaokrąglaj wyniki, zanim pokażesz je użytkownikowi. Przy pieniądzach liczy się zwykle w groszach, czyli w liczbach całkowitych.
+</Hare>
+
+## Konwersje typów, czyli gdzie JS „pomaga”
+
+JavaScript jest bardzo wyrozumiały — trochę jak CSS z gubionymi średnikami. Gdy każesz mu połączyć dwa różne typy, nie zgłosi błędu, tylko sam spróbuje coś wymyślić:
+
+~~~js
+"5" + 1; // "51"  — plus z tekstem to sklejanie
+"5" - 1; // 4     — minus działa tylko na liczbach, więc zamienia "5" na 5
+"5" * "2"; // 10
+~~~
+
+<Hare type="bug">
+`"5" + 1 = "51"` to jeden z najczęstszych bugów na start. Zwykle wychodzi przy formularzach: wszystko, co ktoś wpisze w `<input>`, przychodzi do JS jako **tekst**, nawet jeśli to pole `type="number"`. Dodajesz „1” do wieku 30 i dostajesz 301.
+
+Rozwiązanie: zamień typ **świadomie**, zanim zaczniesz liczyć:
+
+~~~js
+Number("5") + 1; // 6
+String(42); // "42"
+Number("abc"); // NaN — „Not a Number”, czyli „to nie jest liczba”
+~~~
+</Hare>
+
+Ale czasem zamiana na liczbę to zły pomysł. W depeszy METAR `EPKT 071200Z …` grupa `071200Z` oznacza: 7. dzień miesiąca, godzina 12:00 UTC. Wygląda jak liczba, ale nią nie jest:
+
+~~~js
+Number("071200"); // 71200 — zero z przodu zniknęło
+~~~
+
+Liczba nie ma „zera z przodu”, więc dzień `07` zamienia się w kawałek liczby `71200` i już nie wiadomo, gdzie kończy się dzień, a zaczyna godzina. Dlatego takie kody trzymam jako **tekst** i wycinam z nich kawałki: `"071200Z".slice(0, 2)` daje `"07"`. Ta sama zasada dotyczy kodów pocztowych, numerów telefonów czy numerów lotów — jeśli czegoś nie dodajesz ani nie mnożysz, to raczej nie jest liczba.
+
+<Hare type="learn">
+Szczegóły w MDN: [zmienne](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Scripting/Variables), [typy i struktury danych](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Data_structures), [template literals](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals) i [obiekt Math](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math).
+</Hare>
+
+## Co nam to daje?
+
+- **`const` domyślnie, `let` gdy trzeba:** kod mówi od razu, co się zmienia, a co nie.
+- **Znajomość typów:** wiesz, czym różni się `null` od `undefined` i co sprawdzić `typeof`.
+- **Czytelne teksty:** template literals zamiast łańcucha plusów.
+- **Mniej niespodzianek:** zamieniasz typy świadomie, zamiast liczyć na to, że JS zgadnie.
+
+W **części 3** kod zacznie **podejmować decyzje**: `if`, `else`, porównania i operator `??`. Zobaczysz, jak przełącznik motywu wybiera w jednej linijce między jasnym a ciemnym — i dlaczego `0 || 10` to nie to samo co `0 ?? 10`. Do zobaczenia!
