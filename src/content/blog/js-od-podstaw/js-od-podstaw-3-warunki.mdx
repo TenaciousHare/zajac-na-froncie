@@ -1,0 +1,193 @@
+---
+title: 'JavaScript od podstaw (cz. 3): warunki, czyli kod, który podejmuje decyzje'
+description: 'if, else i porównania. Dlaczego === zamiast ==, co JS uznaje za fałsz, operator trójargumentowy oraz ?? i ?. — na przykładzie przełącznika motywu, przycisku „do góry” i reguł lotów VFR/IFR.'
+pubDate: 2026-11-06
+tags: ['javascript', 'podstawy']
+series: 'js-od-podstaw'
+seriesPart: 3
+---
+
+import Hare from "../../../components/Hare.astro";
+
+W [części 2](/blog/js-od-podstaw-2-zmienne-i-typy) nauczyliśmy się zapamiętywać wartości w zmiennych. Sama pamięć to jednak za mało — kod musi umieć **wybrać**, co zrobić dalej. Jasny czy ciemny motyw? Pokazać przycisk „do góry” czy jeszcze nie? Warunki na lotnisku są dobre czy utrudniające lądowanie? Dziś: **warunki**.
+
+## if, else if, else
+
+Podstawowa konstrukcja wygląda tak:
+
+~~~js
+if (warunek) {
+  // wykona się, gdy warunek jest prawdziwy
+} else {
+  // wykona się w przeciwnym razie
+}
+~~~
+
+W nawiasie stoi wyrażenie, którego wynikiem jest `true` albo `false` — czyli `boolean` z poprzedniej części. Najczęściej powstaje z **porównania**:
+
+| Operator | Znaczenie | Przykład | Wynik |
+| --- | --- | --- | --- |
+| `===` | równe | `"dark" === "dark"` | `true` |
+| `!==` | różne | `"dark" !== "light"` | `true` |
+| `>` / `<` | większe / mniejsze | `450 > 400` | `true` |
+| `>=` / `<=` | większe lub równe / mniejsze lub równe | `400 >= 400` | `true` |
+
+Na tym blogu porównanie decyduje o tym, kiedy w prawym dolnym rogu pojawia się przycisk „do góry”:
+
+~~~js
+const visible = window.scrollY > 400;
+~~~
+
+`window.scrollY` to liczba pikseli, o które przewinąłeś stronę. Gdy jest większa niż 400, `visible` dostaje `true` i przycisk się pokazuje. Zwróć uwagę, że nie ma tu żadnego `if` — wynik porównania to zwykła wartość, którą można zapisać w zmiennej.
+
+## === zamiast ==
+
+W JS są dwa rodzaje porównania: `===` (ścisłe) i `==` (luźne). Luźne przed porównaniem **zamienia typy** — dokładnie tak „pomocnie”, jak `"5" - 1` z części 2:
+
+~~~js
+5 == "5"; // true  — tekst zamieniony na liczbę
+0 == ""; // true  — oba „zamieniają się” na 0
+null == undefined; // true
+
+5 === "5"; // false — inny typ, koniec dyskusji
+0 === ""; // false
+~~~
+
+<Hare type="tip">
+Zawsze **`===`** i **`!==`**. Ścisłe porównanie sprawdza i wartość, i typ, więc nie ma niespodzianek. Jeśli porównujesz tekst z formularza z liczbą, najpierw świadomie zamień typ (`Number(...)`), a dopiero potem porównuj.
+</Hare>
+
+## Kilka warunków naraz: &&, ||, !
+
+- **`&&`** (i) — prawda, gdy **oba** warunki są prawdziwe,
+- **`||`** (lub) — prawda, gdy **przynajmniej jeden** jest prawdziwy,
+- **`!`** (nie) — odwraca wartość: `!true` to `false`.
+
+I tu dochodzimy do przykładu z mojego drugiego świata. W lotnictwie pogodę na lotnisku dzieli się na kategorie według dwóch wartości: **podstawy chmur** i **widzialności**. Wystarczy, że jedna z nich jest słaba, i kategoria spada. Uproszczona wersja (według amerykańskich progów, w stopach i milach lądowych) to łańcuch `else if`:
+
+~~~js
+const ceiling = 2000; // podstawa chmur w stopach (BKN020 → 2000 ft)
+const visibility = 6; // widzialność w milach lądowych
+let flightRules;
+
+if (ceiling < 500 || visibility < 1) {
+  flightRules = "LIFR"; // bardzo trudne warunki
+} else if (ceiling < 1000 || visibility < 3) {
+  flightRules = "IFR"; // trudne warunki
+} else if (ceiling <= 3000 || visibility <= 5) {
+  flightRules = "MVFR"; // umiarkowane warunki
+} else {
+  flightRules = "VFR"; // dobre warunki
+}
+
+console.log(flightRules); // "MVFR"
+~~~
+
+JS sprawdza warunki **od góry** i zatrzymuje się na pierwszym prawdziwym. Dlatego kolejność ma znaczenie: zaczynam od najgorszej kategorii. Gdybym zaczął od `VFR`, musiałbym pisać dłuższe warunki, np. `ceiling > 3000 && visibility > 5`. A tak każdy kolejny `else if` wie, że poprzednie już odpadły.
+
+## Truthy i falsy
+
+W nawiasie `if` nie musi stać `true` ani `false`. Możesz tam wstawić **dowolną** wartość, a JS sam zdecyduje, czy uznać ją za prawdę. Wartości uznawane za fałsz (**falsy**):
+
+~~~js
+false;
+0;
+""; // pusty tekst
+null;
+undefined;
+NaN;
+~~~
+
+Wszystko inne jest **truthy** — także `"0"`, `"false"`, pusta tablica `[]` i pusty obiekt `{}`. Dzięki temu w skrypcie przycisku „do góry” wystarczy napisać:
+
+~~~js
+const btn = document.getElementById("back-to-top");
+if (btn) {
+  // ...cała obsługa przycisku
+}
+~~~
+
+Jeśli przycisku na stronie nie ma, `getElementById` zwraca `null`, czyli falsy, i cały blok się nie wykona. Zero błędów w konsoli.
+
+## Operator trójargumentowy
+
+Gdy wybierasz między **dwiema wartościami**, `if/else` bywa przydługi. I tutaj wkracza operator trójargumentowy: `warunek ? wartośćGdyTak : wartośćGdyNie`. Tak wygląda serce przełącznika motywu na tym blogu:
+
+~~~js
+const current = document.documentElement.getAttribute("data-theme");
+const next = current === "dark" ? "light" : "dark";
+~~~
+
+„Jeśli teraz jest ciemny, to następny jest jasny. W przeciwnym razie — ciemny”. Jedna linijka i od razu `const`, bo wynik przypisujesz tylko raz. Z `if/else` musiałbyś zrobić `let next` i przypisywać go w dwóch miejscach.
+
+<Hare type="simple">
+Operator trójargumentowy jest świetny do **prostych** wyborów typu „to albo tamto”. Ale nie zagnieżdżaj go: `a ? b : c ? d : e ? f : g` da się napisać, tylko nikt potem tego nie zrozumie, łącznie z Tobą za jakiś czas, gdy wrócisz do kodu. Przy trzech i więcej możliwościach wróć do `if / else if` — jak przy kategoriach lotów.
+</Hare>
+
+## ?? i ?. — bezpieczne skróty
+
+Na koniec dwa nowsze operatory, które spotkasz w każdym współczesnym projekcie.
+
+**`??` (nullish coalescing)** — „weź wartość z lewej, a jeśli to `null` albo `undefined`, weź tę z prawej”. Skrypt w `<head>` tego bloga używa go, żeby ustalić motyw, zanim strona się wyświetli:
+
+~~~js
+const saved = localStorage.getItem("theme");
+const theme =
+  saved ??
+  (window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light");
+~~~
+
+Po ludzku: „weź motyw, który zapisałeś ostatnio. A jeśli nic nie zapisałeś (`getItem` zwraca wtedy `null`), zapytaj system, czy wolisz ciemny”. Ten sam wzorzec ratuje dekoder chmur w Avia Weather — `CLOUD_COVER[code] ?? code` pokazuje surowy kod, gdy słownik go nie zna, zamiast pustego miejsca.
+
+**`?.` (optional chaining)** — „idź dalej tylko wtedy, gdy jest dokąd”. W skrypcie przełącznika motywu:
+
+~~~js
+const btn = document.getElementById("theme-toggle");
+btn?.addEventListener("click", () => {
+  // ...
+});
+~~~
+
+Jeśli `btn` to `null`, całe wyrażenie po cichu się kończy, zamiast rzucić błędem. To ten sam efekt co `if (btn) { ... }` w przycisku „do góry”, tylko krócej. Na blogu masz więc dwa sposoby na „nie wysyp się, gdy elementu nie ma” — `if` lepiej się czyta przy dłuższym bloku kodu, `?.` przy jednej linijce.
+
+<Hare type="bug">
+Dlaczego `??`, a nie stare dobre `||`? Bo `||` reaguje na **każdą** wartość falsy, a `??` tylko na `null` i `undefined`:
+
+~~~js
+const savedVolume = 0; // użytkownik celowo wyciszył dźwięk
+
+savedVolume || 10; // wynik: 10, bo 0 jest falsy, więc wyciszenie przepadło 😱
+savedVolume ?? 10; // wynik: 0,  bo 0 to prawdziwa wartość, wyciszenie zostaje
+~~~
+
+Gdy `0`, `""` albo `false` to poprawne wartości, `||` po cichu je nadpisze. `??` zastępuje tylko to, czego naprawdę **nie ma**.
+</Hare>
+
+## Strażnik na wejściu
+
+Ostatni przykład pochodzi z komentarzy pod wpisami. Giscus działa w ramce `iframe` i wysyła mojej stronie wiadomości. Ale wiadomość może przyjść z dowolnego miejsca, więc skrypt najpierw sprawdza nadawcę:
+
+~~~js
+addEventListener("message", (event) => {
+  if (event.origin !== "https://giscus.app") return;
+  if (typeof event.data?.giscus === "undefined") return;
+  applyGiscusTheme();
+});
+~~~
+
+`return` kończy funkcję w tym miejscu. To tak zwany **wczesny return**, czyli strażnik: zamiast zagnieżdżać `if` w `if`, odsyłam od razu wszystko, co mnie nie interesuje — obcego nadawcę i wiadomości, które nie dotyczą Giscusa. Dopiero gdy przejdziesz obu strażników, kod robi swoje. Wrócimy do tego w części o funkcjach, a do sprawdzania nadawcy — w części o zdarzeniach.
+
+<Hare type="learn">
+Szczegóły w MDN: [instrukcja if...else](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/if...else), [ścisła równość ===](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Strict_equality), [truthy](https://developer.mozilla.org/en-US/docs/Glossary/Truthy) i [falsy](https://developer.mozilla.org/en-US/docs/Glossary/Falsy), [operator ??](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Nullish_coalescing) oraz [operator ?.](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Optional_chaining).
+</Hare>
+
+## Co nam to daje?
+
+- **Przewidywalne porównania:** `===` sprawdza wartość i typ, bez zgadywania.
+- **Czytelne decyzje:** `if / else if` dla wielu przypadków, operator trójargumentowy dla „to albo tamto”.
+- **Odporny kod:** `?.`, `??` i `if (element)` sprawiają, że brakujący element czy pusta wartość nie wysypują strony.
+- **Mniej zagnieżdżeń:** wczesny `return` odsyła na wejściu to, czego nie chcesz obsługiwać.
+
+W **części 4** zamkniemy ten kod w **funkcjach**, czyli małych maszynkach, które dostają coś na wejściu i oddają wynik. Rozbierzemy dekoder chmur z Avia Weather i zobaczysz, dlaczego komentarze na tym blogu mają osobno funkcję, która **liczy**, i funkcję, która **robi**. Do zobaczenia!
