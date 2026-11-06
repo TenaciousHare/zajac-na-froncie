@@ -1,0 +1,254 @@
+---
+title: 'JavaScript od podstaw (cz. 6): obiekty, czyli dane z etykietami'
+description: 'Klucz i wartość, kropka i nawiasy kwadratowe, tablice obiektów, destrukturyzacja i spread. Map jako licznik tagów, JSON jako tekst, który wygląda jak obiekt — i dlaczego const nie chroni obiektu przed zmianą.'
+pubDate: 2026-11-09
+tags: ['javascript', 'podstawy', 'obiekty', 'json']
+series: 'js-od-podstaw'
+seriesPart: 6
+---
+
+import Hare from "../../../components/Hare.astro";
+
+W [części 5](/blog/js-od-podstaw-5-tablice-i-petle) układaliśmy listę wpisów: `filter`, `sort`, `findIndex`. Ale czym właściwie jest pojedynczy wpis na tej liście? Nie liczbą i nie tekstem, tylko paczką danych: tytuł, opis, data, tagi, seria. Każda z tych wartości ma swoją **etykietę**. I to jest właśnie **obiekt**.
+
+## Klucz i wartość
+
+Obiekt zapisujesz w klamrach. W środku są pary **klucz: wartość**, oddzielone przecinkami. Frontmatter tego wpisu, zamieniony na obiekt JavaScriptu, wygląda mniej więcej tak:
+
+~~~js
+const post = {
+  title: "JavaScript od podstaw (cz. 6): obiekty, czyli dane z etykietami",
+  pubDate: new Date("2026-11-09"),
+  tags: ["javascript", "podstawy", "obiekty", "json"],
+  series: "js-od-podstaw",
+  seriesPart: 6,
+};
+~~~
+
+Wartością może być wszystko, co już znasz: tekst, liczba, data, tablica — a nawet inny obiekt albo funkcja. Do wartości sięgasz **przez kropkę**:
+
+~~~js
+post.title; // "JavaScript od podstaw (cz. 6): …"
+post.seriesPart; // 6
+post.tags[0]; // "javascript"
+post.author; // undefined — nie ma takiego klucza
+~~~
+
+Zauważ, że w części 5 pisaliśmy już `post.data.tags` i `post.data.pubDate`. To była właśnie kropka: obiekt `post`, w nim obiekt `data`, a w nim tablica `tags`.
+
+Wartości możesz też zmieniać i dopisywać:
+
+~~~js
+post.seriesPart = 7; // zmiana istniejącej wartości
+post.draft = true; // nowy klucz
+~~~
+
+## Kropka czy nawiasy?
+
+Jest drugi sposób na sięgnięcie do wartości: **nawiasy kwadratowe** z nazwą klucza jako tekstem. `post["title"]` to dokładnie to samo co `post.title`. Po co więc dwa zapisy?
+
+Wróćmy do dekodera chmur z części 4:
+
+~~~js
+const CLOUD_COVER = {
+  FEW: "zachmurzenie małe",
+  SCT: "zachmurzenie umiarkowane",
+  BKN: "zachmurzenie duże",
+  OVC: "zachmurzenie całkowite",
+};
+
+function describeCloudCover(code) {
+  return CLOUD_COVER[code.toUpperCase()] ?? code;
+}
+~~~
+
+Tutaj nie wiemy z góry, o który klucz zapyta użytkownik — raz będzie to `"BKN"`, raz `"OVC"`. Nazwa klucza siedzi w **zmiennej** `code`, więc potrzebujemy nawiasów.
+
+<Hare type="explain">
+**Kropka**, gdy znasz nazwę klucza, pisząc kod: `post.title`. **Nawiasy**, gdy nazwa klucza jest w zmiennej albo powstaje dopiero w trakcie działania: `CLOUD_COVER[code]`.
+
+Pułapka: `CLOUD_COVER.code` **nie** szuka klucza zapisanego w zmiennej `code`. Szuka klucza o nazwie dosłownie „code” — a takiego nie ma, więc dostajesz `undefined`.
+</Hare>
+
+<Hare type="decision">
+Dlaczego słownik, a nie długi `switch` albo łańcuch `if` z części 3? Porównaj:
+
+~~~js
+switch (code) {
+  case "FEW":
+    return "zachmurzenie małe";
+  case "SCT":
+    return "zachmurzenie umiarkowane";
+  // …i tak dalej dla każdego kodu
+  default:
+    return code;
+}
+~~~
+
+Słownik to **dane**, a `switch` to **logika**. Nowy kod w słowniku to jedna linijka bez dotykania funkcji. A sama funkcja ma jedną linijkę, którą testuje się trzema prostymi testami. Tym samym wzorcem zrobiłem w Avia Weather wszystkie dekodery: reguły lotów, typy prognoz w TAF-ie, kierunek wiatru.
+</Hare>
+
+## Tablica obiektów
+
+Najczęstszy kształt danych, jaki spotkasz, to **tablica obiektów**. Lista wpisów na blogu jest właśnie taka. Podobnie strona Projekty — w jej kodzie siedzi tablica (tu w skróconej wersji), w której każdy projekt to obiekt z tymi samymi kluczami:
+
+~~~js
+const projects = [
+  {
+    name: "Avia Weather",
+    tech: ["React", "TypeScript", "Vite", "TanStack Query"],
+    live: "https://avia-weather.netlify.app",
+  },
+  {
+    name: "Destinations",
+    tech: ["React", "TypeScript", "Vite", "Firebase"],
+    live: "https://destinations-test.netlify.app",
+  },
+];
+
+projects.map((project) => project.name); // ["Avia Weather", "Destinations"]
+projects[1].tech.length; // 4
+~~~
+
+Tu spotykają się obie części: tablicę przeglądasz metodami z części 5, a do środka każdego elementu sięgasz kropką. Dodanie nowego projektu na stronie to dopisanie jednego obiektu do tablicy — wygląd karty zostaje ten sam.
+
+## Destrukturyzacja i skrócony zapis
+
+Kiedy z obiektu potrzebujesz kilku wartości naraz, możesz je **wyjąć do zmiennych** jedną linijką. Tak zaczyna się funkcja, która zbiera części serii pod wpisem:
+
+~~~js
+const { series, seriesPart } = current.data;
+// to samo co:
+// const series = current.data.series;
+// const seriesPart = current.data.seriesPart;
+~~~
+
+To jest **destrukturyzacja**: klamry po lewej stronie znaku `=` mówią „z tego obiektu wyjmij klucze o takich nazwach i zrób z nich zmienne”.
+
+Działa to też w drugą stronę. Jeśli masz zmienne `tag` i `count` i chcesz z nich zrobić obiekt z kluczami o tych samych nazwach, nie musisz pisać `{ tag: tag, count: count }`. Wystarczy **skrócony zapis**:
+
+~~~js
+const tag = "javascript";
+const count = 6;
+
+const entry = { tag, count }; // { tag: "javascript", count: 6 }
+~~~
+
+## Spread, czyli kopia z dodatkami
+
+Trzy kropki **`...`** (*spread*) „rozsypują” zawartość tablicy albo obiektu w nowe miejsce. Najczęściej używa się ich do zrobienia kopii z drobną zmianą:
+
+~~~js
+const tags = ["javascript", "podstawy"];
+const moreTags = [...tags, "json"]; // ["javascript", "podstawy", "json"]
+
+const updated = { ...post, updatedDate: new Date("2026-11-10") }; // kopia wpisu z jednym kluczem więcej
+~~~
+
+Oryginały zostają nietknięte. Za chwilę zobaczysz, dlaczego to takie ważne.
+
+A gdy chcesz przejść po wszystkich parach klucz–wartość w obiekcie, użyj `Object.entries`. Zamienia obiekt w tablicę par, a na tablicy działa już wszystko z części 5:
+
+~~~js
+Object.entries(CLOUD_COVER);
+// [["FEW", "zachmurzenie małe"], ["SCT", "zachmurzenie umiarkowane"], …]
+~~~
+
+## Map, czyli licznik tagów
+
+Na stronie Tagi przy każdym tagu widzisz liczbę wpisów. Liczy je ta funkcja:
+
+~~~js
+async function getAllTags() {
+  const posts = await getPublishedPosts();
+  const counts = new Map();
+  for (const post of posts) {
+    for (const tag of post.data.tags) {
+      counts.set(tag, (counts.get(tag) ?? 0) + 1);
+    }
+  }
+  return [...counts.entries()]
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => a.tag.localeCompare(b.tag, "pl"));
+}
+~~~
+
+Wygląda groźnie, ale w większości to rzeczy, które już znasz. Pętla w pętli z części 5 przechodzi po wszystkich tagach wszystkich wpisów. **`Map`** to obiekt stworzony do takich zadań: `get(tag)` odczytuje licznik, `set(tag, …)` zapisuje nowy. Gdy tag pojawia się pierwszy raz, `get` oddaje `undefined`, więc `?? 0` z części 3 zamienia go na zero.
+
+Potem `[...counts.entries()]` (spread!) robi z `Map` tablicę par `[tag, liczba]`. `map` zamienia każdą parę w obiekt `{ tag, count }` — z destrukturyzacją tablicy w parametrze i skróconym zapisem w wyniku. Na końcu `sort` z `localeCompare(…, "pl")` układa tagi alfabetycznie po polsku, więc „łódź” stanęłaby po „lotnictwie”, a nie na samym końcu listy.
+
+Kiedy `Map` zamiast zwykłego obiektu? Gdy klucze powstają w trakcie działania, a Ty chcesz je liczyć, dodawać i usuwać — jak tutaj. Słownik zapisany na sztywno w kodzie, jak `CLOUD_COVER`, spokojnie zostaje zwykłym obiektem.
+
+<Hare type="bug">
+Zwróć uwagę na nawias w `({ tag, count })`. Bez niego funkcja strzałkowa uzna klamry za **swoje ciało**, a nie za obiekt — i zwróci `undefined`:
+
+~~~js
+const a = (tag) => { tag }; // undefined — klamry to ciało funkcji
+const b = (tag) => ({ tag }); // { tag: … } — nawias mówi „to wyrażenie”
+~~~
+</Hare>
+
+## JSON, czyli obiekt w podróży
+
+Obiekt żyje w pamięci programu. Kiedy trzeba go gdzieś **wysłać** albo **zapisać**, zamienia się go w tekst. Najpopularniejszy format takiego tekstu to **JSON** (*JavaScript Object Notation*). Wygląda prawie jak obiekt, ale klucze muszą być w cudzysłowach, a funkcji ani `undefined` w nim nie zapiszesz:
+
+~~~json
+{
+  "station": "EPKT",
+  "flight_rules": "MVFR",
+  "visibility": 6
+}
+~~~
+
+Do zamiany służą dwie funkcje:
+
+~~~js
+const text = JSON.stringify({ station: "EPKT", visibility: 6 });
+// '{"station":"EPKT","visibility":6}' — tekst
+
+const data = JSON.parse(text);
+data.station; // "EPKT" — znowu obiekt
+~~~
+
+JSON jest wszędzie. Funkcja serwerowa w Avia Weather odsyła przeglądarce dane pogodowe właśnie jako JSON — stąd nagłówek `"Content-Type": "application/json"` w jej kodzie z [części 2 „Jak powstał Avia Weather”](/blog/jak-powstal-metar-2-dane-i-funkcja-serwerowa). A pamięć przeglądarki, w której blog trzyma wybrany motyw, przyjmuje tylko tekst — więc żeby zapisać tam obiekt, też trzeba go najpierw zamienić na JSON. Do obu tematów wrócimy w częściach 9 i 10.
+
+## const nie zamraża obiektu
+
+Na koniec rzecz, która zaskakuje prawie każdego. Skoro `post` jest w `const`, to dlaczego mogliśmy wyżej zmienić `post.seriesPart`?
+
+<Hare type="bug">
+`const` pilnuje tylko, żeby pod nazwą `post` nie wylądował **inny obiekt**. Zawartości obiektu nie pilnuje wcale:
+
+~~~js
+const project = { name: "Avia Weather" };
+
+project.name = "Avia Weather 2.0"; // działa — zmieniasz zawartość
+project = { name: "Inny" }; // TypeError — podmieniasz cały obiekt
+~~~
+
+A druga strona tej samej sprawy: zmienna nie trzyma obiektu, tylko **odnośnik** do niego. Przypisanie do innej zmiennej nie robi kopii:
+
+~~~js
+const original = { name: "Avia Weather" };
+const copy = original; // to NIE jest kopia, to drugi odnośnik do tego samego obiektu
+copy.name = "Avia Weather 2.0";
+
+original.name; // "Avia Weather 2.0" — oryginał też się zmienił
+~~~
+
+Chcesz prawdziwej kopii? Użyj spreadu: `const copy = { ...original }`.
+</Hare>
+
+<Hare type="learn">
+Szczegóły w MDN: [obiekty — podstawy](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Scripting/Object_basics), [destrukturyzacja](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Destructuring), [składnia spread](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Spread_syntax), [Map](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map) i [praca z JSON](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Scripting/JSON).
+</Hare>
+
+## Co nam to daje?
+
+- **Dane z etykietami:** zamiast pamiętać, co jest pod indeksem 3, piszesz `post.seriesPart`.
+- **Słowniki zamiast `switch`:** nowy kod to nowa linijka danych, a funkcja zostaje bez zmian.
+- **Krótszy kod:** destrukturyzacja, skrócony zapis i spread usuwają powtórzenia.
+- **Wspólny język z serwerem:** JSON zamienia obiekt w tekst i z powrotem.
+- **Mniej niespodzianek:** wiesz, że `const` nie zamraża obiektu, a kopię robisz spreadem.
+
+Za nami sześć części samego języka. Mamy zmienne, warunki, funkcje, tablice i obiekty — wszystko, czego JavaScript potrzebuje, żeby w końcu **dotknąć strony**. W **części 7** zajrzymy do **DOM-u**: jak JS widzi Twój HTML, jak znaleźć w nim element i jak go zmienić. Rozbierzemy w całości skrypt przycisku „Kopiuj” i zobaczysz, dlaczego przełącznik motywu zmienia tylko jeden atrybut. Do zobaczenia!
