@@ -1,0 +1,266 @@
+---
+title: 'JavaScript od podstaw (cz. 5): tablice i pętle'
+description: 'Indeksy od zera, push i includes, pętle for i for...of, a potem map, filter, sort i findIndex. Tak powstaje lista wpisów na stronie głównej i nawigacja po serii — i dlaczego [10, 9, 1].sort() daje [1, 10, 9].'
+pubDate: 2026-11-08
+tags: ['javascript', 'podstawy', 'tablice', 'pętle']
+series: 'js-od-podstaw'
+seriesPart: 5
+---
+
+import Hare from "../../../components/Hare.astro";
+
+Do tej pory każda zmienna trzymała **jedną** rzecz: jeden motyw, jedną liczbę, jeden kod chmur. Ale blog to nie jeden wpis, tylko lista wpisów. Wpis ma nie jeden tag, tylko kilka. A depesza METAR to cały ciąg grup do rozszyfrowania. Do trzymania wielu wartości naraz służą **tablice**, a do przechodzenia po nich — **pętle**.
+
+## Tablica, czyli lista z numerami
+
+Tablicę zapisujesz w nawiasach kwadratowych, a elementy oddzielasz przecinkami. Pierwszy przykład bierzemy z samego bloga — tagi wpisu:
+
+~~~js
+const tags = ["javascript", "podstawy"];
+
+tags[0]; // "javascript"
+tags[1]; // "podstawy"
+tags[2]; // undefined — nie ma takiego elementu
+tags.length; // 2
+~~~
+
+Każdy element ma swój numer, czyli **indeks**. Do elementu sięgasz, podając indeks w nawiasach kwadratowych. A `length` mówi, ile elementów jest w tablicy.
+
+<Hare type="explain">
+Skąd te tagi? Każdy wpis na tym blogu to plik MDX (Markdown, do którego można wstawiać komponenty, np. tego zająca). Na samej górze pliku, między dwiema liniami `---`, jest **frontmatter**, czyli metryczka wpisu: tytuł, opis, data publikacji, tagi, seria. Na stronie jej nie widać, ale Astro czyta ją przy budowaniu bloga i robi z niej listę wpisów, strony tagów i nawigację po serii. Frontmatter tego wpisu wygląda tak:
+
+~~~yaml
+---
+title: 'JavaScript od podstaw (cz. 5): tablice i pętle'
+pubDate: 2026-11-08
+tags: ['javascript', 'podstawy', 'tablice', 'pętle']
+series: 'js-od-podstaw'
+seriesPart: 5
+---
+~~~
+
+`tags` to właśnie tablica. W kodzie bloga dane z frontmattera każdego wpisu są dostępne jako `post.data`, dlatego za chwilę zobaczysz zapisy w rodzaju `post.data.tags` czy `post.data.pubDate`.
+</Hare>
+
+<Hare type="tip">
+Indeksy liczy się **od zera**. Pierwszy element to `tags[0]`, a ostatni to `tags[tags.length - 1]` — nie `tags[tags.length]`, bo tam już nic nie ma. Na początku to się myli każdemu.
+
+Ostatni element wygodniej wyjmiesz przez `tags.at(-1)` — ujemny indeks w `at()` liczy od końca.
+</Hare>
+
+Tablicę możesz zmieniać, nawet jeśli jest w `const` (`const` pilnuje tylko, żeby pod nazwą `tags` nie wylądowała zupełnie inna wartość — więcej o tym w części 6):
+
+~~~js
+tags.push("devtools"); // dodaje na końcu
+tags; // ["javascript", "podstawy", "devtools"]
+
+tags.includes("podstawy"); // true
+tags.includes("css"); // false
+~~~
+
+`includes` to pytanie „czy jest tu taki element?”. Dokładnie tak działa strona z wpisami dla danego tagu na tym blogu — bierze wszystkie wpisy i zostawia te, których tablica `tags` zawiera wybrany tag:
+
+~~~js
+post.data.tags.includes(tag);
+~~~
+
+<Hare type="tip">
+`push` i `includes` to tylko dwie z kilkudziesięciu metod tablic. Kilka innych, które szybko spotkasz:
+
+~~~js
+tags.pop(); // "devtools" — usuwa ostatni element i go oddaje
+tags.unshift("nowość"); // dodaje element na początku
+tags.shift(); // "nowość" — usuwa pierwszy element i go oddaje
+tags.indexOf("podstawy"); // 1 — pod którym indeksem jest element
+tags.join(", "); // "javascript, podstawy" — skleja elementy w jeden tekst
+~~~
+
+Nie musisz znać ich wszystkich na pamięć. Wystarczy wiedzieć, że istnieją, i zajrzeć do pełnej listy w MDN (link na końcu wpisu), kiedy czegoś potrzebujesz. W tym wpisie skupiam się na tych, które naprawdę pracują w kodzie tego bloga.
+</Hare>
+
+## Pętle
+
+Pętla to sposób, żeby powtórzyć ten sam kod kilka razy — na przykład raz dla każdego elementu tablicy. Powiedzmy, że chcesz wypisać w konsoli wszystkie tagi wpisu. Bez pętli wyglądałoby to tak:
+
+~~~js
+const tags = ["javascript", "podstawy", "devtools"];
+
+console.log(tags[0]);
+console.log(tags[1]);
+console.log(tags[2]);
+~~~
+
+Przy trzech tagach da się wytrzymać. Przy trzystu już nie. A przede wszystkim często nie wiesz z góry, ile elementów będzie w tablicy — jeden wpis ma dwa tagi, inny pięć. Pętla rozwiązuje oba problemy: piszesz kod raz, a ona sama powtarza go tyle razy, ile trzeba.
+
+**`for...of`, czyli „dla każdego elementu”**
+
+Zacznijmy od najprostszej pętli:
+
+~~~js
+for (const tag of tags) {
+  console.log(tag);
+}
+// "javascript"
+// "podstawy"
+// "devtools"
+~~~
+
+Czytaj to dosłownie: **dla każdego `tag` z tablicy `tags`** wykonaj kod w klamrach. Za pierwszym razem `tag` to `"javascript"`, za drugim `"podstawy"`, za trzecim `"devtools"`. Gdy elementy się skończą, pętla sama się zatrzyma.
+
+Nazwę `tag` wymyślasz sam. To zwykła zmienna, która w każdym obrocie pętli dostaje kolejny element. Dobrym zwyczajem jest liczba pojedyncza od nazwy tablicy: `tags` → `tag`, `posts` → `post`.
+
+**Klasyczny `for`, czyli „licz od zera do końca”**
+
+Starsza wersja, którą zobaczysz w wielu tutorialach, sama liczy obroty:
+
+~~~js
+for (let i = 0; i < tags.length; i++) {
+  console.log(i, tags[i]);
+}
+// 0 "javascript"
+// 1 "podstawy"
+// 2 "devtools"
+~~~
+
+Wygląda groźniej, ale to tylko licznik. W nawiasie są trzy części oddzielone średnikami:
+
+1. **`let i = 0`** — start: tworzymy licznik `i` i ustawiamy go na zero (indeksy liczymy od zera),
+2. **`i < tags.length`** — warunek: kręć się, dopóki `i` jest mniejsze niż liczba elementów (tutaj 3),
+3. **`i++`** — krok: po każdym obrocie zwiększ `i` o jeden.
+
+Prześledźmy to po kolei: `i` to 0 → wypisz `tags[0]`. `i` to 1 → `tags[1]`. `i` to 2 → `tags[2]`. `i` to 3 → warunek `3 < 3` jest fałszywy, więc pętla się kończy.
+
+Po klasyczny `for` sięgniesz wtedy, gdy potrzebujesz **numeru** elementu albo chcesz iść inaczej niż po kolei od początku, np. co drugi element. Łatwo tu jednak o pomyłkę o jeden: wystarczy `<=` zamiast `<`, żeby ostatni obrót trafił w `tags[3]`, czyli w `undefined`. Dlatego gdy numer nie jest Ci potrzebny, wybieraj `for...of`.
+
+`for...of` w praktyce: tak na tym blogu liczę, ile wpisów ma każdy tag. To pętla w pętli — dla każdego wpisu, dla każdego jego tagu, dolicz jeden.
+
+~~~js
+for (const post of posts) {
+  for (const tag of post.data.tags) {
+    // dolicz 1 do licznika tego tagu
+  }
+}
+~~~
+
+Jest jeszcze **`forEach`** — metoda tablicy, której przekazujesz funkcję (callback z części 4), a ona wywołuje ją dla każdego elementu. Tak skrypt przycisku „Kopiuj” dokłada przycisk do każdego bloku kodu we wpisie:
+
+~~~js
+const blocks = document.querySelectorAll("article pre");
+blocks.forEach((pre) => {
+  // opakuj blok kodu i dodaj do niego przycisk „Kopiuj”
+});
+~~~
+
+Szczegóły tego, co dzieje się w środku, rozbierzemy w części 7, kiedy JS w końcu dotknie strony.
+
+## map, czyli „zrób z każdego coś innego”
+
+Teraz metody, które naprawdę zmieniają sposób pisania kodu. Pierwsza to **`map`**: bierze tablicę, przepuszcza każdy element przez funkcję i oddaje **nową** tablicę z wynikami.
+
+~~~js
+const codes = ["FEW", "BKN", "OVC"];
+const descriptions = codes.map((code) => describeCloudCover(code));
+// ["zachmurzenie małe", "zachmurzenie duże", "zachmurzenie całkowite"]
+~~~
+
+Na stronie Projekty tego bloga każda technologia przy projekcie to mała „pigułka”. Astro rysuje je dokładnie tak — `map` zamienia każdy napis z tablicy `tech` w element listy:
+
+~~~jsx
+{project.tech.map((t) => <li>{t}</li>)}
+~~~
+
+To nie jest czysty JS, tylko zapis w szablonie Astro, ale metoda `map` jest dokładnie ta sama.
+
+<Hare type="explain">
+`map` **zawsze** oddaje tablicę tej samej długości co wejściowa: trzy kody → trzy opisy, sześć technologii → sześć pigułek. Nie usuwa elementów i nie dodaje nowych — każdy element zamienia w coś innego. Jeśli chcesz część elementów wyrzucić, potrzebujesz `filter`.
+</Hare>
+
+## filter i sort, czyli strona główna tego bloga
+
+Zajrzyjmy do funkcji, która decyduje, jakie wpisy widzisz na stronie głównej:
+
+~~~js
+async function getPublishedPosts() {
+  const now = new Date();
+  return (await getCollection("blog"))
+    .filter((post) => !post.data.draft && post.data.pubDate <= now)
+    .sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime());
+}
+~~~
+
+Pomiń na razie `async` i `await` — wrócimy do nich w części 10. `getCollection("blog")` oddaje tablicę wszystkich wpisów. Potem dzieją się dwie rzeczy, jedna po drugiej:
+
+**1. `filter`** zostawia tylko te elementy, dla których funkcja zwróci `true`. Tutaj: wpis nie jest szkicem (`!post.data.draft`) **i** (`&&` z części 3) jego data publikacji już minęła.
+
+To zresztą odpowiedź na pytanie, jak publikuję wpisy z wyprzedzeniem. Wpis z datą w przyszłości po prostu nie przechodzi przez `filter`. Codziennie rano strona buduje się od nowa — i w dniu publikacji ten sam warunek nagle daje `true`, a wpis „pojawia się sam”.
+
+**2. `sort`** układa wpisy od najnowszego. Dostaje funkcję porównującą dwa elementy, `a` i `b`, i patrzy tylko na znak jej wyniku:
+
+- wynik **ujemny** → `a` idzie przed `b`,
+- wynik **dodatni** → `b` idzie przed `a`,
+- **zero** → kolejność bez zmian.
+
+`getTime()` zamienia datę na liczbę milisekund, więc `b - a` jest dodatnie, gdy `b` jest nowszy — i nowszy wpis ląduje wyżej. Gdybyś zamienił na `a - b`, dostałbyś listę od najstarszego.
+
+Zwróć uwagę, że metody stoją w **łańcuchu**: `filter` oddaje tablicę, więc od razu możesz wywołać na niej `sort`. Kod czyta się jak przepis: weź wpisy, zostaw opublikowane, posortuj od najnowszego.
+
+<Hare type="bug">
+Wpisz w konsolę `[10, 9, 1].sort()`. Wynik? `[1, 10, 9]`.
+
+`sort` bez funkcji porównującej zamienia elementy na **tekst** i układa je alfabetycznie, a „10” zaczyna się od „1”, więc ląduje przed „9”. To ta sama „pomocność” JS-a co przy `"5" + 1` z części 2. Liczby sortuj zawsze z funkcją:
+
+~~~js
+[10, 9, 1].sort((a, b) => a - b); // [1, 9, 10]
+~~~
+
+I druga pułapka: `sort` w przeciwieństwie do `map` i `filter` **zmienia oryginalną tablicę**, a nie oddaje nowej. Jeśli oryginał ma zostać nietknięty, użyj `toSorted()` — robi to samo, ale na kopii.
+</Hare>
+
+## find i findIndex, czyli nawigacja po serii
+
+Pod każdym wpisem z serii masz linki „← poprzednia · następna →”. Działa to tak: najpierw biorę wszystkie opublikowane części serii, posortowane po numerze części, a potem szukam w nich bieżącego wpisu:
+
+~~~js
+const index = parts.findIndex((post) => post.id === current.id);
+if (index === -1) return { prev: undefined, next: undefined };
+
+return { prev: parts[index - 1], next: parts[index + 1] };
+~~~
+
+**`findIndex`** przechodzi po tablicy i oddaje indeks **pierwszego** elementu, dla którego funkcja zwróci `true`. Mając indeks bieżącej części, poprzednia to `index - 1`, a następna `index + 1`. Dla pierwszej części `parts[-1]` to `undefined` — więc linku „poprzednia” po prostu nie ma. Tak samo przy ostatniej części brakuje „następnej”.
+
+A po co ta linijka z `-1`? Bo gdy `findIndex` niczego nie znajdzie, oddaje właśnie `-1`. Bez strażnika `parts[index + 1]` zmieniłoby się w `parts[0]` i wpis spoza listy dostałby link „następna” do części 1. U mnie to się praktycznie nie zdarza, ale strażnik kosztuje jedną linijkę, a wczesny `return` znasz już z części 3.
+
+Siostrzana metoda **`find`** oddaje nie indeks, tylko sam element. Przyda się w Avia Weather, gdzie depesza METAR to po prostu tekst:
+
+~~~js
+const metar = "EPKT 071200Z 24008KT 9999 BKN020 05/02 Q1018";
+const groups = metar.split(" ");
+// ["EPKT", "071200Z", "24008KT", "9999", "BKN020", "05/02", "Q1018"]
+
+groups[0]; // "EPKT" — kod lotniska
+groups.find((group) => group.startsWith("BKN")); // "BKN020"
+~~~
+
+`split(" ")` tnie tekst w każdym miejscu, gdzie stoi spacja, i oddaje tablicę kawałków. Z jednego długiego napisu robi się lista grup, a na liście możesz już używać wszystkiego, co znasz z tej części.
+
+## Pętla czy metoda?
+
+Wszystko, co robią `map` i `filter`, da się zrobić pętlą `for`. Kiedy więc czego używać?
+
+- **`map`, `filter`, `find`** — gdy z tablicy robisz nową tablicę albo czegoś w niej szukasz. Nazwa metody od razu mówi, co się dzieje, a kod mieści się w jednej linijce.
+- **`for...of`** — gdy w każdym obrocie dzieje się coś bardziej złożonego, jak liczenie tagów pętlą w pętli.
+- **`forEach`** — gdy dla każdego elementu chcesz coś **zrobić** (np. dodać przycisk), a nie zbudować nową tablicę.
+
+<Hare type="learn">
+Szczegóły w MDN: [tablice — wprowadzenie](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Scripting/Arrays), [pętle](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Scripting/Loops), [map()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map), [filter()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/filter), [sort()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort), [findIndex()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/findIndex) oraz [pełna lista metod tablic](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array).
+</Hare>
+
+## Co nam to daje?
+
+- **Jedna zmienna zamiast wielu:** tablica trzyma całą listę, a metody takie jak `push` czy `includes` pozwalają ją zmieniać i przeszukiwać.
+- **Kod piszesz raz:** pętla powtórzy go dla każdego elementu, niezależnie od tego, czy jest ich trzy, czy trzysta.
+- **Krótszy i czytelniejszy kod:** `map`, `filter` i `sort` zastępują całe pętle, a połączone w łańcuch czytają się jak przepis.
+- **Mniej niespodzianek:** pamiętasz, że indeksy liczy się od zera, a liczby sortuje z funkcją porównującą.
+
+W **części 6** poznasz **obiekty**, czyli dane z etykietami zamiast numerów. Widziałeś je już w tej części, choć trochę z ukrycia: `post.data.tags` to tablica schowana w obiekcie `data`, który z kolei siedzi w obiekcie `post`. Dowiesz się też, czym jest JSON i dlaczego `const` nie chroni obiektu przed zmianą. Do zobaczenia!
