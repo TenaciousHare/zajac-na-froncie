@@ -1,0 +1,204 @@
+---
+title: 'JavaScript od podstaw (cz. 4): funkcje, czyli małe maszynki'
+description: 'Deklaracja i funkcja strzałkowa, parametry, return i wartości domyślne. Czyste funkcje, zakres zmiennych i funkcja przekazana jako argument — na przykładzie dekodera chmur z Avia Weather i skryptów tego bloga.'
+pubDate: 2026-11-07
+tags: ['javascript', 'podstawy']
+series: 'js-od-podstaw'
+seriesPart: 4
+---
+
+import Hare from "../../../components/Hare.astro";
+
+W [części 3](/blog/js-od-podstaw-3-warunki) kod nauczył się podejmować decyzje. Tylko że taki kod, wpisany luzem, wykona się raz — od góry do dołu — i koniec. A co, jeśli tę samą decyzję trzeba podjąć sto razy, za każdym razem dla innych danych? Wtedy zamykamy kod w **funkcji**: małej maszynce, która dostaje coś na wejściu, robi swoje i oddaje wynik.
+
+## Pierwsza funkcja
+
+Zacznijmy od funkcji, która w [Avia Weather](/blog/jak-powstal-metar-3-dekodery-i-testy) zamienia kod zachmurzenia z depeszy METAR na ludzki język:
+
+~~~js
+const CLOUD_COVER = {
+  FEW: "zachmurzenie małe",
+  SCT: "zachmurzenie umiarkowane",
+  BKN: "zachmurzenie duże",
+  OVC: "zachmurzenie całkowite",
+};
+
+function describeCloudCover(code) {
+  return CLOUD_COVER[code.toUpperCase()] ?? code;
+}
+
+describeCloudCover("BKN"); // "zachmurzenie duże"
+describeCloudCover("ovc"); // "zachmurzenie całkowite"
+describeCloudCover("XYZ"); // "XYZ"
+~~~
+
+`CLOUD_COVER` to słownik „kod → opis”. Dokładnie rozbierzemy go w części 6, na razie wystarczy, że umie odpowiedzieć na pytanie „co znaczy BKN?”. Ciekawsza jest sama funkcja:
+
+- **`function`** — słowo, które mówi: „teraz będzie funkcja”,
+- **`describeCloudCover`** — jej nazwa,
+- **`(code)`** — **parametr**, czyli miejsce na dane wejściowe,
+- **`{ … }`** — ciało funkcji, czyli to, co się wykona,
+- **`return`** — oddaje wynik temu, kto funkcję wywołał, i od razu ją kończy.
+
+Funkcję **wywołujesz**, dopisując nawias do nazwy: `describeCloudCover("BKN")`. Bez nawiasu tylko o niej mówisz, ale jej nie uruchamiasz — za chwilę zobaczysz, że to ważna różnica.
+
+W środku są dwie rzeczy. `??` znasz już z części 3 — zwraca surowy kod, gdy słownik go nie zna. Nowe jest `toUpperCase()` — metoda, czyli funkcja wbudowana w każdy tekst. Zamienia wszystkie litery na wielkie (`"bkn".toUpperCase()` daje `"BKN"`). Klucze w słowniku są zapisane wielkimi literami, więc dzięki niej `"bkn"` i `"BKN"` dają ten sam wynik.
+
+<Hare type="explain">
+**Parametr** i **argument** to dwie strony tej samej rzeczy. Parametr to nazwa w definicji funkcji (`code`) — puste miejsce na dane. Argument to konkretna wartość, którą wstawiasz przy wywołaniu (`"BKN"`). Jak formularz: pole „Imię” to parametr, a „Paweł” wpisany w to pole to argument.
+</Hare>
+
+Funkcja bez `return` też coś oddaje — `undefined`. Jeśli kiedyś w konsoli zobaczysz `undefined` tam, gdzie spodziewałeś się wyniku, sprawdź najpierw, czy nie zapomniałeś o `return`.
+
+Parametr może mieć też **wartość domyślną**, użytą wtedy, gdy argumentu nie podasz:
+
+~~~js
+function readingLabel(minutes = 1) {
+  return `${minutes} min czytania`;
+}
+
+readingLabel(4); // "4 min czytania"
+readingLabel(); // "1 min czytania"
+~~~
+
+## Funkcja strzałkowa
+
+Tę samą funkcję możesz zapisać krócej, jako **funkcję strzałkową** (*arrow function*) przypisaną do zmiennej:
+
+~~~js
+const describeCloudCover = (code) => {
+  return CLOUD_COVER[code.toUpperCase()] ?? code;
+};
+~~~
+
+A gdy w środku jest tylko `return`, jeszcze krócej:
+
+~~~js
+const describeCloudCover = (code) => CLOUD_COVER[code.toUpperCase()] ?? code;
+~~~
+
+W tej wersji nie ma klamer ani `return`, a funkcja i tak oddaje wynik. To tak zwany **niejawny return**: jeśli po strzałce stoi jedno wyrażenie, jego wartość jest wynikiem funkcji.
+
+Na tym blogu funkcję strzałkową znajdziesz w skrypcie przycisku „do góry”:
+
+~~~js
+const update = () => {
+  const visible = window.scrollY > 400;
+  btn.classList.toggle("is-visible", visible);
+  btn.tabIndex = visible ? 0 : -1;
+  ticking = false;
+};
+
+update();
+~~~
+
+`update` nie przyjmuje żadnych parametrów, stąd puste `()`. Skrypt wywołuje ją raz od razu po załadowaniu strony — gdybyś odświeżył stronę w połowie wpisu, przycisk musi się pokazać bez czekania na przewinięcie — a potem przy każdym przewijaniu.
+
+Którą formę wybrać? W praktyce to głównie kwestia stylu. Ja piszę `function` dla „głównych” funkcji, które mają nazwę i żyją same, a strzałki dla krótkich funkcji przekazywanych gdzieś dalej. O tym „przekazywaniu” — za chwilę.
+
+## Funkcja, która liczy, i funkcja, która robi
+
+Zajrzyj do skryptu komentarzy pod tym wpisem. Są tam dwie funkcje:
+
+~~~js
+function giscusTheme() {
+  return document.documentElement.getAttribute("data-theme") === "dark"
+    ? "dark"
+    : "light";
+}
+
+function applyGiscusTheme() {
+  const iframe = document.querySelector("iframe.giscus-frame");
+  iframe?.contentWindow?.postMessage(
+    { giscus: { setConfig: { theme: giscusTheme() } } },
+    "https://giscus.app",
+  );
+}
+~~~
+
+Pierwsza tylko **liczy**: sprawdza motyw strony i oddaje `"dark"` albo `"light"`. Niczego nie zmienia. Druga **robi**: wysyła wiadomość do ramki z komentarzami, żeby przełączyła motyw — a po wartość sięga, wywołując tę pierwszą.
+
+<Hare type="architecture">
+Taki podział to dobry nawyk. Funkcja, która tylko liczy, jest **czysta**: dla tego samego wejścia zawsze oddaje to samo wyjście i nie zmienia niczego dookoła. `describeCloudCover` też jest czysta — `"BKN"` zawsze da „zachmurzenie duże”, dziś, jutro i w teście.
+
+A czyste funkcje bardzo łatwo testować. W Avia Weather sprawdza to jedna linijka:
+
+~~~js
+expect(describeCloudCover("BKN")).toBe("zachmurzenie duże");
+~~~
+
+Funkcji, która coś robi, np. wysyła wiadomość, zmienia stronę, zapisuje coś w pamięci, tak prosto nie sprawdzisz, bo jej efekt dzieje się gdzieś obok. Dlatego warto, żeby była krótka, a całe myślenie oddawała funkcjom, które liczą.
+</Hare>
+
+## Co zostaje w funkcji, a co wychodzi na zewnątrz
+
+Zmienne utworzone wewnątrz funkcji żyją **tylko w niej**. To się nazywa **zakres** (*scope*):
+
+~~~js
+function readingLabel(minutes) {
+  const label = `${minutes} min czytania`;
+  return label;
+}
+
+readingLabel(3); // "3 min czytania"
+console.log(label); // ❌ ReferenceError: label is not defined
+~~~
+
+Na zewnątrz wychodzi tylko to, co oddasz przez `return`. Reszta znika, gdy funkcja skończy pracę. To dobra wiadomość: możesz w każdej funkcji nazwać zmienną `label`, `result` czy `i` i nic się nie pogryzie.
+
+Ta sama zasada dotyczy każdego bloku w klamrach `{ }` — `if`, pętli i innych — pod warunkiem, że używasz `let` i `const`. To właśnie ten „przeciekający” `var` z części 2 tej zasady nie przestrzega. W skrypcie przycisku „do góry” flaga `let ticking` siedzi wewnątrz `if (btn) { … }`, więc żaden inny skrypt na stronie jej nie widzi i nie może jej przypadkiem nadpisać.
+
+## Funkcja jako wartość
+
+Teraz najważniejsza rzecz w tej części: w JavaScripcie funkcja to **zwykła wartość**. Możesz ją zapisać w zmiennej (jak `update`), a także **przekazać do innej funkcji** jako argument. Taką przekazaną funkcję nazywa się **callbackiem**.
+
+Robiłeś to już, nawet o tym nie wiedząc. Spójrz jeszcze raz na przycisk motywu z części 3:
+
+~~~js
+btn?.addEventListener("click", () => {
+  // ...
+});
+~~~
+
+Drugi argument `addEventListener` to funkcja strzałkowa. Nie wywołujemy jej sami — oddajemy ją przeglądarce i mówimy: „wywołaj ją, kiedy ktoś kliknie”. Tak samo działa skrypt przycisku „do góry”, który przy przewijaniu prosi przeglądarkę: „wywołaj `update`, zanim następny raz odświeżysz obraz”:
+
+~~~js
+requestAnimationFrame(update);
+~~~
+
+<Hare type="bug">
+Zwróć uwagę: `update`, **bez** nawiasu. Gdybyś napisał `requestAnimationFrame(update())`, funkcja wykonałaby się **od razu**, a do przeglądarki trafiłby jej wynik — czyli `undefined`, bo `update` niczego nie zwraca. Przekazujesz funkcję — bez nawiasu. Wywołujesz funkcję — z nawiasem.
+</Hare>
+
+Callbacki będą wracać w tej serii bez przerwy: w części 5 przekażemy funkcję do metod tablic (`map`, `filter`, `sort`), a w części 8 do zdarzeń.
+
+Na koniec ciekawostka. Skoro funkcja to wartość, to funkcja może też **zwrócić funkcję**. Wtyczka, która liczy czas czytania na tym blogu, wygląda tak:
+
+~~~js
+export function remarkReadingTime() {
+  return function (tree, file) {
+    // ...liczenie minut dla jednego wpisu
+  };
+}
+~~~
+
+Astro wywołuje `remarkReadingTime()` raz, dostaje w zamian funkcję i to ją uruchamia potem dla każdego wpisu osobno. Nie musisz jeszcze rozumieć, po co to wszystko — wystarczy, że takie „maszynki do robienia maszynek” istnieją i nie są niczym magicznym.
+
+<Hare type="tip">
+**Jedna funkcja = jedno zadanie.** Jeśli opisując funkcję, mówisz „robi to **i** tamto”, to pewnie powinny być dwie.
+
+I nazywaj funkcje jak polecenia: **czasownik + co robi**. `describeCloudCover`, `applyGiscusTheme`, `getPublishedPosts` — po samej nazwie wiesz, czego się spodziewać, zanim zajrzysz do środka. Funkcja nazwana `handle` albo `doStuff` za tydzień nie powie Ci nic.
+</Hare>
+
+<Hare type="learn">
+Szczegóły w MDN: [funkcje — wprowadzenie](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Scripting/Functions), [funkcje strzałkowe](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/Arrow_functions), [parametry domyślne](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/Default_parameters) i [funkcje callback](https://developer.mozilla.org/en-US/docs/Glossary/Callback_function).
+</Hare>
+
+## Co nam to daje?
+
+- **Kod wielokrotnego użytku:** piszesz raz, wywołujesz ile razy chcesz, z różnymi danymi.
+- **Porządek:** funkcje, które liczą, oddzielone od funkcji, które robią — a te pierwsze łatwo przetestować.
+- **Bezpieczne zmienne:** to, co w funkcji, zostaje w funkcji.
+- **Funkcja jako wartość:** możesz ją przekazać dalej i pozwolić komuś innemu zdecydować, kiedy ją wywołać.
+
+W **części 5** zajmiemy się **tablicami i pętlami**. Zobaczysz, jak `filter` i `sort` układają listę wpisów na stronie głównej, jak działa nawigacja „poprzednia · następna” pod wpisem z serii — i dlaczego `[10, 9, 1].sort()` daje `[1, 10, 9]`. Do zobaczenia!
