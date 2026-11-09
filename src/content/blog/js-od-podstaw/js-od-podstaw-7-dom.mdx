@@ -1,0 +1,230 @@
+---
+title: 'JavaScript od podstaw (cz. 7): DOM, czyli jak JavaScript widzi stronę'
+description: 'Drzewo DOM, querySelector i closest, textContent kontra innerHTML, createElement i appendChild, a do tego classList i atrybuty data-*. Rozbieramy przycisk „Kopiuj” i sprawdzamy, dlaczego przełącznik motywu zmienia tylko jeden atrybut.'
+pubDate: 2026-11-10
+tags: ['javascript', 'podstawy', 'dom', 'dostępność']
+series: 'js-od-podstaw'
+seriesPart: 7
+---
+
+import Hare from "../../../components/Hare.astro";
+
+Przez sześć części JavaScript siedział w konsoli: liczył, porównywał, przechodził po tablicach. Strona w tym czasie stała obok i nic o tym nie wiedziała. Dziś to się zmienia. Żeby JS mógł coś na stronie znaleźć, zmienić albo dodać, musi ją jakoś „widzieć”. Tym widokiem jest **DOM**.
+
+## DOM, czyli drzewo z HTML-a
+
+Kiedy przeglądarka wczytuje HTML, nie trzyma go jako tekstu. Zamienia go w **drzewo obiektów**, w którym każdy element to osobny węzeł. To drzewo nazywa się **DOM** (*Document Object Model*). Weźmy mały kawałek strony:
+
+~~~html
+<article>
+  <h1>Tablice i pętle</h1>
+  <p>Do tej pory każda zmienna…</p>
+  <pre><code>const tags = [];</code></pre>
+</article>
+~~~
+
+W DOM-ie wygląda to tak:
+
+~~~text
+article
+├── h1
+├── p
+└── pre
+    └── code
+~~~
+
+To dokładnie to samo zagnieżdżanie, o którym pisałem w [pierwszej części serii HTML](/blog/html-od-podstaw-1-co-to-jest-html): element w elemencie. `article` jest **rodzicem** dla `h1`, `p` i `pre`, a `code` jest **dzieckiem** `pre`.
+
+Całe drzewo jest dostępne w zmiennej `document`, a jego korzeń, czyli element `<html>`, w `document.documentElement`. Każdy węzeł to obiekt z części 6, z właściwościami i metodami, do których sięgasz kropką.
+
+<Hare type="explain">
+DOM to nie to samo co kod, który widzisz po kliknięciu „Pokaż źródło strony”. Źródło to HTML w takiej postaci, w jakiej przyszedł z serwera. DOM to stan strony **teraz**, po wszystkich zmianach, które zrobił JavaScript.
+
+Sprawdź to na tym wpisie. W „Pokaż źródło” każdy blok kodu to zwykły `<pre>`. A w DevTools, w zakładce Elements, każdy `<pre>` siedzi w `<div class="code-block">` i ma obok przycisk „Kopiuj”. Tych elementów nie ma w HTML-u, dołożył je skrypt, który za chwilę rozbierzemy.
+</Hare>
+
+## Szukanie elementów
+
+Zanim cokolwiek zmienisz, musisz to znaleźć. Do tego służą cztery metody:
+
+~~~js
+document.getElementById("back-to-top"); // element o id="back-to-top"
+document.querySelector("article pre"); // PIERWSZY pre w article
+document.querySelectorAll("article pre"); // WSZYSTKIE pre w article
+pre.closest(".code-block"); // najbliższy przodek z klasą code-block
+~~~
+
+- **`getElementById`** szuka po `id`. Najprostsza i najszybsza, ale działa tylko na `id`.
+- **`querySelector`** przyjmuje **selektor CSS** i oddaje pierwszy pasujący element.
+- **`querySelectorAll`** oddaje wszystkie pasujące elementy jako listę. Lista ma `length` i `forEach`, więc pracujesz na niej prawie jak na tablicy z części 5.
+- **`closest`** idzie w drugą stronę: od elementu **w górę** drzewa, przez rodzica, dziadka i dalej, aż znajdzie przodka pasującego do selektora.
+
+Selektory to te same, które znasz z [części 2 serii CSS](/blog/css-od-podstaw-2-selektory-i-kaskada): `#id`, `.klasa`, `article pre`, `button[type="button"]`. Raz nauczone, działają w obu językach.
+
+Pamiętaj tylko, że gdy nic nie pasuje, `getElementById`, `querySelector` i `closest` oddają `null`. Dlatego w kodzie bloga tak często widzisz `if (btn)` albo `btn?.` z części 3.
+
+## Zmiana treści: textContent i innerHTML
+
+Gdy masz już element, możesz zmienić jego treść. Najbezpieczniej przez **`textContent`**:
+
+~~~js
+const btn = document.querySelector(".copy-btn");
+btn.textContent = "Skopiowano!";
+~~~
+
+`textContent` traktuje wszystko jako zwykły tekst. Jest też **`innerHTML`**, który to, co dostanie, czyta jako HTML:
+
+~~~js
+el.textContent = "<strong>Hej</strong>"; // na stronie: <strong>Hej</strong>
+el.innerHTML = "<strong>Hej</strong>"; // na stronie: pogrubione Hej
+~~~
+
+<Hare type="bug">
+`innerHTML` z danymi od użytkownika to proszenie się o kłopoty. Wyobraź sobie pole „Twoje imię”, z którego wartość wstawiasz na stronę przez `innerHTML`. Ktoś zamiast imienia wpisuje:
+
+~~~html
+<img src="x" onerror="alert('Mam Cię!')">
+~~~
+
+Obrazek się nie wczyta, więc przeglądarka wykona kod z `onerror`. Zamiast `alert` mógłby tam stać skrypt, który wysyła komuś Twoje dane. To atak **XSS** (*cross-site scripting*), jeden z najczęstszych błędów bezpieczeństwa w sieci.
+
+Zasada: tekst wstawiaj przez `textContent`. `innerHTML` zostaw na HTML, który napisałeś sam i który nie zawiera niczego od użytkownika.
+</Hare>
+
+## Tworzenie i wstawianie elementów
+
+JS może też budować nowe elementy. Robi się to w dwóch krokach: najpierw tworzysz element, potem wstawiasz go w drzewo.
+
+~~~js
+const btn = document.createElement("button"); // nowy <button>, jeszcze poza stroną
+btn.textContent = "Kopiuj";
+wrapper.appendChild(btn); // teraz jest na stronie, jako ostatnie dziecko wrappera
+~~~
+
+- **`createElement`** tworzy element, ale go nie pokazuje. Istnieje tylko w pamięci, dopóki go nie wstawisz.
+- **`appendChild`** wstawia element jako **ostatnie dziecko** wskazanego rodzica.
+- **`insertBefore`** wstawia element **przed** innym, wskazanym dzieckiem: `rodzic.insertBefore(nowy, istniejący)`.
+
+Jedna rzecz zaskakuje na początku: jeśli wstawiasz element, który **już jest** na stronie, `appendChild` go nie kopiuje, tylko **przenosi** w nowe miejsce. Z tej sztuczki korzysta przycisk „Kopiuj”.
+
+## Przycisk „Kopiuj” w całości
+
+Oto część skryptu, która dokłada przycisk do każdego bloku kodu we wpisie. Obsługę kliknięcia na razie pomijam, wrócimy do niej w części 8 i 10.
+
+~~~js
+const blocks = document.querySelectorAll("article pre");
+blocks.forEach((pre) => {
+  if (pre.closest(".code-block")) return; // już opakowany
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "code-block";
+  pre.parentNode.insertBefore(wrapper, pre);
+  wrapper.appendChild(pre);
+
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "copy-btn";
+  btn.setAttribute("aria-label", "Kopiuj kod");
+  btn.textContent = "Kopiuj";
+
+  wrapper.appendChild(btn);
+});
+~~~
+
+Krok po kroku:
+
+1. **Znajdź wszystkie bloki kodu** we wpisie: `querySelectorAll("article pre")`, a potem `forEach` z części 5.
+2. **Strażnik:** jeśli `pre` siedzi już w `.code-block`, to znaczy, że ktoś go wcześniej opakował. Wczesny `return` z części 3 pomija ten blok, żeby nie dostał dwóch przycisków.
+3. **Stwórz wrapper**, czyli `<div class="code-block">`, i wstaw go tuż **przed** `pre`. Na chwilę stoją obok siebie.
+4. **Przenieś `pre` do środka wrappera.** `appendChild` nie kopiuje, tylko przenosi, więc `pre` znika ze starego miejsca i ląduje w `div`.
+5. **Stwórz przycisk:** `type="button"`, klasa do stylów, etykieta dla czytników ekranu i tekst.
+6. **Wstaw przycisk** do wrappera, obok `pre`.
+
+Efekt w DOM-ie:
+
+~~~text
+div.code-block
+├── pre
+│   └── code
+└── button.copy-btn
+~~~
+
+Zwróć uwagę, że to prawdziwy `<button>`, a nie `<div>` udający przycisk. Dzięki temu da się do niego dojść klawiszem Tab i nacisnąć go Enterem bez żadnego dodatkowego kodu. `aria-label` mówi czytnikowi ekranu, co przycisk robi, bo samo „Kopiuj” bez kontekstu niewiele znaczy. O tym, dlaczego to tak ważne, więcej w części 8.
+
+<Hare type="decision">
+Po co ten wrapper? Czy nie prościej wstawić przycisk prosto do `pre`?
+
+Prościej, ale nie zadziała dobrze. Długie linijki kodu przewijają się w poziomie, a przewija się **cały** `pre` razem ze wszystkim, co ma w środku. Przycisk wewnątrz `pre` przy przewijaniu odjeżdżałby w bok razem z kodem.
+
+Dlatego przycisk siedzi obok `pre`, we wspólnym rodzicu, który się nie przewija. W CSS wrapper ma `position: relative`, a przycisk `position: absolute` w prawym górnym rogu. To dokładnie ten wzorzec rodzica i dziecka z [części 7 serii CSS](/blog/css-od-podstaw-7-pozycjonowanie). JS buduje strukturę, a CSS ustawia ją na miejscu.
+</Hare>
+
+## Atrybuty, klasy i data-*
+
+Ostatnia grupa narzędzi zmienia nie treść, tylko **opis** elementu: jego atrybuty i klasy.
+
+**Atrybuty** odczytujesz i ustawiasz przez `getAttribute` i `setAttribute`. Tak działa cały przełącznik motywu na tym blogu:
+
+~~~js
+const current = document.documentElement.getAttribute("data-theme");
+const next = current === "dark" ? "light" : "dark";
+document.documentElement.setAttribute("data-theme", next);
+~~~
+
+Operator trójargumentowy już znasz z części 3. Nowa jest tylko ostatnia linijka: JS ustawia **jeden atrybut** na elemencie `<html>`. I to wszystko, co robi JavaScript. Kolory tła, tekstu i linków zmieniają się dlatego, że CSS ma reguły dla `[data-theme="dark"]` i zmienne z [części 9 serii CSS](/blog/css-od-podstaw-9-zmienne-css). Nawet ikonki księżyca i słońca w przycisku przełączają się same, bo Tailwind pokazuje je lub chowa zależnie od tego atrybutu.
+
+**Klasy** mają własne, wygodniejsze narzędzie: `classList`.
+
+~~~js
+el.classList.add("is-visible"); // dodaj klasę
+el.classList.remove("is-visible"); // usuń klasę
+el.classList.toggle("is-visible"); // jest → usuń, nie ma → dodaj
+el.classList.toggle("is-visible", visible); // dodaj, gdy visible to true, usuń, gdy false
+~~~
+
+Ta ostatnia wersja przydaje się najbardziej. Tak przycisk „do góry” w prawym dolnym rogu decyduje, czy ma być widoczny:
+
+~~~js
+const visible = window.scrollY > 400;
+btn.classList.toggle("is-visible", visible);
+~~~
+
+Porównanie z części 3 daje `true` albo `false`, a `toggle` z drugim argumentem zamienia to od razu na „klasa jest” albo „klasy nie ma”. Samo pojawianie się i płynne rozjaśnianie przycisku robi CSS: element bez klasy ma `opacity: 0`, a z klasą `is-visible` dostaje `opacity: 1` i animację.
+
+**Atrybuty `data-*`** to Twoje własne atrybuty, o których pisałem w [części 8 serii HTML](/blog/html-od-podstaw-8-atrybuty-aria). W JS czytasz je i ustawiasz przez `dataset`:
+
+~~~js
+btn.dataset.copied = "true"; // w HTML: <button data-copied="true">
+delete btn.dataset.copied; // atrybut znika
+~~~
+
+Po kliknięciu „Kopiuj” skrypt ustawia `data-copied="true"`, a w CSS czeka na to reguła:
+
+~~~css
+.copy-btn[data-copied="true"] {
+  color: #3fb950;
+  border-color: #3fb950;
+}
+~~~
+
+Przycisk robi się zielony, choć JS nie dotknął ani jednego koloru.
+
+<Hare type="tip">
+JS ma też `el.style.color = "green"`, które zmienia styl bezpośrednio. Działa, ale miesza warstwy: kolor ląduje w JavaScripcie, a nie w CSS, i przy następnej zmianie wyglądu musisz szukać go w dwóch miejscach.
+
+Lepszy podział: **JS zmienia klasy i atrybuty, a CSS decyduje, jak to wygląda.** Na tym blogu każdy skrypt trzyma się tej zasady: motyw to atrybut, przycisk „do góry” to klasa, „Skopiowano!” to `data-*`.
+</Hare>
+
+<Hare type="learn">
+Szczegóły w MDN: [wprowadzenie do DOM](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Scripting/DOM_scripting), [querySelector()](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelector), [closest()](https://developer.mozilla.org/en-US/docs/Web/API/Element/closest), [textContent](https://developer.mozilla.org/en-US/docs/Web/API/Node/textContent), [createElement()](https://developer.mozilla.org/en-US/docs/Web/API/Document/createElement), [classList](https://developer.mozilla.org/en-US/docs/Web/API/Element/classList) i [dataset](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dataset).
+</Hare>
+
+## Co nam to daje?
+
+- **Strona jako drzewo:** wiesz, że JS nie pracuje na tekście HTML-a, tylko na DOM-ie, i że możesz go podejrzeć w zakładce Elements.
+- **Szukanie tymi samymi selektorami co w CSS:** `querySelector`, `querySelectorAll` i `closest` przyjmują znane Ci selektory.
+- **Bezpieczna treść:** tekst wstawiasz przez `textContent`, a `innerHTML` nie dostaje niczego od użytkownika.
+- **Budowanie elementów:** `createElement`, `appendChild` i `insertBefore` wystarczą, żeby dołożyć przycisk do każdego bloku kodu.
+- **Czysty podział warstw:** JS przełącza klasy i atrybuty, a wygląd zostaje w CSS.
+
+Na razie nasze skrypty uruchamiają się raz, przy wczytaniu strony. W **części 8** strona zacznie **reagować**: na kliknięcie, przewijanie i wpisywanie tekstu w formularzu. Dokończymy przełącznik motywu, zobaczysz, dlaczego `<div>` z kliknięciem to zły pomysł, i jak przycisk „do góry” unika przeliczania wszystkiego sto razy na sekundę. Do zobaczenia!
