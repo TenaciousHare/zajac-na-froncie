@@ -1,0 +1,238 @@
+---
+title: 'JavaScript od podstaw (cz. 8): zdarzenia, czyli strona, która reaguje'
+description: 'addEventListener, obiekt zdarzenia i event.target, formularz z preventDefault, klawiatura i dostępność, przewijanie z requestAnimationFrame i wiadomości od ramki iframe. Na przykładzie przełącznika motywu, przycisku „do góry” i komentarzy.'
+pubDate: 2026-11-11
+tags: ['javascript', 'podstawy', 'zdarzenia', 'dostępność']
+series: 'js-od-podstaw'
+seriesPart: 8
+---
+
+import Hare from "../../../components/Hare.astro";
+
+W [części 7](/blog/js-od-podstaw-7-dom) JavaScript nauczył się znajdować i zmieniać elementy na stronie. Ale wszystko działo się raz, przy wczytaniu strony. Prawdziwa strona czeka na użytkownika: na kliknięcie, przewinięcie, wpisanie tekstu. Każda taka rzecz to **zdarzenie**, a dziś nauczymy się, jak na nie odpowiadać.
+
+## addEventListener, czyli „daj znać, kiedy…”
+
+Do reagowania na zdarzenia służy jedna metoda: **`addEventListener`**. Podajesz jej dwie rzeczy: **jakie zdarzenie** Cię interesuje i **co zrobić**, gdy się wydarzy.
+
+~~~js
+btn.addEventListener("click", () => {
+  console.log("Kliknięto!");
+});
+~~~
+
+To drugie to zwykła funkcja, czyli callback z [części 4](/blog/js-od-podstaw-4-funkcje). Nie wywołujesz jej sam. Przekazujesz ją przeglądarce i mówisz: „wywołaj ją, kiedy ktoś kliknie”. Taką funkcję nazywa się też **nasłuchiwaczem** (*listener*), bo czeka i nasłuchuje.
+
+Oto cały skrypt przełącznika motywu na tym blogu:
+
+~~~js
+const btn = document.getElementById("theme-toggle");
+btn?.addEventListener("click", () => {
+  const current = document.documentElement.getAttribute("data-theme");
+  const next = current === "dark" ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", next);
+  localStorage.setItem("theme", next);
+});
+~~~
+
+Sześć linijek i znasz już każdą z nich. Znajdź przycisk (część 7), a jeśli istnieje (`?.` z części 3), to przy każdym kliknięciu:
+
+1. **odczytaj** obecny motyw z atrybutu,
+2. **odwróć** go operatorem trójargumentowym,
+3. **ustaw** nowy atrybut, a CSS zrobi resztę,
+4. **zapisz** wybór, żeby przetrwał do następnej wizyty.
+
+Ten ostatni krok, `localStorage`, rozbierzemy w części 9.
+
+## Obiekt zdarzenia
+
+Przeglądarka, wywołując Twoją funkcję, przekazuje jej jeden argument: **obiekt zdarzenia**. Zwykle nazywa się go `event` (albo krótko `e`). W środku są informacje o tym, co się stało:
+
+~~~js
+document.addEventListener("click", (event) => {
+  console.log(event.type); // "click"
+  console.log(event.target); // element, w który kliknięto
+});
+~~~
+
+Najczęściej przyda Ci się **`event.target`**, czyli element, od którego zdarzenie się zaczęło. Wklej ten kod w konsolę na dowolnej stronie i poklikaj: zobaczysz, w co dokładnie trafiasz.
+
+## Najważniejsze zdarzenia
+
+Zdarzeń jest kilkadziesiąt, ale na start wystarczy Ci pięć:
+
+- **`click`** — kliknięcie myszą, tapnięcie palcem, a w przypadku przycisku także Enter lub spacja z klawiatury,
+- **`input`** — każda zmiana wartości w polu formularza, litera po literze,
+- **`submit`** — wysłanie formularza,
+- **`keydown`** — wciśnięcie klawisza (`event.key` mówi którego, np. `"Escape"`),
+- **`scroll`** — przewijanie strony.
+
+Na blogu nie ma formularza, więc dwa pierwsze pokażę na małym przykładzie.
+
+## Formularz, który sprawdza się sam
+
+Weźmy formularz kontaktowy w stylu tego z [części 6 serii HTML](/blog/html-od-podstaw-6-formularze):
+
+~~~html
+<form id="contact">
+  <label for="message">Twoje pytanie</label>
+  <textarea id="message" name="message" maxlength="200" required></textarea>
+  <p id="counter">0 / 200</p>
+  <p id="error" role="alert"></p>
+  <button type="submit">Wyślij</button>
+</form>
+~~~
+
+Najpierw `input`, czyli licznik znaków, który zmienia się przy każdej literze:
+
+~~~js
+const message = document.getElementById("message");
+const counter = document.getElementById("counter");
+
+message.addEventListener("input", () => {
+  counter.textContent = `${message.value.length} / 200`;
+});
+~~~
+
+`value` to aktualna zawartość pola, a template literal z części 2 składa z niej tekst licznika.
+
+Teraz `submit`. Domyślnie przeglądarka po wysłaniu formularza przeładowuje stronę. Jeśli chcesz najpierw coś sprawdzić, zatrzymujesz to przez **`event.preventDefault()`**:
+
+~~~js
+const form = document.getElementById("contact");
+const error = document.getElementById("error");
+
+form.addEventListener("submit", (event) => {
+  event.preventDefault(); // nie przeładowuj strony
+
+  if (message.value.trim() === "") {
+    error.textContent = "Pytanie nie może składać się z samych spacji.";
+    return;
+  }
+
+  error.textContent = "";
+  // tu wysłalibyśmy dane na serwer (o tym w części 10)
+});
+~~~
+
+Po co ten warunek, skoro pole ma `required`? Bo `required` przepuści pytanie złożone z samych spacji. Dla przeglądarki to nie jest puste pole. `trim()` obcina spacje z początku i końca tekstu, więc `"   "` zamienia się w `""` i warunek łapie taki przypadek.
+
+Zwróć uwagę na `role="alert"` przy komunikacie o błędzie. Gdy JS wstawi tam tekst, czytnik ekranu od razu go przeczyta. Bez tego osoba niewidoma nie wiedziałaby, dlaczego formularz „nie działa”.
+
+<Hare type="tip">
+Walidacja w JS **dokłada się** do walidacji z HTML-a, a nie ją zastępuje. Najpierw `required`, `type="email"` czy `maxlength`, które działają nawet bez JavaScriptu. Dopiero potem JS dla rzeczy, których HTML nie umie wyrazić, jak „nie same spacje”.
+</Hare>
+
+## Klawiatura, czyli dlaczego button, a nie div
+
+Nie każdy używa myszy. Ktoś porusza się po stronie klawiszem Tab, ktoś inny korzysta z czytnika ekranu. Dla nich ważne jest, **na jakim elemencie** wisi nasłuchiwacz.
+
+<Hare type="bug">
+Spotkasz w sieci takie „przyciski”:
+
+~~~html
+<div class="btn" onclick="toggleTheme()">Przełącz motyw</div>
+~~~
+
+Myszą działa. Ale `<div>` nie łapie fokusu z Tab, więc z klawiatury nie da się do niego dojść. A nawet gdyby się dało, Enter i spacja niczego by nie zrobiły. Czytnik ekranu też nie powie, że to przycisk.
+
+Prawdziwy `<button>` daje to wszystko za darmo: fokus, Enter, spację i rolę „przycisk”. Przeglądarka sama zamienia Enter i spację na zdarzenie `click`, więc jeden nasłuchiwacz obsługuje i mysz, i klawiaturę. Dlatego przełącznik motywu i „Kopiuj” to `<button>`, a nie `<div>`. To ta sama myśl, co w [części 8 serii HTML](/blog/html-od-podstaw-8-atrybuty-aria): najlepsza ARIA to brak ARIA, czyli właściwy element od początku.
+</Hare>
+
+Czasem trzeba też zadbać o odwrotną sytuację: element, którego **nie** widać, nie powinien łapać fokusu. Przycisk „do góry” jest przez większość czasu niewidoczny (ma `opacity: 0`), ale wciąż stoi na stronie. Gdyby był dostępny z Tab, osoba używająca klawiatury trafiłaby w niewidzialny przycisk i nie wiedziałaby, gdzie jest. Dlatego skrypt przy każdej zmianie ustawia:
+
+~~~js
+btn.tabIndex = visible ? 0 : -1;
+~~~
+
+`tabIndex` równe `0` znaczy „normalnie w kolejce Tab”, a `-1` znaczy „pomiń mnie”. Przycisk dostaje fokus tylko wtedy, gdy go widać.
+
+## Przewijanie bez zadyszki
+
+Skoro jesteśmy przy przycisku „do góry”, zobaczmy jego cały skrypt:
+
+~~~js
+const btn = document.getElementById("back-to-top");
+if (btn) {
+  let ticking = false;
+  const update = () => {
+    const visible = window.scrollY > 400;
+    btn.classList.toggle("is-visible", visible);
+    btn.tabIndex = visible ? 0 : -1;
+    ticking = false;
+  };
+  window.addEventListener(
+    "scroll",
+    () => {
+      if (!ticking) {
+        requestAnimationFrame(update);
+        ticking = true;
+      }
+    },
+    { passive: true },
+  );
+  update();
+}
+~~~
+
+Funkcję `update` już znasz: sprawdza, czy przewinąłeś więcej niż 400 pikseli, i pokazuje albo chowa przycisk. Ciekawsze jest to, **jak często** się wykonuje.
+
+Zdarzenie `scroll` przychodzi bardzo często, nawet kilkadziesiąt razy podczas jednego ruchu kółkiem myszy. Ekran odświeża się zwykle około 60 razy na sekundę, więc liczenie częściej nie ma sensu, bo i tak nikt tego nie zobaczy. Dlatego:
+
+- **`requestAnimationFrame(update)`** mówi przeglądarce: „wywołaj `update` tuż przed najbliższym odświeżeniem ekranu”,
+- **flaga `ticking`** (ten sam `let` z części 2) pilnuje, żeby w kolejce czekało najwyżej jedno takie wywołanie. Kolejne zdarzenia `scroll` widzą `ticking === true` i nic nie robią, dopóki `update` się nie wykona i nie ustawi flagi z powrotem na `false`,
+- **`update()` na końcu** uruchamia sprawdzenie raz od razu. Jeśli odświeżysz stronę w połowie wpisu, przycisk pojawi się bez czekania na pierwsze przewinięcie.
+
+<Hare type="tip">
+Trzeci argument, `{ passive: true }`, to obietnica dla przeglądarki: „ten nasłuchiwacz nie wywoła `preventDefault`, więc nie zablokuje przewijania”. Przeglądarka nie musi wtedy czekać, aż Twoja funkcja skończy, i przewija stronę od razu. Przy `scroll` i dotyku na telefonie dodawaj `passive` zawsze, gdy nie zatrzymujesz domyślnego zachowania.
+</Hare>
+
+## Delegacja zdarzeń
+
+Przycisk „Kopiuj” dostaje własny nasłuchiwacz, osobno przy każdym bloku kodu. Przy kilku blokach to w porządku. Ale wyobraź sobie listę ze stoma przyciskami. Sto nasłuchiwaczy działa, tylko po co?
+
+Zamiast tego możesz dać **jeden** nasłuchiwacz na wspólnym rodzicu i sprawdzać, w co kliknięto:
+
+~~~js
+document.querySelector("article").addEventListener("click", (event) => {
+  const btn = event.target.closest(".copy-btn");
+  if (!btn) return; // kliknięto gdzieś indziej
+  // obsłuż kliknięcie w btn
+});
+~~~
+
+Działa to dlatego, że kliknięcie „wędruje” w górę drzewa DOM: od przycisku, przez wrapper, aż do `article` i dalej. To się nazywa **delegacja zdarzeń**. `closest` z części 7 znajduje przycisk nawet wtedy, gdy kliknąłeś w coś wewnątrz niego. Dodatkowa korzyść: przyciski dołożone później też zadziałają, bez dopinania nowych nasłuchiwaczy.
+
+## Wiadomość od sąsiada
+
+Ostatnie zdarzenie pochodzi z komentarzy pod wpisem. Giscus, który je wyświetla, działa w ramce `iframe`, czyli w osobnej stronie z innego adresu, osadzonej w mojej. Ramka i strona nie widzą nawzajem swojego DOM-u, ale mogą wysyłać sobie wiadomości. Gdy wiadomość przychodzi, przeglądarka wywołuje zdarzenie **`message`**:
+
+~~~js
+addEventListener("message", (event) => {
+  if (event.origin !== "https://giscus.app") return;
+  if (typeof event.data?.giscus === "undefined") return;
+  applyGiscusTheme();
+});
+~~~
+
+Ten kod widziałeś już w części 3, przy wczesnym `return`. Teraz widać, po co jest pierwszy strażnik. Wiadomość do mojej strony może wysłać **każda** inna strona, więc nie wolno ufać jej w ciemno. `event.origin` mówi, skąd wiadomość przyszła. Jeśli nie z `https://giscus.app`, skrypt kończy pracę, zanim cokolwiek zrobi. Drugi strażnik odrzuca wiadomości, które przyszły od Giscusa, ale nie dotyczą komentarzy.
+
+Dopiero po obu sprawdzeniach skrypt wysyła ramce aktualny motyw. Jak dokładnie to robi i skąd wie, że motyw się zmienił, zobaczysz w części 9.
+
+<Hare type="debug">
+W DevTools, w zakładce Elements, kliknij dowolny element i otwórz panel **Event Listeners** (obok Styles). Zobaczysz wszystkie nasłuchiwacze podpięte do tego elementu i jego przodków, z linkiem do kodu. Zaznacz przycisk motywu na tym blogu: znajdziesz tam `click`, a po kliknięciu w link trafisz prosto do skryptu z początku tego wpisu.
+</Hare>
+
+<Hare type="learn">
+Szczegóły w MDN: [wprowadzenie do zdarzeń](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Scripting/Events), [addEventListener()](https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener), [preventDefault()](https://developer.mozilla.org/en-US/docs/Web/API/Event/preventDefault), [requestAnimationFrame()](https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame), [delegacja zdarzeń](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Scripting/Event_bubbling) i [zdarzenie message](https://developer.mozilla.org/en-US/docs/Web/API/Window/message_event).
+</Hare>
+
+## Co nam to daje?
+
+- **Strona, która odpowiada:** `addEventListener` i callback wystarczą, żeby zareagować na kliknięcie, wpisywanie czy przewijanie.
+- **Kontrola nad formularzem:** `preventDefault` zatrzymuje wysyłkę, a JS sprawdza to, czego nie umie HTML.
+- **Dostępność bez dodatkowej pracy:** `<button>` obsługuje mysz i klawiaturę jednym `click`, a `tabIndex` chowa niewidoczne elementy przed Tabem.
+- **Płynne przewijanie:** `passive` i `requestAnimationFrame` sprawiają, że skrypt nie liczy więcej, niż widać na ekranie.
+- **Bezpieczne rozmowy z ramką:** `event.origin` sprawdzasz, zanim uwierzysz w wiadomość.
+
+W **części 9** złożymy wszystko w jedną całość: **przełącznik motywu od A do Z**. Zobaczysz, gdzie blog pamięta Twój wybór, skąd wie, że wolisz ciemny motyw, zanim cokolwiek klikniesz, i dlaczego jeden skrypt musi stać w `<head>`, żeby strona nie mignęła na biało. Do zobaczenia!
