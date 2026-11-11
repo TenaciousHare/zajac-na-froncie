@@ -1,0 +1,15 @@
+---
+interface Props {
+  class?: string;
+}
+const { class: klasa } = Astro.props;
+---
+
+{Astro.slots.has("margines") && (
+  <div class="col-start-2 pl-5 font-reka text-dlugopis md:col-start-1 md:pl-0 md:pr-4 md:text-right">
+    <slot name="margines" />
+  </div>
+)}
+<div class:list={["col-start-2 min-w-0 pl-5 md:pl-10", klasa]}>
+  <slot />
+</div>

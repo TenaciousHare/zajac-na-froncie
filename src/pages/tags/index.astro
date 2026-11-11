@@ -9,23 +9,23 @@ const tags = await getAllTags();
   title="Tagi — Zając na Froncie"
   description="Wszystkie tematy na blogu Zając na Froncie — wybierz tag, żeby zobaczyć powiązane wpisy."
 >
-  <h1 class="mb-6 text-3xl font-bold text-atrament">
-    Tagi
-  </h1>
+  <div class="max-w-3xl mx-auto">
+    <h1 class="mb-6 text-3xl font-bold text-atrament">Tagi</h1>
 
-  <ul class="flex flex-wrap gap-3">
-    {tags.map(({ tag, count }) => (
-      <li>
-        <a
-          href={`/tags/${tag}`}
-          class="inline-flex items-center gap-1.5 rounded-full bg-dlugopis/10 px-4 py-1.5 text-sm font-medium text-dlugopis transition hover:bg-dlugopis/20"
-        >
-          #{tag}
-          <span class="text-xs text-olowek">
-            <span class="sr-only">liczba wpisów:</span> {count}
-          </span>
-        </a>
-      </li>
-    ))}
-  </ul>
+    <ul class="flex flex-wrap gap-3">
+      {tags.map(({ tag, count }) => (
+        <li>
+          <a
+            href={`/tags/${tag}`}
+            class="inline-flex items-center gap-1.5 rounded-full bg-dlugopis/10 px-4 py-1.5 text-sm font-medium text-dlugopis transition hover:bg-dlugopis/20"
+          >
+            #{tag}
+            <span class="text-xs text-olowek">
+              <span class="sr-only">liczba wpisów:</span> {count}
+            </span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
 </Layout>

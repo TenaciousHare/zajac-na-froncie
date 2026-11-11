@@ -40,6 +40,29 @@
   --color-pulapka: #ff8b4e;
 }
 
+@utility papier-w-kratke {
+  background-color: var(--color-papier);
+  background-image:
+    linear-gradient(var(--color-kratka) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-kratka) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+@utility zeszyt {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--margines, 1rem) minmax(0, 1fr);
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    left: var(--margines, 1rem);
+    width: 2px;
+    background: var(--color-margines);
+  }
+}
+
 a.heading-anchor {
   margin-left: 0.35rem;
   color: var(--color-dlugopis);
