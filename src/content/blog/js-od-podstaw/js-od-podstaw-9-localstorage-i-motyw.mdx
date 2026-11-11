@@ -1,0 +1,218 @@
+---
+title: 'JavaScript od podstaw (cz. 9): localStorage i przełącznik motywu od A do Z'
+description: 'Pamięć przeglądarki, matchMedia i kolejność priorytetów, mignięcie jasnego motywu i skrypt w head, a na koniec MutationObserver, który przestawia komentarze. Cała droga jednego kliknięcia przez HTML, CSS i JavaScript.'
+pubDate: 2026-11-12
+tags: ['javascript', 'podstawy', 'localstorage', 'ciemny-motyw']
+series: 'js-od-podstaw'
+seriesPart: 9
+---
+
+import Hare from "../../../components/Hare.astro";
+
+Przez ostatnie części przełącznik motywu pojawiał się kawałkami: operator trójargumentowy w części 3, `setAttribute` w części 7, `click` w części 8. Dziś składamy go w całość. Odpowiemy na trzy pytania: skąd blog pamięta Twój wybór po zamknięciu karty, skąd wie, że wolisz ciemny motyw, zanim cokolwiek klikniesz, i dlaczego strona nie miga przy wczytaniu na biało.
+
+## localStorage, czyli pamięć przeglądarki
+
+Zmienne w JavaScripcie żyją tylko, dopóki strona jest otwarta. Odśwież kartę i wszystko znika. Jeśli coś ma przetrwać, trzeba to zapisać w przeglądarce. Najprostsze miejsce to **`localStorage`**:
+
+~~~js
+localStorage.setItem("theme", "dark"); // zapisz pod kluczem "theme"
+localStorage.getItem("theme"); // "dark"
+localStorage.removeItem("theme"); // usuń
+localStorage.getItem("theme"); // null — nic tu nie ma
+~~~
+
+Działa jak słownik z części 6: klucz i wartość. Trzy rzeczy warto zapamiętać:
+
+- **Dane zostają** po zamknięciu karty, a nawet przeglądarki, dopóki ich nie usuniesz.
+- **Każda strona ma własną szufladę.** Blog nie widzi tego, co zapisał inny serwis, i odwrotnie. Szuflada jest też osobna w każdej przeglądarce: motyw wybrany w Chrome nie przeniesie się do Firefoksa.
+- **Brak klucza to `null`**, tak jak przy `getElementById`. Za chwilę zobaczysz, jak przydaje się tu `??` z części 3.
+
+Podejrzyj to sam: w DevTools otwórz zakładkę **Application**, a w niej **Local Storage**. Po kliknięciu przełącznika motywu na tym blogu zobaczysz klucz `theme` z wartością `dark` albo `light`.
+
+### Tylko tekst
+
+`localStorage` przyjmuje wyłącznie **tekst**. Liczbę zamieni na tekst sama (zapiszesz `18`, a odczytasz `"18"`), ale z obiektem sobie nie poradzi:
+
+~~~js
+const settings = { theme: "dark", fontSize: 18 };
+
+localStorage.setItem("settings", settings);
+localStorage.getItem("settings"); // "[object Object]" — dane przepadły
+~~~
+
+Rozwiązanie znasz z części 6. Obiekt zamieniasz w JSON przy zapisie i z powrotem przy odczycie:
+
+~~~js
+localStorage.setItem("settings", JSON.stringify(settings));
+const saved = JSON.parse(localStorage.getItem("settings"));
+saved.fontSize; // 18
+~~~
+
+Blog trzyma tylko jeden napis, `"dark"` albo `"light"`, więc JSON nie jest mu potrzebny.
+
+<Hare type="bug">
+`localStorage` nie zawsze jest dostępny. Gdy ktoś zablokuje w przeglądarce zapisywanie danych stron, samo sięgnięcie po `localStorage` rzuca błędem i skrypt staje w miejscu. Ostrożna wersja łapie taki błąd w `try / catch` (rozbierzemy go dokładnie w części 10):
+
+~~~js
+let saved = null;
+try {
+  saved = localStorage.getItem("theme");
+} catch {
+  // pamięć zablokowana: działamy bez niej
+}
+~~~
+
+Uczciwie: mój skrypt motywu jeszcze tego nie robi. To rzadki przypadek, ale mam go na liście usprawnień.
+</Hare>
+
+## matchMedia, czyli pytanie o ustawienia systemu
+
+Przy pierwszej wizycie w `localStorage` nic nie ma. Ale Twój telefon czy laptop może mieć ustawiony ciemny tryb. W [części 8 serii CSS](/blog/css-od-podstaw-8-responsywnosc) pytaliśmy o to media query `prefers-color-scheme`. JavaScript może zadać dokładnie to samo pytanie:
+
+~~~js
+window.matchMedia("(prefers-color-scheme: dark)").matches; // true albo false
+~~~
+
+`matchMedia` przyjmuje to samo zapytanie, które piszesz w CSS po `@media`, a `matches` mówi, czy w tej chwili jest spełnione.
+
+## Kolejność: Ty, system, jasny
+
+Mamy więc dwa źródła informacji: Twój zapisany wybór i ustawienie systemu. Blog sprawdza je w takiej kolejności:
+
+1. **Twój wybór**, jeśli kiedyś kliknąłeś przełącznik,
+2. **ustawienie systemu**, jeśli nic nie wybrałeś,
+3. **jasny motyw**, jeśli system też nie woli ciemnego.
+
+W kodzie to jedna instrukcja z `??` i operatorem trójargumentowym:
+
+~~~js
+const saved = localStorage.getItem("theme");
+const theme =
+  saved ??
+  (window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light");
+document.documentElement.setAttribute("data-theme", theme);
+~~~
+
+Ten kod widziałeś w części 3, przy `??`. Teraz widać, po co jest każdy kawałek. Jeśli `saved` ma wartość, wygrywa od razu. Jeśli to `null`, JS pyta system. Wynik trafia do tego samego atrybutu, który przestawia przełącznik.
+
+<Hare type="decision">
+Dlaczego zapisany wybór wygrywa z systemem, a nie odwrotnie?
+
+Bo jest **świeższy i bardziej konkretny**. Ustawienie systemu mówi: „ten człowiek zwykle woli ciemny”. Kliknięcie przełącznika mówi: „na tym blogu chcę jasny”. Gdyby system wygrywał, każde odświeżenie strony cofałoby Twoją decyzję. Przełącznik, który zapomina, co mu kazałeś, jest gorszy niż brak przełącznika.
+</Hare>
+
+## Dlaczego ten skrypt stoi w head
+
+W [części 1](/blog/js-od-podstaw-1-czym-jest-javascript) pisałem, że skrypty zwykle stoją na końcu strony albo czekają, aż HTML się wczyta. Skrypt motywu łamie tę zasadę: stoi w `<head>`, przed całą treścią. W Astro wygląda tak:
+
+~~~html
+<head>
+  <script is:inline>
+    const saved = localStorage.getItem("theme");
+    // ...reszta kodu z poprzedniej sekcji
+  </script>
+</head>
+~~~
+
+Zwykły skrypt w Astro jest pakowany do osobnego pliku i uruchamia się **po** wczytaniu HTML-a. `is:inline` mówi: „zostaw ten kod dokładnie tu, gdzie jest, i wykonaj go od razu”.
+
+<Hare type="bug">
+Co by się stało, gdyby skrypt motywu stał na końcu strony?
+
+Przeglądarka czyta HTML od góry i maluje treść, gdy tylko może. Zobaczyłaby wpis bez `data-theme`, więc pokazałaby go w jasnym motywie. Ułamek sekundy później skrypt ustawiłby `data-theme="dark"` i strona przeskoczyłaby na ciemną. Efekt: przy każdym wejściu biały błysk po oczach. Takie mignięcie ma nawet swoją nazwę: **FOUC** (*flash of unstyled content*).
+
+Skrypt w `<head>` wykonuje się, **zanim** przeglądarka namaluje cokolwiek. Gdy przychodzi pora na malowanie, atrybut już jest i strona od pierwszej klatki ma właściwy motyw.
+
+A skąd skrypt w `<head>` ma dostęp do elementu, skoro `<body>` jeszcze nie istnieje? Zmienia tylko atrybut na `<html>`, czyli `document.documentElement`. Ten element istnieje od samego początku, bo `<head>` siedzi w jego środku.
+</Hare>
+
+## Komentarze też muszą wiedzieć
+
+Został ostatni element układanki: komentarze pod wpisem. Giscus działa w ramce `iframe` z innej strony, więc reguły CSS dla `[data-theme="dark"]` go nie dotyczą. Ramce trzeba **powiedzieć**, jaki jest motyw, wiadomością przez `postMessage`:
+
+~~~js
+function giscusTheme() {
+  return document.documentElement.getAttribute("data-theme") === "dark"
+    ? "dark"
+    : "light";
+}
+
+function applyGiscusTheme() {
+  const iframe = document.querySelector("iframe.giscus-frame");
+  iframe?.contentWindow?.postMessage(
+    { giscus: { setConfig: { theme: giscusTheme() } } },
+    "https://giscus.app",
+  );
+}
+~~~
+
+Te dwie funkcje znasz z [części 4](/blog/js-od-podstaw-4-funkcje): pierwsza **liczy**, czyli odczytuje atrybut i oddaje nazwę motywu, a druga **robi**, czyli znajduje ramkę i wysyła jej obiekt z nowym ustawieniem. Drugi argument `postMessage` to adres odbiorcy. Wiadomość dotrze tylko wtedy, gdy w ramce naprawdę jest `https://giscus.app`. To lustrzane odbicie sprawdzania `event.origin` z części 8: tam sprawdzaliśmy nadawcę, tu wskazujemy odbiorcę.
+
+Kiedy wywołać `applyGiscusTheme`? Raz, gdy Giscus się załaduje i przyśle pierwszą wiadomość (to zdarzenie `message` z części 8). I za każdym razem, gdy zmienisz motyw. Tylko jak skrypt komentarzy ma się dowiedzieć o kliknięciu w przycisk, który siedzi w zupełnie innym pliku?
+
+Mógłbym dopisać wywołanie do przełącznika motywu, ale wtedy przełącznik musiałby wiedzieć o komentarzach. Zamiast tego skrypt komentarzy sam **obserwuje** atrybut:
+
+~~~js
+new MutationObserver(applyGiscusTheme).observe(document.documentElement, {
+  attributes: true,
+  attributeFilter: ["data-theme"],
+});
+~~~
+
+**`MutationObserver`** to obserwator zmian w DOM-ie. Dostaje funkcję do wywołania, a `observe` mówi mu, na co patrzeć: na element `<html>`, tylko na atrybuty i tylko na `data-theme`. Od teraz każda zmiana tego atrybutu, skądkolwiek przyjdzie, wywoła `applyGiscusTheme`. Przełącznik nie wie o komentarzach, a komentarze nie wiedzą o przełączniku. Oba wiedzą tylko o atrybucie.
+
+<Hare type="architecture">
+Cała droga jednego kliknięcia na tym blogu:
+
+1. **`<head>` w `Layout.astro`:** przed malowaniem strony skrypt czyta `localStorage`, w razie potrzeby pyta system i ustawia `data-theme` na `<html>`.
+2. **Przycisk w `Nav.astro`:** po kliknięciu odwraca motyw, ustawia nowy `data-theme` i zapisuje wybór w `localStorage`.
+3. **`global.css`:** reguły dla `[data-theme="dark"]` i zmienne CSS przestawiają kolory całej strony.
+4. **`Comments.astro`:** `MutationObserver` widzi zmianę atrybutu i wysyła Giscusowi nowy motyw przez `postMessage`.
+
+Wszystkie cztery miejsca łączy jeden atrybut. Żadne z nich nie musi wiedzieć, jak działają pozostałe.
+</Hare>
+
+## Czego blog jeszcze nie robi
+
+Jest jedna sytuacja, której mój przełącznik nie obsługuje. Załóżmy, że nigdy nie kliknąłeś przełącznika, a telefon sam przechodzi na ciemny tryb wieczorem. Blog sprawdził system przy wczytaniu, więc zmieni motyw dopiero po odświeżeniu strony.
+
+`matchMedia` potrafi dać znać, kiedy odpowiedź się zmienia. Wystarczy nasłuchiwacz z części 8:
+
+~~~js
+const media = window.matchMedia("(prefers-color-scheme: dark)");
+
+media.addEventListener("change", (event) => {
+  if (localStorage.getItem("theme")) return; // Twój wybór wygrywa
+  const theme = event.matches ? "dark" : "light";
+  document.documentElement.setAttribute("data-theme", theme);
+});
+~~~
+
+Strażnik na początku pilnuje kolejności priorytetów: jeśli kiedyś wybrałeś motyw sam, zmiana w systemie go nie nadpisze. Komentarze dostosują się same, bo `MutationObserver` zobaczy zmianę atrybutu. To kolejny pomysł na moją listę usprawnień.
+
+## Trzy warstwy w jednym przycisku
+
+Na początku serii HTML pisałem, że HTML nadaje treści znaczenie, CSS wygląd, a JavaScript zachowanie. Przełącznik motywu pokazuje to lepiej niż jakikolwiek przykład:
+
+- **HTML:** prawdziwy `<button type="button">` z `aria-label="Przełącz motyw"`. Działa z klawiatury i czytnik ekranu wie, co robi.
+- **CSS:** zmienne i reguły dla `[data-theme="dark"]` decydują o każdym kolorze, a ikonki księżyca i słońca chowają się zależnie od atrybutu.
+- **JavaScript:** odczytuje, przełącza, zapamiętuje i daje znać komentarzom. Nie zmienia ani jednego koloru.
+
+Każda warstwa robi swoje i żadna nie wchodzi w drogę pozostałym.
+
+<Hare type="learn">
+Szczegóły w MDN: [Web Storage API i localStorage](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage), [matchMedia()](https://developer.mozilla.org/en-US/docs/Web/API/Window/matchMedia), [prefers-color-scheme](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@media/prefers-color-scheme), [MutationObserver](https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver) i [postMessage()](https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage).
+</Hare>
+
+## Co nam to daje?
+
+- **Pamięć między wizytami:** `localStorage` trzyma tekst, a obiekty zapisujesz przez JSON.
+- **Szacunek dla ustawień użytkownika:** `matchMedia` pyta system, ale wybór z przełącznika zawsze wygrywa.
+- **Strona bez mignięcia:** skrypt, który musi zadziałać przed malowaniem, stoi w `<head>`.
+- **Luźno połączony kod:** `MutationObserver` pozwala komentarzom reagować na motyw, a przełącznik nic o nich nie wie.
+- **Trzy warstwy w praktyce:** znaczenie w HTML, wygląd w CSS, zachowanie w JS.
+
+Wszystko, co robiliśmy do tej pory, działo się od razu. Ale niektóre rzeczy wymagają czekania: na schowek, na serwer, na dane pogodowe z drugiego końca świata. W **części 10** poznasz kod, który **czeka**: `setTimeout`, `Promise`, `async` i `await` oraz `fetch`. Rozbierzemy kliknięcie w „Kopiuj” do końca i zajrzymy, jak Avia Weather pobiera depesze METAR. Do zobaczenia!
