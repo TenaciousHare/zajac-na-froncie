@@ -1,4 +1,7 @@
 ---
+import "@fontsource-variable/atkinson-hyperlegible-next";
+import "@fontsource-variable/atkinson-hyperlegible-mono";
+import "@fontsource-variable/shantell-sans/full.css";
 import "../styles/global.css";
 import Nav from "../components/Nav.astro";
 import BackToTop from "../components/BackToTop.astro";
@@ -70,13 +73,13 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     ></script>
     <!-- End Cloudflare Web Analytics -->
   </head>
-  <body class="bg-white text-slate-900 transition-colors dark:bg-slate-900 dark:text-slate-100">
+  <body class="bg-papier font-sans text-atrament">
     <Nav />
     <main class="mx-auto max-w-3xl px-4 py-8">
       <slot />
     </main>
-    <footer class="border-t border-slate-200 dark:border-slate-700">
-      <div class="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-6 text-sm text-slate-500 dark:text-slate-400">
+    <footer class="border-t border-linia">
+      <div class="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-6 text-sm text-olowek">
         <p>© {new Date().getFullYear()} Zając na Froncie</p>
         <SocialLinks />
       </div>
