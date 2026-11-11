@@ -10,13 +10,13 @@ const posts = await getPublishedPosts();
   title="Blog — Zając na Froncie"
   description="Wpisy o nauce frontendu od zera: React, TypeScript, Astro i CSS. Realna droga z błędami i zwycięstwami — prosto, po polsku, z Senior Hare w roli przewodnika."
 >
-  <h1 class="text-3xl font-bold text-atrament mb-6">
-    Blog
-  </h1>
+  <div class="max-w-3xl mx-auto">
+    <h1 class="text-3xl font-bold text-atrament mb-6">Blog</h1>
 
-  <ul class="space-y-6">
-    {posts.map((post) => (
-      <PostCard post={post} />
-    ))}
-  </ul>
+    <ul class="space-y-6">
+      {posts.map((post) => (
+        <PostCard post={post} />
+      ))}
+    </ul>
+  </div>
 </Layout>
