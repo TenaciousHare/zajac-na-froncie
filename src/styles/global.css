@@ -4,17 +4,45 @@
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 @theme {
-  --color-accent: #ea580c; /* pomarańcz — "Froncie" (GŁÓWNY akcent) */
-  --color-accent-dark: #c2410c; /* ciemniejszy — pod hover / lepszy kontrast */
-  --color-link: var(--color-accent-dark); /* accent-dark — jasny motyw */
+  --font-sans:
+    "Atkinson Hyperlegible Next Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Atkinson Hyperlegible Mono Variable", ui-monospace, monospace;
+  --font-reka: "Shantell Sans Variable", "Comic Sans MS", cursive;
+  --font-reka--font-variation-settings: "INFM" 100, "BNCE" 35;
+
+  --color-papier: #fbfcfd; /* tło strony */
+  --color-kartka: #ffffff; /* dymki i bloki na papierze */
+  --color-kratka: rgb(33 82 196 / 0.085); /* linie kratki */
+  --color-linia: #c9d6ea; /* obramowania, separatory */
+  --color-atrament: #1f2a44; /* tekst */
+  --color-atrament-2: #3a4562; /* lead i opisy */
+  --color-olowek: #55607a; /* daty, podpisy */
+  --color-dlugopis: #2152c4; /* linki, numery, pismo Zająca */
+  --color-dlugopis-ciemny: #153a92; /* hover linków */
+  --color-marker: #f47c42; /* tylko jako tło */
+  --color-na-markerze: #1f2a44; /* tekst na tle marker */
+  --color-margines: #e26c7e; /* czerwona linia */
+  --color-pulapka: #a63f0b; /* etykieta „Pułapka” */
 }
 [data-theme="dark"] {
-  --color-link: #fb923c; /* orange-400 — ciemny motyw */
+  --color-papier: #121a30;
+  --color-kartka: #1a2442;
+  --color-kratka: rgb(143 176 255 / 0.07);
+  --color-linia: #2a3655;
+  --color-atrament: #e9edf6;
+  --color-atrament-2: #c3cadb;
+  --color-olowek: #a9b3c9;
+  --color-dlugopis: #8fb0ff;
+  --color-dlugopis-ciemny: #b7ccff;
+  --color-marker: #ff8b4e;
+  --color-na-markerze: #121a30;
+  --color-margines: #b4475c;
+  --color-pulapka: #ff8b4e;
 }
 
 a.heading-anchor {
   margin-left: 0.35rem;
-  color: var(--color-link);
+  color: var(--color-dlugopis);
   text-decoration: none;
   opacity: 0;
   transition: opacity 0.15s ease;
@@ -72,6 +100,23 @@ a.heading-anchor:focus-visible {
 .copy-btn[data-copied="true"] {
   color: #3fb950; /* GitHub success green = skopiowano */
   border-color: #3fb950;
+}
+
+.prose-zeszyt {
+  --tw-prose-body: var(--color-atrament);
+  --tw-prose-headings: var(--color-atrament);
+  --tw-prose-lead: var(--color-atrament-2);
+  --tw-prose-links: var(--color-dlugopis);
+  --tw-prose-bold: var(--color-atrament);
+  --tw-prose-counters: var(--color-olowek);
+  --tw-prose-bullets: var(--color-olowek);
+  --tw-prose-hr: var(--color-linia);
+  --tw-prose-quotes: var(--color-atrament-2);
+  --tw-prose-quote-borders: var(--color-linia);
+  --tw-prose-captions: var(--color-olowek);
+  --tw-prose-code: var(--color-atrament);
+  --tw-prose-th-borders: var(--color-linia);
+  --tw-prose-td-borders: var(--color-linia);
 }
 
 .prose code::before,
