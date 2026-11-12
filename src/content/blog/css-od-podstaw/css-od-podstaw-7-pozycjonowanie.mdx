@@ -1,6 +1,6 @@
 ---
 title: 'CSS od podstaw (cz. 7): pozycjonowanie i warstwy'
-description: 'position: relative, absolute, fixed i sticky, właściwość inset i z-index. Jak cała karta wpisu stała się klikalna bez linku w linku i skąd w rogu ekranu bierze się przycisk powrotu na górę.'
+description: 'position: relative, absolute, fixed i sticky, właściwość inset i z-index. Jak zrobić klikalną całą kartę bez linku w linku i skąd w rogu ekranu bierze się przycisk powrotu na górę.'
 pubDate: 2026-10-30
 tags: ['css', 'podstawy', 'pozycjonowanie']
 series: 'css-od-podstaw'
@@ -53,7 +53,7 @@ Klasyczny błąd: dajesz dziecku `absolute`, a ono ląduje w rogu… **całej st
 
 ## Z życia: klikalna cała karta
 
-Na stronie głównej każda karta wpisu jest klikalna w całości. Pierwszy pomysł: owinąć całą kartę w `<a>`. Problem w tym, że w karcie są też **tagi**, które same są linkami — a **link w linku jest w HTML nieprawidłowy**.
+Do listopada na stronie głównej każda karta wpisu była klikalna w całości. Pierwszy pomysł: owinąć całą kartę w `<a>`. Problem w tym, że w karcie były też **tagi**, które same są linkami — a **link w linku jest w HTML nieprawidłowy**.
 
 Rozwiązanie to wzorzec **stretched link** (rozciągnięty link):
 
@@ -77,11 +77,15 @@ Krok po kroku:
 W HTML-u jest jeden link do wpisu i osobne linki do tagów. Czytnik ekranu nie słyszy całej karty jako jednego wielkiego linku, a dla myszki cała karta jest klikalna.
 </Hare>
 
+<Hare type="decision">
+Po przejściu bloga na „zeszyt w kratkę” kart już nie ma: wpis na stronie głównej to dziś tytuł z linkiem. Wzorzec zostaje jednak w skrzynce z narzędziami — przyda się przy każdej karcie z linkami w środku.
+</Hare>
+
 ## `z-index` — kto na wierzchu
 
 Gdy elementy nachodzą na siebie, **`z-index`** decyduje, który jest bliżej Ciebie. Większa liczba = wyżej. Ale są dwie zasady, które oszczędzą Ci sporo nerwów:
 
-- `z-index` działa tylko na elementach **pozycjonowanych** (`relative`, `absolute`, `fixed`, `sticky`) oraz dzieciach flexa i grida. Na zwykłym `static` nie robi nic. Dlatego tagi w karcie mają `relative` **i** `z-10`, a nie samo `z-10`,
+- `z-index` działa tylko na elementach **pozycjonowanych** (`relative`, `absolute`, `fixed`, `sticky`) oraz dzieciach flexa i grida. Na zwykłym `static` nie robi nic. Dlatego tagi w karcie miały `relative` **i** `z-10`, a nie samo `z-10`,
 - `z-index` porównuje się tylko w obrębie tego samego **kontekstu nakładania** (*stacking context*).
 
 <Hare type="why">
@@ -101,7 +105,7 @@ Po przewinięciu tego wpisu w prawym dolnym rogu pojawi się okrągły przycisk 
 }
 ~~~
 
-Okno przeglądarki jest punktem odniesienia, więc przycisk stoi w miejscu, a strona przewija się pod nim. `z-index: 50` trzyma go ponad treścią, także ponad kartami z ich `z-10`.
+Okno przeglądarki jest punktem odniesienia, więc przycisk stoi w miejscu, a strona przewija się pod nim. `z-index: 50` trzyma go ponad całą treścią strony.
 
 ## `sticky` — przyklej, ale z umiarem
 

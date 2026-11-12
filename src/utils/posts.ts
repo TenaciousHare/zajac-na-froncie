@@ -62,16 +62,22 @@ export async function getSeriesOverview() {
     getPlannedPosts(),
   ]);
   return Object.entries(serie)
-    .map(([klucz, meta]) => ({
-      klucz,
-      ...meta,
-      czesci: opublikowane
+    .map(([klucz, meta]) => {
+      const wkrotce = zaplanowane
         .filter((p) => p.data.series === klucz)
-        .sort(poCzesci),
-      wkrotce: zaplanowane
-        .filter((p) => p.data.series === klucz)
-        .sort(poCzesci),
-    }))
+        .sort(poCzesci);
+      return {
+        klucz,
+        ...meta,
+        czesci: opublikowane
+          .filter((p) => p.data.series === klucz)
+          .sort(poCzesci),
+        wkrotce,
+        // zamknięta dopiero, gdy ostatnia zaplanowana część wyjdzie;
+        // codzienny rebuild przestawi napis sam, bez dodatkowego commita
+        zamknieta: meta.zamknieta && wkrotce.length === 0,
+      };
+    })
     .sort((a, b) => a.kolejnosc - b.kolejnosc);
 }
 

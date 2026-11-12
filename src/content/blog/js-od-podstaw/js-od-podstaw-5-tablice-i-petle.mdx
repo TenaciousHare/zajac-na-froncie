@@ -163,16 +163,22 @@ const descriptions = codes.map((code) => describeCloudCover(code));
 // ["zachmurzenie małe", "zachmurzenie duże", "zachmurzenie całkowite"]
 ~~~
 
-Na stronie Projekty tego bloga każda technologia przy projekcie to mała „pigułka”. Astro rysuje je dokładnie tak — `map` zamienia każdy napis z tablicy `tech` w element listy:
+Pod tym wpisem stoi lista tagów, każdy w małej „pigułce”. Astro rysuje ją dokładnie tak — `map` zamienia każdy napis z tablicy tagów w element listy z linkiem:
 
 ~~~jsx
-{project.tech.map((t) => <li>{t}</li>)}
+{widoczne.map((tag) => (
+  <li>
+    <a href={`/tags/${tag}`}>#{tag}</a>
+  </li>
+))}
 ~~~
 
 To nie jest czysty JS, tylko zapis w szablonie Astro, ale metoda `map` jest dokładnie ta sama.
 
 <Hare type="explain">
-`map` **zawsze** oddaje tablicę tej samej długości co wejściowa: trzy kody → trzy opisy, sześć technologii → sześć pigułek. Nie usuwa elementów i nie dodaje nowych — każdy element zamienia w coś innego. Jeśli chcesz część elementów wyrzucić, potrzebujesz `filter`.
+`map` **zawsze** oddaje tablicę tej samej długości co wejściowa: trzy kody → trzy opisy, trzy tagi → trzy pigułki. Nie usuwa elementów i nie dodaje nowych — każdy element zamienia w coś innego. Jeśli chcesz część elementów wyrzucić, potrzebujesz `filter`.
+
+Dlatego tablica nazywa się `widoczne`. Ten wpis ma cztery tagi, a pigułki widzisz trzy: `podstawy` ma prawie każdy wpis, więc niczego nie odróżnia, i `filter` wyrzuca go, zanim `map` narysuje listę.
 </Hare>
 
 ## filter i sort, czyli strona główna tego bloga
@@ -218,7 +224,7 @@ I druga pułapka: `sort` w przeciwieństwie do `map` i `filter` **zmienia orygin
 
 ## find i findIndex, czyli nawigacja po serii
 
-Pod każdym wpisem z serii masz linki „← poprzednia · następna →”. Działa to tak: najpierw biorę wszystkie opublikowane części serii, posortowane po numerze części, a potem szukam w nich bieżącego wpisu:
+Pod każdym wpisem z serii masz linki „Poprzednia część” i „Następna część”. Działa to tak: najpierw biorę wszystkie opublikowane części serii, posortowane po numerze części, a potem szukam w nich bieżącego wpisu:
 
 ~~~js
 const index = parts.findIndex((post) => post.id === current.id);

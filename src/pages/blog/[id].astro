@@ -47,8 +47,9 @@ const maSpis =
   title={`${post.data.title} — Zając na Froncie`}
   description={post.data.description}
 >
-  <!-- -my-8 znosi py-8 z <main>, więc linia marginesu dochodzi do nagłówka i stopki -->
-  <div class="wpis-z-marginesem zeszyt -my-8 pb-16 [--margines:1rem] md:[--margines:6rem] lg:[--margines:15rem]">
+  <!-- -my-8 znosi py-8 z <main>, więc linia marginesu dochodzi do nagłówka i stopki.
+       Cały zeszyt to <article>: tytuł, części serii i treść należą do jednego wpisu -->
+  <article class="wpis-z-marginesem zeszyt -my-8 pb-16 [--margines:1rem] md:[--margines:6rem] lg:[--margines:15rem]">
     <!-- temat lekcji: tytuł bez nazwy serii, bo serię pokazują kwadraty -->
     <Wiersz class="pt-12">
       <span
@@ -107,15 +108,15 @@ const maSpis =
 
     <Wiersz class="mt-10">
       <!-- flow-root: notatki na marginesie nie wystają pod tagi i komentarze -->
-      <article class="prose prose-lg flow-root max-w-[70ch] prose-zeszyt prose-a:underline-offset-2 prose-a:hover:text-dlugopis-ciemny prose-a:hover:decoration-2">
+      <div class="prose prose-lg flow-root max-w-[70ch] prose-zeszyt prose-a:underline-offset-2 prose-a:hover:text-dlugopis-ciemny prose-a:hover:decoration-2">
         <Content />
-      </article>
+      </div>
       <div class="max-w-[70ch]">
         <TagList tags={post.data.tags} />
         <SeriesNav prev={prev} next={next} />
         <Comments />
       </div>
     </Wiersz>
-  </div>
+  </article>
   <CodeCopy />
 </Layout>

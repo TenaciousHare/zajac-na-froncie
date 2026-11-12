@@ -186,13 +186,13 @@ a.heading-anchor:focus-visible {
 
 /* długie nazwy z kodu, np. requestAnimationFrame(update), łamią się
    na wąskim telefonie, zamiast rozpychać stronę w bok */
-.wpis-z-marginesem article {
+.wpis-z-marginesem .prose {
   overflow-wrap: break-word;
 }
 
 /* szeroka tabela (np. operatory w JS cz. 3) zwęża się na telefonie:
    komórki mogą łamać długi kod, więc tabela nie rozpycha strony */
-.wpis-z-marginesem article :is(td, th) {
+.wpis-z-marginesem .prose :is(td, th) {
   overflow-wrap: anywhere;
 }
 

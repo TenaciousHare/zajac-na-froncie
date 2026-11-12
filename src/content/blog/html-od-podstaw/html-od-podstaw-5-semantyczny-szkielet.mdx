@@ -115,35 +115,32 @@ To pytanie zadasz sobie najczęściej. Odpowiedź wynika ze znaczenia:
 
   <main>
     <article>
-      <h1>HTML od podstaw (cz. 5): semantyczny szkielet strony</h1>
+      <h1>Semantyczny szkielet strony</h1>
+      <nav aria-label="Części serii">
+        <ol>…</ol>
+      </nav>
       <nav aria-label="Spis treści">…</nav>
       <h2>Morze divów</h2>
       <p>…</p>
+      <nav aria-label="Sąsiednie części serii">…</nav>
     </article>
-
-    <section>
-      <h2>Więcej z tej serii</h2>
-      <ol>…</ol>
-    </section>
-
-    <nav aria-label="Części serii">…</nav>
   </main>
 
   <footer>
     <p>© 2026 Zając na Froncie</p>
-    <a href="/rss.xml">RSS</a>
+    <nav aria-label="Media społecznościowe">…</nav>
   </footer>
 </body>
 ```
 
 Kilka rzeczy wartych zauważenia:
 
-- Na jednej stronie są **aż trzy `<nav>`**: menu, spis treści i przejścia między częściami. Dlatego każdy ma własną etykietę (pamiętasz z części 3?).
+- Na jednej stronie jest **aż pięć `<nav>`**: menu, części serii, spis treści, przejścia do sąsiednich części i linki w stopce. Dlatego każdy ma własną etykietę (pamiętasz z części 3?).
 - Przycisk zmiany motywu stoi w `header`, ale **poza** `nav` — bo to akcja, a nie nawigacja. To pytanie „link czy przycisk” z części 3, tylko w skali całej strony.
-- „Więcej z tej serii” to `section` z nagłówkiem: tematyczny fragment tej podstrony. Równie dobrze mógłby to być `aside` — treść powiązana, ale poboczna. Oba wybory da się obronić.
+- Części serii pod tytułem wyglądają jak rząd kwadratów, ale w HTML-u to `nav` z listą `<ol>`. Liczy się nie wygląd, tylko to, czym są: linkami do innych części, czyli nawigacją. A `ol`, a nie `ul`, bo kolejność części ma znaczenie.
 
 <Hare type="tip">
-  Chcesz zobaczyć landmarki na żywo? W Chrome otwórz DevTools → **Elements** → panel **Accessibility** i włącz „Enable full-page accessibility tree”. Na tej stronie znajdziesz `banner` (header), trzy nazwane `navigation`, `main` i `contentinfo` (footer).
+  Chcesz zobaczyć landmarki na żywo? W Chrome otwórz DevTools → **Elements** → panel **Accessibility** i włącz „Enable full-page accessibility tree”. Na tej stronie znajdziesz `banner` (header), pięć nazwanych `navigation`, `main` i `contentinfo` (footer).
 </Hare>
 
 <Hare type="learn">

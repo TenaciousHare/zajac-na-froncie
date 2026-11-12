@@ -40,19 +40,22 @@ I tak właśnie działa ciemny motyw na tym blogu:
 
 ~~~css
 @theme {
-  --color-accent-dark: #c2410c;
-  --color-link: var(--color-accent-dark);
+  --color-papier: #fbfcfd; /* tło strony */
+  --color-atrament: #1f2a44; /* tekst */
+  --color-dlugopis: #2152c4; /* linki */
 }
 
 [data-theme="dark"] {
-  --color-link: #fb923c;
+  --color-papier: #121a30;
+  --color-atrament: #e9edf6;
+  --color-dlugopis: #8fb0ff;
 }
 ~~~
 
-Przełącznik w nawigacji zmienia tylko atrybut `data-theme` na `<html>` (pisałem o tym w części 8). Od tej chwili `--color-link` ma nową wartość, a każdy link na stronie, który jej używa, zmienia kolor — bez dotykania choćby jednej klasy.
+Przełącznik w nawigacji zmienia tylko atrybut `data-theme` na `<html>` (pisałem o tym w części 8). Od tej chwili `--color-dlugopis` ma nową wartość, a każdy link na stronie, który jej używa, zmienia kolor — bez dotykania choćby jednej klasy.
 
 <Hare type="explain">
-Zwróć uwagę na `--color-link: var(--color-accent-dark)`. To **token wskazujący token**. Paleta (`accent`, `accent-dark`) mówi, jakie kolory w ogóle mamy, a `link` mówi, **do czego** jednego z nich używamy. Jeśli kiedyś zmienię odcień pomarańczu, linki pójdą za nim same.
+Zmienna może też wskazywać inną zmienną. Wtyczka typograficzna Tailwinda trzyma kolor linków we wpisie w `--tw-prose-links`, a ja w `global.css` piszę jej: `--tw-prose-links: var(--color-dlugopis)`. Wtyczka wie tylko, **do czego** służy kolor, a paleta — **jaki** jest. Gdy długopis zmieni odcień, linki we wpisach pójdą za nim same.
 </Hare>
 
 ## Z życia: ciemny motyw bez Tailwinda
@@ -90,9 +93,9 @@ Zauważ też, że `body` ma tam `transition: background 0.2s, color 0.2s`. Po kl
 Przy audycie kontrastu z części 4 usunąłem z bloga kilka nieużywanych kolorów. Jeden z nich nazywał się `sneaker`. Ładna nazwa, tylko co znaczy? Jakiego koloru jest but? I co, jeśli zmienię odcień — dalej będzie „sneaker”?
 
 <Hare type="decision">
-Dziś nazywam tokeny **według roli**: `link`, `accent`, `danger`, a nie `orange` czy `sneaker`. Rola się nie zmienia, nawet gdy zmienia się kolor — w ciemnym motywie `link` jest jaśniejszy, ale dalej jest linkiem.
+Dziś nazywam tokeny **według roli**, a nie wyglądu. Blog jest zeszytem, więc role mają nazwy z piórnika: `atrament` to tekst, `olowek` to daty i podpisy, `dlugopis` to linki, a `marker` to zakreślacz pod ważnym przyciskiem. Żaden nie nazywa się `blue` ani `sneaker`. Rola się nie zmienia, nawet gdy zmienia się kolor — w ciemnym motywie długopis jest jaśniejszy, ale dalej jest długopisem.
 
-To działa też w drugą stronę. Pigułki z technologiami na stronie **Projekty** mają w ciemnym motywie `orange-400`, a nie `text-link`, choć kolor wygląda podobnie. Dlaczego? Bo pigułka **nie jest linkiem**. Gdybym kiedyś zmienił kolor linków, pigułki nie powinny zmienić się razem z nimi.
+To działa też w drugą stronę. Czerwona linia marginesu (`margines`) i czerwona etykieta „Pułapka” w notatkach Zająca (`pulapka`) to dwa osobne tokeny, choć oba są czerwone. Linia to grafika i wystarcza jej 3:1, a etykieta to tekst i potrzebuje 4.5:1 — więc jest ciemniejsza. Gdybym kiedyś zmienił kolor marginesu, etykiety nie powinny zmienić się razem z nim.
 </Hare>
 
 Zmienne w Avia Weather też są nazwane według roli: `--bg`, `--text`, `--muted`, `--border`.
@@ -110,10 +113,10 @@ Odpowiedź jest prostsza, niż myślałem: **Tailwind to CSS**. Każda klasa to 
 
 Tailwind nie zwalnia z rozumienia CSS. On zakłada, że je rozumiesz, i daje krótszy zapis. Bez tej serii klasa `min-w-0` byłaby dla mnie zaklęciem. Teraz wiem, że to `min-width: 0`, i wiem, **dlaczego** ratuje callout.
 
-A w Tailwindzie v4 most jest dosłowny. Blok `@theme` z `global.css` to **zwykłe zmienne CSS**. Tailwind robi z nich dwie rzeczy: generuje klasy (`--color-link` → `text-link`, `bg-link`, `border-link`) i wypuszcza same zmienne do arkusza — przy tym tylko te, których naprawdę używasz.
+A w Tailwindzie v4 most jest dosłowny. Blok `@theme` z `global.css` to **zwykłe zmienne CSS**. Tailwind robi z nich dwie rzeczy: generuje klasy (`--color-dlugopis` → `text-dlugopis`, `bg-dlugopis`, `border-dlugopis`) i wypuszcza same zmienne do arkusza — przy tym tylko te, których naprawdę używasz.
 
 <Hare type="bug">
-Jest jedna pułapka, na którą wpadłem. Tailwind ma też wariant `@theme inline`. Wygląda niewinnie, ale robi coś innego: zamiast `color: var(--color-link)` wkleja do klasy `text-link` od razu **wartość** zmiennej. A wtedy nadpisanie `--color-link` w `[data-theme="dark"]` nic nie zmienia, bo klasa już o tej zmiennej nie wie.
+Jest jedna pułapka, na którą wpadłem. Tailwind ma też wariant `@theme inline`. Wygląda niewinnie, ale robi coś innego: zamiast `color: var(--color-dlugopis)` wkleja do klasy `text-dlugopis` od razu **wartość** zmiennej. A wtedy nadpisanie `--color-dlugopis` w `[data-theme="dark"]` nic nie zmienia, bo klasa już o tej zmiennej nie wie.
 
 Dlatego tokeny, które mają się zmieniać z motywem, trzymaj zawsze w zwykłym `@theme`.
 </Hare>

@@ -148,7 +148,7 @@ const czesci = (n: number) =>
             </h3>
             <p class="mt-1 text-atrament-2">{s.opis}</p>
             <p class="mt-1 text-sm text-olowek">
-              {czesci(s.czesci.length)} części,{" "}
+              {czesci(s.czesci.length)},{" "}
               {s.zamknieta ? "seria zamknięta" : "kolejne w drodze"}
             </p>
           </div>
@@ -182,7 +182,7 @@ const czesci = (n: number) =>
               </a>
             </h3>
             <p class="max-w-[30em] text-atrament-2">{s.opis}</p>
-            <p class="text-sm text-olowek">{czesci(s.czesci.length)} części</p>
+            <p class="text-sm text-olowek">{czesci(s.czesci.length)}</p>
             <Kwadraty
               tytulSerii={s.tytul}
               czesci={s.czesci}
