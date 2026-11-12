@@ -34,7 +34,7 @@ const labels: Record<keyof typeof badges, string> = {
   explain: "Wyjaśnienie",
   code: "Kod",
   tip: "Wskazówka",
-  bug: "Bug",
+  bug: "Pułapka",
   why: "Dlaczego to nie działa?",
   works: "Działa!",
   debug: "Debugowanie",
@@ -53,9 +53,14 @@ interface Props {
 const { type } = Astro.props;
 const img = badges[type];
 const label = labels[type];
+// notatka z blokiem kodu albo długa zostaje dymkiem w tekście
+const html = await Astro.slots.render("default");
+const tekst = html.replace(/<[^>]+>/g, "");
+const naMargines = !html.includes("<pre") && tekst.length <= 220;
+const ostrzezenie = type === "bug" || type === "why";
 ---
 
-<aside class="not-prose my-6 flex items-center gap-4 rounded-xl border border-linia bg-kartka p-4">
+<!-- <aside class="not-prose my-6 flex items-center gap-4 rounded-xl border border-linia bg-kartka p-4">
   <Image src={img} alt="Senior Hare" class="w-16 shrink-0" />
   <div
     class="min-w-0 flex-1 text-atrament-2
@@ -68,5 +73,48 @@ const label = labels[type];
   >
     <p class="font-semibold text-atrament">{label}</p>
     <slot />
+  </div>
+</aside> -->
+
+<aside
+  data-margines={naMargines ? "" : undefined}
+  class="hare not-prose my-6 flex items-start gap-3"
+>
+  <Image
+    src={img}
+    alt=""
+    width={64}
+    densities={[1, 2]}
+    class="hare-obrazek w-14 shrink-0"
+  />
+  <div
+    class="dymek relative min-w-0 flex-1 rounded-[1.1rem_0.9rem_1.2rem_0.8rem/0.9rem_1.2rem_0.8rem_1.1rem] border-[1.5px] border-atrament bg-kartka px-4 py-3 font-reka text-[1.0625rem] leading-snug text-atrament [&_a]:text-dlugopis [&_a]:underline [&_a]:underline-offset-2
+    [&_a:hover]:text-dlugopis-ciemny [&_a:hover]:decoration-2
+    [&_pre]:my-3 [&_pre]:rounded-lg [&_pre]:p-4
+    [&_kbd]:rounded [&_kbd]:border [&_kbd]:border-b-2 [&_kbd]:border-linia [&_kbd]:bg-papier
+    [&_kbd]:px-1.5 [&_kbd]:py-0.5 [&_kbd]:font-sans [&_kbd]:text-[0.875em] [&_kbd]:font-medium
+    [&_:not(pre)>code]:text-[0.875em] [&_:not(pre)>code]:font-semibold [&_:not(pre)>code]:text-atrament"
+  >
+    <svg
+      aria-hidden="true"
+      class="ogonek absolute -left-3.5 top-4"
+      width="16"
+      height="22"
+      viewBox="0 0 16 22"
+    >
+      <path
+        d="M15 1 L1 9 L15 17"
+        class="fill-kartka stroke-atrament"
+        stroke-width="1.5"
+        stroke-linejoin="round"
+      />
+      <path d="M15.5 2 V16" class="stroke-kartka" stroke-width="3" />
+    </svg>
+    <p
+      class:list={["font-bold", ostrzezenie ? "text-pulapka" : "text-dlugopis"]}
+    >
+      {label}
+    </p>
+    <Fragment set:html={html} />
   </div>
 </aside>
