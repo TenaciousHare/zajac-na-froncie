@@ -3,11 +3,15 @@ interface Props {
   tags: string[];
 }
 const { tags } = Astro.props;
+
+// tag z prawie każdego wpisu niczego nie odróżnia, więc go nie pokazujemy
+const ukryte = new Set(["podstawy"]);
+const widoczne = tags.filter((tag) => !ukryte.has(tag));
 ---
 
-{tags.length > 0 && (
+{widoczne.length > 0 && (
   <ul class="relative z-10 mt-3 flex flex-wrap gap-2">
-    {tags.map((tag) => (
+    {widoczne.map((tag) => (
       <li>
         <a
           href={`/tags/${tag}`}

@@ -1,22 +1,140 @@
 ---
-import PostCard from "../../components/PostCard.astro";
 import Layout from "../../layouts/Layout.astro";
-import { getPublishedPosts } from "../../utils/posts";
+import Wiersz from "../../components/Wiersz.astro";
+import ListaCzesci from "../../components/ListaCzesci.astro";
+import {
+  getPublishedPosts,
+  getSeriesOverview,
+  odmien,
+} from "../../utils/posts";
 
-const posts = await getPublishedPosts();
+const serie = await getSeriesOverview();
+const podstawy = serie.filter((s) => s.rodzaj === "podstawy");
+const warsztat = serie.filter((s) => s.rodzaj === "warsztat");
+
+const wszystkie = await getPublishedPosts();
+const pozostale = wszystkie.filter((post) => !post.data.series);
+
+const liczbaWpisow = odmien(wszystkie.length, {
+  one: "wpis",
+  few: "wpisy",
+  many: "wpisów",
+});
+const czesci = (n: number) =>
+  odmien(n, { one: "część", few: "części", many: "części" });
+
+// skróty na górze strony: kotwice do sekcji, działają bez JavaScriptu
+const skroty = [
+  ...podstawy.map((s) => ({ href: `#${s.klucz}`, nazwa: s.tytul })),
+  { href: "#z-warsztatu", nazwa: "Z warsztatu" },
+  ...(pozostale.length ? [{ href: "#pozostale", nazwa: "Pozostałe" }] : []),
+];
 ---
 
 <Layout
-  title="Blog — Zając na Froncie"
-  description="Wpisy o nauce frontendu od zera: React, TypeScript, Astro i CSS. Realna droga z błędami i zwycięstwami — prosto, po polsku, z Senior Hare w roli przewodnika."
+  title="Wszystkie wpisy — Zając na Froncie"
+  description="Serie HTML, CSS i JavaScript od podstaw do czytania po kolei, dzienniki budowy narzędzi z lotniska i wpisy osobne. Po polsku, z Senior Hare na marginesie."
 >
-  <div class="max-w-3xl mx-auto">
-    <h1 class="text-3xl font-bold text-atrament mb-6">Blog</h1>
+  <!-- -my-8 znosi py-8 z <main>, więc linia marginesu dochodzi do nagłówka i stopki -->
+  <div class="zeszyt -my-8 pb-16 [--margines:1rem] md:[--margines:5.5rem]">
+    <Wiersz class="py-12 md:pt-16">
+      <h1 class="text-[clamp(2.4rem,4.4vw,3.25rem)] leading-tight font-extrabold tracking-tight">
+        Wszystkie wpisy
+      </h1>
+      <p class="mt-3 max-w-[40em] text-lg text-pretty text-atrament-2">
+        {liczbaWpisow}: serie podstaw do czytania po kolei, dzienniki budowy
+        narzędzi z lotniska i wpisy osobne.
+      </p>
+      <nav aria-label="Przejdź do serii" class="mt-6">
+        <ul class="flex flex-wrap gap-2">
+          {skroty.map(({ href, nazwa }) => (
+            <li>
+              <a
+                href={href}
+                class="inline-flex min-h-11 items-center rounded-lg border-[1.5px] border-olowek bg-kartka px-4 font-medium text-atrament no-underline hover:border-dlugopis hover:text-dlugopis"
+              >
+                {nazwa}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </Wiersz>
 
-    <ul class="space-y-6">
-      {posts.map((post) => (
-        <PostCard post={post} />
-      ))}
-    </ul>
+    <!-- serie podstaw: numer na marginesie, części w dwóch kolumnach -->
+    {podstawy.map((s, i) => (
+      <Wiersz class="mt-12">
+        <span
+          slot="margines"
+          aria-hidden="true"
+          class="block text-3xl leading-none font-semibold"
+        >
+          {i + 1}.
+        </span>
+        <section id={s.klucz} class="scroll-mt-6">
+          <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+            <h2 class="text-[1.75rem] leading-tight font-extrabold tracking-tight">
+              {s.tytul}
+            </h2>
+            <p class="text-sm text-olowek">
+              {czesci(s.czesci.length)},{" "}
+              {s.zamknieta ? "seria zamknięta" : "kolejne w drodze"}
+            </p>
+          </div>
+          <ListaCzesci czesci={s.czesci} wkrotce={s.wkrotce} dwieKolumny />
+        </section>
+      </Wiersz>
+    ))}
+
+    <!-- z warsztatu: dwie serie obok siebie -->
+    <Wiersz class="mt-20">
+      <section id="z-warsztatu" class="scroll-mt-6">
+        <h2 class="text-[1.75rem] leading-tight font-extrabold tracking-tight">
+          Z warsztatu
+        </h2>
+        <p class="mt-2 text-olowek">
+          Dzienniki budowy narzędzi do pracy na lotnisku. Każdą serię można
+          czytać osobno.
+        </p>
+        <div class="mt-6 grid gap-x-14 gap-y-10 md:grid-cols-2">
+          {warsztat.map((s) => (
+            <section id={s.klucz} class="scroll-mt-6">
+              <h3 class="text-[1.3rem] leading-tight font-bold">{s.tytul}</h3>
+              <p class="mt-1 text-sm text-olowek">{czesci(s.czesci.length)}</p>
+              <ListaCzesci czesci={s.czesci} wkrotce={s.wkrotce} />
+            </section>
+          ))}
+        </div>
+      </section>
+    </Wiersz>
+
+    <!-- wpisy spoza serii -->
+    {pozostale.length > 0 && (
+      <Wiersz class="mt-20">
+        <section id="pozostale" class="scroll-mt-6">
+          <h2 class="text-[1.75rem] leading-tight font-extrabold tracking-tight">
+            Pozostałe
+          </h2>
+          <ul class="mt-4 max-w-3xl">
+            {pozostale.map((post) => (
+              <li class="flex items-baseline gap-4 py-1.5">
+                <a
+                  href={`/blog/${post.id}`}
+                  class="flex-1 font-semibold text-atrament underline decoration-linia underline-offset-3 hover:text-dlugopis hover:decoration-dlugopis"
+                >
+                  {post.data.title}
+                </a>
+                <time
+                  datetime={post.data.pubDate.toISOString()}
+                  class="shrink-0 text-sm text-olowek tabular-nums"
+                >
+                  {post.data.pubDate.toLocaleDateString("pl-PL")}
+                </time>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </Wiersz>
+    )}
   </div>
 </Layout>

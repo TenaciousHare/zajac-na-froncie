@@ -7,6 +7,7 @@ import {
   getPublishedPosts,
   getSeriesOverview,
   krotkiTytul,
+  odmien,
 } from "../utils/posts";
 import { ciekawostki } from "../data/ciekawostki";
 import hareLupa from "../assets/hare/SeniorHare_1_explanations-tutorial.png";
@@ -26,6 +27,8 @@ const kawalki = ciekawostka.tekst.split("`");
 
 const tytulSerii = (klucz?: string) =>
   serie.find((s) => s.klucz === klucz)?.tytul;
+const czesci = (n: number) =>
+  odmien(n, { one: "część", few: "części", many: "części" });
 ---
 
 <Layout
@@ -145,7 +148,7 @@ const tytulSerii = (klucz?: string) =>
             </h3>
             <p class="mt-1 text-atrament-2">{s.opis}</p>
             <p class="mt-1 text-sm text-olowek">
-              {s.czesci.length} części,{" "}
+              {czesci(s.czesci.length)} części,{" "}
               {s.zamknieta ? "seria zamknięta" : "kolejne w drodze"}
             </p>
           </div>
@@ -179,7 +182,7 @@ const tytulSerii = (klucz?: string) =>
               </a>
             </h3>
             <p class="max-w-[30em] text-atrament-2">{s.opis}</p>
-            <p class="text-sm text-olowek">{s.czesci.length} części</p>
+            <p class="text-sm text-olowek">{czesci(s.czesci.length)} części</p>
             <Kwadraty
               tytulSerii={s.tytul}
               czesci={s.czesci}
