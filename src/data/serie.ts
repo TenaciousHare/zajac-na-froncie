@@ -5,6 +5,7 @@ type Seria = {
   opis: string;
   rodzaj: RodzajSerii;
   kolejnosc: number;
+  /** wszystkie części napisane; „seria zamknięta” pojawi się, gdy ostatnia zostanie opublikowana */
   zamknieta: boolean;
 };
 
@@ -25,10 +26,10 @@ export const serie = {
   },
   "js-od-podstaw": {
     tytul: "JavaScript od podstaw",
-    opis: "Zmienne, warunki, funkcje, tablice, obiekty, DOM i zdarzenia.",
+    opis: "Zmienne, warunki, funkcje, tablice, obiekty, DOM i zdarzenia, a na koniec async, fetch, moduły i TypeScript.",
     rodzaj: "podstawy",
     kolejnosc: 3,
-    zamknieta: false,
+    zamknieta: true,
   },
   "jak-powstal-destinations": {
     tytul: "Jak powstał Destinations",

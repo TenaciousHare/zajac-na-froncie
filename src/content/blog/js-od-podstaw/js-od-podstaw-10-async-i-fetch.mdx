@@ -1,0 +1,246 @@
+---
+title: 'JavaScript od podstaw (cz. 10): kod, który czeka, czyli async/await i fetch'
+description: 'setTimeout, Promise, async i await, try/catch i fetch. Rozbieramy do końca przycisk „Kopiuj”, zaglądamy do funkcji serwerowej Avia Weather i sprawdzamy, dlaczego fetch nie zgłasza błędu przy 404.'
+pubDate: 2026-11-13
+tags: ['javascript', 'podstawy', 'async', 'api']
+series: 'js-od-podstaw'
+seriesPart: 10
+---
+
+import Hare from "../../../components/Hare.astro";
+
+Do tej pory wszystko, co pisaliśmy, działo się od razu: porównanie, pętla, zmiana atrybutu. Ale niektóre rzeczy wymagają czekania. Zapis do schowka trwa chwilę. Odpowiedź z serwera może przyjść po pół sekundy, a może po pięciu. Dane pogodowe lecą z drugiego końca świata. Dziś nauczymy się pisać kod, który **czeka**, i nie blokuje przy tym całej strony.
+
+## Dlaczego JS nie może po prostu stać i czekać
+
+JavaScript w przeglądarce ma jeden **wątek**, czyli robi jedną rzecz naraz. Wyobraź sobie jedno stanowisko odprawy na lotnisku i jedną osobę za biurkiem. Jeśli ta osoba zadzwoni na sortownię bagażową i będzie stać ze słuchawką przy uchu przez pięć minut, cała kolejka stanie w miejscu.
+
+Ze stroną jest tak samo. Gdyby JS czekał na odpowiedź z serwera, stojąc w miejscu, przez ten czas nie zadziałałby żaden przycisk, nie dałoby się przewinąć strony, a przeglądarka w końcu zapytałaby, czy zamknąć „niereagującą stronę”.
+
+Dlatego JS robi inaczej: **zleca** czekanie przeglądarce, obsługuje w tym czasie resztę kolejki, a do sprawy wraca, gdy przyjdzie wynik. Taki kod nazywa się **asynchronicznym**.
+
+## setTimeout, czyli „zrób to później”
+
+Najprostsze „później” to **`setTimeout`**. Przyjmuje funkcję i liczbę milisekund:
+
+~~~js
+setTimeout(() => {
+  console.log("Minęły 2 sekundy");
+}, 2000);
+~~~
+
+Znasz już ten zapis: funkcja przekazana jako argument to callback z części 4. Tak przycisk „Kopiuj” po dwóch sekundach wraca do swojego napisu:
+
+~~~js
+setTimeout(() => {
+  btn.textContent = "Kopiuj";
+  delete btn.dataset.copied;
+}, 2000);
+~~~
+
+Ważne: `setTimeout` **nie zatrzymuje** kodu. Ustawia „budzik” i od razu idzie dalej. Sprawdź to w konsoli:
+
+~~~js
+console.log("A");
+setTimeout(() => console.log("B"), 0);
+console.log("C");
+// A
+// C
+// B
+~~~
+
+Nawet z zerem milisekund `B` pojawi się na końcu. Callback z `setTimeout` czeka, aż JS skończy bieżącą robotę, i dopiero wtedy dostaje swoją kolej.
+
+Jest też **`setInterval`**, który powtarza callback co określony czas, dopóki go nie zatrzymasz przez `clearInterval`:
+
+~~~js
+const id = setInterval(() => console.log("tik"), 1000);
+// …a gdy chcesz przestać:
+clearInterval(id);
+~~~
+
+## Promise, czyli obietnica wyniku
+
+`setTimeout` wystarcza, gdy wiesz, **ile** chcesz czekać. Ale ile potrwa odpowiedź z serwera? Tego nie wie nikt. Do takich sytuacji służy **`Promise`** (obietnica): obiekt, który mówi „wynik będzie, tylko jeszcze nie teraz”.
+
+Promise zawsze jest w jednym z trzech stanów:
+
+- **oczekująca** (*pending*) — wynik jeszcze nie przyszedł,
+- **spełniona** (*fulfilled*) — wynik jest,
+- **odrzucona** (*rejected*) — coś poszło nie tak.
+
+<Hare type="explain">
+Promise działa jak potwierdzenie nadania bagażu. Oddajesz walizkę przy odprawie i dostajesz kwit. Walizki jeszcze nie masz, ale masz **obietnicę**, że ją odbierzesz. Po wylądowaniu są dwa scenariusze: walizka wyjeżdża na taśmie (obietnica spełniona) albo idziesz do biura zagubionych bagaży (obietnica odrzucona). Przez cały lot nie musisz stać przy taśmie. Możesz robić co innego.
+</Hare>
+
+Promise'ów zwykle sam nie tworzysz. Dostajesz je od przeglądarki: zwraca je zapis do schowka, `fetch`, a w Astro na przykład `getCollection`. Twoja rola to tylko na nie poczekać.
+
+## async i await, czyli czekanie, które czyta się normalnie
+
+Do czekania na Promise służy słowo **`await`**. Stawiasz je przed wywołaniem, które zwraca obietnicę, i dostajesz od razu gotowy wynik:
+
+~~~js
+async function copyCode(code) {
+  await navigator.clipboard.writeText(code);
+  console.log("Skopiowano!");
+}
+~~~
+
+`await` mówi: „poczekaj tu, aż obietnica się spełni, a potem idź dalej”. Kod czyta się od góry do dołu, jak zwykły kod z poprzednich części. Ale JS w tym czasie nie stoi. Odkłada tę funkcję na bok, obsługuje kliknięcia i przewijanie, a wraca do niej, gdy schowek odpowie.
+
+Jest jeden warunek: `await` działa tylko wewnątrz funkcji oznaczonej słowem **`async`**. Dlatego `copyCode` zaczyna się od `async function`. To samo działa w funkcji strzałkowej: `async () => { … }`.
+
+<Hare type="bug">
+Najczęstszy błąd na start to zapomniany `await`:
+
+~~~js
+const posts = getCollection("blog");
+console.log(posts); // Promise {<pending>}
+posts.filter(/* … */); // TypeError: posts.filter is not a function
+~~~
+
+Bez `await` w zmiennej ląduje nie wynik, tylko **sama obietnica**, czyli kwit zamiast walizki. Gdy w konsoli zobaczysz `Promise {<pending>}`, a metoda tablicy nagle „nie jest funkcją”, najpierw sprawdź, czy przed wywołaniem stoi `await`.
+</Hare>
+
+## try i catch, czyli gdy obietnica nie zostanie spełniona
+
+Obietnica może zostać odrzucona. Użytkownik nie dał stronie dostępu do schowka, serwer nie odpowiada, internet zniknął w tunelu. Wtedy `await` **rzuca błędem** i, jeśli nic go nie złapie, funkcja kończy się czerwonym komunikatem w konsoli.
+
+Błędy łapie się konstrukcją **`try / catch`**:
+
+~~~js
+try {
+  // spróbuj zrobić to…
+} catch {
+  // …a jeśli coś pójdzie nie tak, zrób to
+}
+~~~
+
+Teraz możemy wreszcie rozebrać do końca kliknięcie w „Kopiuj”, które obiecałem w części 7:
+
+~~~js
+btn.addEventListener("click", async () => {
+  const code =
+    pre.querySelector("code")?.textContent ?? pre.textContent ?? "";
+  try {
+    await navigator.clipboard.writeText(code);
+    btn.textContent = "Skopiowano!";
+    btn.dataset.copied = "true";
+  } catch {
+    btn.textContent = "Błąd";
+  }
+  setTimeout(() => {
+    btn.textContent = "Kopiuj";
+    delete btn.dataset.copied;
+  }, 2000);
+});
+~~~
+
+Krok po kroku:
+
+1. **Callback jest `async`**, bo w środku czekamy na schowek.
+2. **Wyciągnij tekst kodu.** `?.` i `??` z części 3 pilnują, żeby nawet przy dziwnej strukturze bloku zawsze był jakiś tekst, choćby pusty.
+3. **Spróbuj skopiować.** `await` czeka, aż przeglądarka zapisze tekst w schowku.
+4. **Udało się:** napis „Skopiowano!” i `data-copied`, który w CSS zmienia kolor na zielony (część 7).
+5. **Nie udało się:** `catch` łapie błąd i pokazuje „Błąd”, zamiast udawać, że wszystko gra.
+6. **Po dwóch sekundach**, w obu przypadkach, `setTimeout` przywraca przycisk do stanu wyjściowego.
+
+## fetch, czyli rozmowa z serwerem
+
+Najważniejsza funkcja tej części to **`fetch`**. Wysyła zapytanie pod wskazany adres i zwraca Promise z odpowiedzią:
+
+~~~js
+async function loadMetar(station) {
+  const res = await fetch(`/.netlify/functions/avwx?station=${station}`);
+  if (!res.ok) {
+    throw new Error(`Serwer odpowiedział kodem ${res.status}`);
+  }
+  return await res.json();
+}
+~~~
+
+To uproszczona wersja tego, jak Avia Weather pyta o pogodę. Po kolei:
+
+- **`await fetch(…)`** czeka na odpowiedź serwera. Adres składa template literal z części 2.
+- **`res.ok`** mówi, czy serwer odpowiedział sukcesem.
+- **`throw new Error(…)`** rzuca własny błąd, gdy coś jest nie tak. Złapie go `catch` w miejscu, które wywołało `loadMetar`.
+- **`await res.json()`** zamienia tekst odpowiedzi w obiekt. To `JSON.parse` z części 6, tylko w wersji asynchronicznej, bo treść odpowiedzi też przychodzi w kawałkach.
+
+<Hare type="tip">
+Zawsze sprawdzaj `res.ok`. `fetch` **nie rzuca błędem**, gdy serwer odpowie 404 (nie ma takiej strony) albo 500 (serwer się wysypał). Dla `fetch` to wciąż poprawna odpowiedź: zapytanie poszło, odpowiedź wróciła. Błędem kończy się dopiero wtedy, gdy w ogóle nie da się połączyć, na przykład bez internetu.
+
+`res.ok` jest `true` tylko dla kodów od 200 do 299. Bez tego sprawdzenia próbowałbyś czytać JSON ze strony błędu.
+</Hare>
+
+Na stronie każde takie pobieranie ma trzy stany: **ładowanie**, **błąd** albo **dane**. Użytkownik powinien zawsze wiedzieć, w którym jest:
+
+~~~js
+async function showMetar(station) {
+  status.textContent = "Ładuję pogodę…";
+  try {
+    const data = await loadMetar(station);
+    status.textContent = data.raw; // surowa depesza METAR
+  } catch {
+    status.textContent = "Nie udało się pobrać pogody. Spróbuj za chwilę.";
+  }
+}
+~~~
+
+Najpierw komunikat o ładowaniu, potem dane albo zrozumiały komunikat o błędzie. Nigdy pusta strona, na której nie wiadomo, czy coś się dzieje.
+
+## Dlaczego fetch do AVWX dzieje się na serwerze
+
+Zwróć uwagę, że `loadMetar` nie pyta AVWX, czyli serwisu z danymi pogodowymi, tylko moją funkcję na Netlify. To ona dopiero rozmawia z AVWX:
+
+~~~js
+const token = process.env.AVWX_TOKEN; // tylko na serwerze!
+const res = await fetch(`https://avwx.rest/api/metar/${station}`, {
+  headers: { Authorization: `Bearer ${token}` },
+});
+~~~
+
+AVWX wymaga klucza, a klucz to sekret. Wszystko, co trafia do przeglądarki, każdy może podejrzeć w DevTools, w zakładce Network. Gdybym wywołał AVWX prosto z frontendu, klucz byłby widoczny dla każdego odwiedzającego. Dlatego przeglądarka rozmawia z moją funkcją, a funkcja na serwerze, z kluczem schowanym w zmiennej środowiskowej, rozmawia z AVWX. Całą historię opisałem w [części 2 „Jak powstał Avia Weather”](/blog/jak-powstal-metar-2-dane-i-funkcja-serwerowa).
+
+Zasada na przyszłość: **klucza API nie trzyma się we frontendzie**. Nawet w zmiennej, nawet w „ukrytym” pliku. Jeśli kod wykonuje się w przeglądarce, sekret przestaje być sekretem.
+
+## Co robi za mnie TanStack Query
+
+Avia Weather odświeża pogodę co 5 minut. Z tego, co już umiesz, dałoby się to napisać ręcznie:
+
+~~~js
+showMetar("EPKT");
+setInterval(() => showMetar("EPKT"), 5 * 60 * 1000);
+~~~
+
+Dwie linijki i działa. Ale prawdziwa aplikacja potrzebuje więcej: nie pokazywać „Ładuję…”, gdy stare dane są jeszcze dobre, nie pytać serwera dwa razy o to samo, ponowić zapytanie po chwilowym błędzie, przestać odświeżać, gdy karta jest w tle. Każdą z tych rzeczy da się dopisać, tylko po co pisać ją od nowa w każdym projekcie.
+
+Dlatego w Avia Weather używam biblioteki **TanStack Query**, która robi to wszystko za mnie. Ale pod spodem to wciąż te same `fetch`, `await`, `try / catch` i `setInterval`, które znasz z tej części. Biblioteka nie zwalnia z rozumienia, jak to działa. Pozwala tylko nie pisać tego od zera.
+
+## await i map razem
+
+Na koniec dwa przykłady, które pokazują, że async to nie osobny świat, tylko zwykły JS z czekaniem. W Destinations lista kierunków przychodzi z bazy Firestore:
+
+~~~js
+async function getDestinations() {
+  const snapshot = await getDocs(collection(db, "destinations"));
+  return snapshot.docs.map((doc) => doc.data());
+}
+~~~
+
+Najpierw `await`, bo baza odpowiada z opóźnieniem. Potem `map` z części 5 zamienia każdy dokument w zwykły obiekt.
+
+A funkcja, która buduje listę wpisów na tym blogu, zaczyna się od `async function getPublishedPosts()`, a w środku ma `await getCollection("blog")`. Nawet Astro przy budowaniu strony czeka, aż wczyta wszystkie pliki z wpisami.
+
+<Hare type="learn">
+Szczegóły w MDN: [setTimeout()](https://developer.mozilla.org/en-US/docs/Web/API/Window/setTimeout), [jak używać Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Using_promises), [async function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function), [try...catch](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/try...catch), [używanie fetch](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch) i [Response.ok](https://developer.mozilla.org/en-US/docs/Web/API/Response/ok).
+</Hare>
+
+## Co nam to daje?
+
+- **Strona, która nie zamarza:** JS zleca czekanie przeglądarce i w tym czasie obsługuje kliknięcia i przewijanie.
+- **Czytelne czekanie:** `async` i `await` pozwalają pisać kod asynchroniczny od góry do dołu, jak każdy inny.
+- **Obsłużone błędy:** `try / catch` łapie odrzucone obietnice, a `res.ok` wyłapuje odpowiedzi 404 i 500, których `fetch` sam nie zgłasza.
+- **Jasne stany:** użytkownik zawsze widzi ładowanie, dane albo zrozumiały błąd.
+- **Bezpieczne klucze:** sekrety zostają na serwerze, a przeglądarka rozmawia tylko z Twoją funkcją.
+
+W **części 11**, ostatniej w serii, uporządkujemy kod w **moduły** z `import` i `export` i zajrzymy do **TypeScriptu**. Zobaczysz, co dokładnie upraszczałem w przykładach przez całą serię i dlaczego moje projekty są w TS, choć wszystko, czego się tu nauczyłeś, dalej obowiązuje. Do zobaczenia!

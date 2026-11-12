@@ -1,0 +1,179 @@
+---
+title: 'JavaScript od podstaw (cz. 11): moduły, TypeScript i co dalej'
+description: 'Finał serii: import i export, czyli kod w wielu plikach, a potem TypeScript, czyli JavaScript z typami. Zobaczysz, co upraszczałem w przykładach przez całą serię i dlaczego moje projekty są w TS.'
+pubDate: 2026-11-14
+tags: ['javascript', 'podstawy', 'moduły', 'typescript']
+series: 'js-od-podstaw'
+seriesPart: 11
+---
+
+import Hare from "../../../components/Hare.astro";
+
+Dziesięć części za nami. Umiesz już zapisać wartość, podjąć decyzję, zamknąć kod w funkcji, przejść po tablicy, znaleźć element na stronie, zareagować na kliknięcie i poczekać na serwer. Został ostatni krok: **porządek**. Prawdziwy projekt to nie jeden skrypt, tylko dziesiątki plików, a im ich więcej, tym łatwiej o literówkę, której nikt nie zauważy. Dziś dwa narzędzia, które pomagają nad tym zapanować: **moduły** i **TypeScript**.
+
+## Moduły, czyli kod w wielu plikach
+
+Każdy przykład w tej serii był pojedynczym kawałkiem kodu. W Avia Weather dekoderów jest kilka: zachmurzenie, reguły lotów, wiatr, typy prognoz. Trzymanie ich w jednym pliku szybko tworzy trudny do ogarnięcia bałagan. Dlatego każdy dekoder ma **własny plik**, a pliki wymieniają się kodem przez `export` i `import`.
+
+Plik `clouds.js` **udostępnia** funkcję słowem `export`:
+
+~~~js
+// clouds.js
+const CLOUD_COVER = {
+  FEW: "zachmurzenie małe",
+  BKN: "zachmurzenie duże",
+  OVC: "zachmurzenie całkowite",
+};
+
+export function describeCloudCover(code) {
+  return CLOUD_COVER[code.toUpperCase()] ?? code;
+}
+~~~
+
+A inny plik ją **wczytuje** słowem `import`:
+
+~~~js
+// app.js
+import { describeCloudCover } from "./clouds.js";
+
+describeCloudCover("BKN"); // "zachmurzenie duże"
+~~~
+
+Zwróć uwagę na jedną rzecz: `CLOUD_COVER` nie ma przed sobą `export`, więc żaden inny plik go nie zobaczy. Każdy moduł ma własną przestrzeń nazw. To, co nie jest wyeksportowane, zostaje w środku. Dzięki temu dwa pliki mogą mieć zmienną o tej samej nazwie i nic się nie pomiesza.
+
+Pamiętasz `type="module"` z [części 1](/blog/js-od-podstaw-1-czym-jest-javascript)? To właśnie ono mówi przeglądarce: „ten skrypt może używać `import` i `export`”.
+
+Obok eksportu z nazwą jest też **eksport domyślny**:
+
+~~~js
+// clouds.js
+export default function describeCloudCover(code) { /* … */ }
+
+// app.js
+import describeCloudCover from "./clouds.js"; // bez klamer
+~~~
+
+Plik może mieć dowolnie wiele eksportów z nazwą, ale tylko jeden domyślny. Przy imporcie domyślnego nie piszesz klamer i możesz nazwać go, jak chcesz.
+
+Na tym blogu moduły widać w pierwszej linijce pliku, który zbiera wpisy w listy i serie:
+
+~~~js
+import { getCollection, type CollectionEntry } from "astro:content";
+import { serie } from "../data/serie";
+~~~
+
+`getCollection` przychodzi z Astro, a `serie`, czyli lista serii z tytułami i opisami, z mojego własnego pliku. Słowo `type` w pierwszej linijce to już TypeScript. Zaraz do niego dojdziemy.
+
+## Czym jest TypeScript
+
+**TypeScript** to JavaScript z **typami**. Piszesz ten sam kod, który znasz z tej serii, ale przy zmiennych i parametrach możesz dopisać, jakiego rodzaju wartości się w nich spodziewasz. Potem specjalne narzędzie sprawdza cały projekt, **zanim** cokolwiek się uruchomi.
+
+Przeglądarka TypeScriptu nie rozumie. Przy budowaniu strony typy są po prostu wycinane i do przeglądarki trafia zwykły JavaScript. TypeScript nie zmienia więc tego, **jak** kod działa. Zmienia to, **kiedy** dowiesz się o błędzie: w edytorze, zamiast u użytkownika.
+
+Weźmy dekoder chmur z części 4. W Avia Weather wygląda tak:
+
+~~~ts
+const CLOUD_COVER: Record<string, string> = {
+  FEW: "zachmurzenie małe",
+  BKN: "zachmurzenie duże",
+  OVC: "zachmurzenie całkowite",
+};
+
+export function describeCloudCover(code: string): string {
+  return CLOUD_COVER[code.toUpperCase()] ?? code;
+}
+~~~
+
+To ta sama funkcja. Doszły tylko trzy dopiski:
+
+- **`code: string`** — parametr musi być tekstem,
+- **`): string`** — funkcja zawsze oddaje tekst,
+- **`Record<string, string>`** — słownik, w którym klucze i wartości to teksty.
+
+Co nam to daje? Spróbuj wywołać `describeCloudCover(20)`. W czystym JS dowiedziałbyś się o problemie dopiero po uruchomieniu, z czerwonym błędem `toUpperCase is not a function`. TypeScript podkreśli tę linijkę w edytorze od razu: „liczba to nie tekst”.
+
+## Co upraszczałem przez całą serię
+
+Czas na małe wyznanie. Kod bloga jest w TypeScripcie, a ja w każdej części wycinałem z niego typy, żeby nie uczyć dwóch rzeczy naraz. Oto trzy miejsca, w których typy naprawdę coś robią.
+
+**1. Ramka z komentarzami.** W części 9 szukaliśmy ramki Giscusa tak:
+
+~~~js
+const iframe = document.querySelector("iframe.giscus-frame");
+~~~
+
+W prawdziwym pliku stoi:
+
+~~~ts
+const iframe = document.querySelector<HTMLIFrameElement>("iframe.giscus-frame");
+~~~
+
+Dlaczego? `querySelector` może znaleźć dowolny element, więc TypeScript zakłada najogólniejszy możliwy typ. A zwykły element nie ma `contentWindow`, przez które wysyłamy ramce wiadomość. Bez dopisku `<HTMLIFrameElement>` dostałbym błąd: „właściwość `contentWindow` nie istnieje”. Dopisek mówi TypeScriptowi: „spokojnie, tu szukam ramki”.
+
+**2. Brakujący numer części.** W pliku z seriami jest funkcja, która układa części po numerach:
+
+~~~ts
+type Wpis = CollectionEntry<"blog">;
+const poCzesci = (a: Wpis, b: Wpis) =>
+  (a.data.seriesPart ?? 0) - (b.data.seriesPart ?? 0);
+~~~
+
+`type Wpis` to nazwa nadana typowi „wpis z kolekcji blog”, żeby nie pisać go w kółko. Ciekawsze jest `?? 0`. TypeScript wie, że `seriesPart` nie jest obowiązkowe, bo wpis spoza serii nie ma numeru części. Więc w tym miejscu może być `undefined`, a odejmowanie od `undefined` daje `NaN`. TypeScript nie pozwoli o tym zapomnieć, a `??` z części 3 zamienia brak numeru na zero.
+
+**3. Frontmatter pod kontrolą.** W części 5 pisałem o frontmatterze, czyli metryczce na górze każdego wpisu. Astro sprawdza ją według opisu, który sam napisałem:
+
+~~~ts
+schema: z.object({
+  title: z.string(),
+  pubDate: z.coerce.date(),
+  tags: z.array(z.string()).default([]),
+  seriesPart: z.number().optional(),
+}),
+~~~
+
+To skrócona wersja, ale widać zasadę: tytuł to tekst, data to data, tagi to tablica tekstów, a numer części jest liczbą, ale nie musi istnieć. Jeśli w którymś wpisie napiszę `seriesPart: "11"` w cudzysłowie, strona się nie zbuduje, a błąd wskaże dokładnie ten plik. Literówka nie trafi na bloga.
+
+<Hare type="decision">
+Dlaczego moje projekty są w TypeScripcie?
+
+Destinations zaczynałem w czystym JS i długo to wystarczało. Problem przyszedł, gdy obiekt kierunku zaczął krążyć po całej aplikacji. Literówka `expantion` zamiast `expansion` nie dawała żadnego błędu, tylko pustą komórkę w wydrukowanym teście. Opisałem to w [części 2 „Jak powstał Destinations”](/blog/jak-powstal-destinations-2-z-js-na-ts). Po przejściu na TS taki błąd jest podkreślony, zanim w ogóle zapiszę plik.
+
+Typy to jednak tylko połowa bezpieczeństwa. Sprawdzają **kształt** danych: czy to tekst, czy liczba, czy pole istnieje. Nie sprawdzą, czy `"BKN"` naprawdę znaczy „zachmurzenie duże”. Od tego są testy. W Avia Weather mam ich 51 i dopiero razem z typami dają mi spokój przy każdej zmianie.
+</Hare>
+
+## A co z frameworkami?
+
+Avia Weather i Destinations są napisane w **React**. Na pierwszy rzut oka to zupełnie inny świat: komponenty, JSX, hooki. Ale zajrzyj pod spód, a znajdziesz wszystko z tej serii. Listy w komponentach powstają tym samym `map` z części 5, którym Astro rysuje tagi pod każdym wpisem. Dane z API i z bazy to obiekty z części 6. A pobieranie to `fetch` i `await` z części 10.
+
+Framework nie zastępuje JavaScriptu. Zdejmuje z Ciebie powtarzalną robotę, jak synchronizowanie danych z DOM-em, tak jak Tailwind zdejmuje powtarzalną robotę z CSS. Ale żeby go dobrze używać, i żeby rozumieć jego błędy, potrzebujesz właśnie podstaw, których nauczyłeś się tutaj.
+
+<Hare type="learn">
+Szczegóły w MDN: [moduły JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules), [import](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/import) i [export](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/export). TypeScript najlepiej zacząć od [TypeScript dla programistów JavaScriptu](https://www.typescriptlang.org/docs/handbook/typescript-in-5-minutes.html) w oficjalnej dokumentacji.
+</Hare>
+
+## Morał całej serii
+
+Przez jedenaście części przeszliśmy drogę od pierwszego `console.log` do przełącznika motywu, który pamięta Twój wybór i przestawia nawet komentarze w ramce z innej strony:
+
+- **zmienne i typy** — jak zapamiętać dane i rozpoznać ich rodzaj,
+- **warunki** — jak kod podejmuje decyzje,
+- **funkcje** — jak nie powtarzać się i dzielić kod na małe kawałki,
+- **tablice i obiekty** — jak trzymać wiele danych naraz i nadawać im etykiety,
+- **DOM i zdarzenia** — jak JS widzi stronę i reaguje na użytkownika,
+- **localStorage** — jak zapamiętać dane na dłużej,
+- **async i fetch** — jak poczekać, nie blokując strony,
+- **moduły i typy** — jak utrzymać to wszystko w porządku.
+
+A trylogia podstaw dostała swoje ostatnie słowo: **HTML nadaje treści znaczenie, CSS — wygląd, a JavaScript — zachowanie.** Każda z tych warstw robi swoje, a najlepsze strony to te, w których żadna nie wchodzi w drogę pozostałym.
+
+<Hare type="success">
+Trzy serie podstaw za nami: HTML, CSS i JavaScript. Jeśli przeszedłeś przez wszystkie, masz fundament, na którym da się budować wszystko inne. Także Reacta, TypeScriptu i każdego frameworka, który dopiero się pojawi.
+</Hare>
+
+## Co dalej?
+
+Podstawy to dopiero początek. W planach mam kolejne serie, tym razem dla średnio zaawansowanych, a także dalsze historie o tym, jak powstają moje projekty.
+
+Jeśli nie chcesz ich przegapić, zajrzyj na mój [LinkedIn](https://www.linkedin.com/in/pawel-zajaczkowski91/), [Instagram](https://www.instagram.com/zajac.na.froncie/) albo dodaj [kanał RSS](/rss.xml) do swojego czytnika.
+
+Dziękuję za wspólną drogę przez całą serię! Do zobaczenia!
