@@ -9,7 +9,7 @@ seriesPart: 4
 
 import Hare from "../../../components/Hare.astro";
 
-W części 3 rozebraliśmy model pudełkowy na warstwy. Dziś zajmiemy się tym, co jest w pudełku najważniejsze dla czytelnika: **tekstem**. Jaką ma wielkość, jakim krojem jest napisany, jak szeroka jest kolumna i czy da się go w ogóle przeczytać. Po drodze opowiem, jak odkryłem, że kolor przewodni tego bloga nie nadaje się do tekstu.
+W części 3 rozebraliśmy model pudełkowy na warstwy. Dziś zajmiemy się tym, co jest w pudełku najważniejsze dla czytelnika: **tekstem**. Jaką ma wielkość, jakim krojem jest napisany, jak szeroka jest kolumna i czy da się go w ogóle przeczytać. Po drodze opowiem, jak odkryłem, że pierwszy kolor przewodni tego bloga nie nadawał się do tekstu.
 
 ## Jednostki: `px`, `rem`, `em`, `%` i `ch`
 
@@ -64,14 +64,14 @@ article {
 }
 ~~~
 
-**`font-family`** to lista krojów w kolejności preferencji. Przeglądarka bierze pierwszy, który ma, a na końcu zawsze stoi ogólna rodzina (`sans-serif`, `serif`, `monospace`) jako koło ratunkowe. Na tym blogu nie ładuję żadnej czcionki z sieci — Tailwind domyślnie daje stos krojów **systemowych**, więc na Macu widzisz San Francisco, a na Windowsie Segoe UI. Zero dodatkowych plików, a tekst wygląda „natywnie”.
+**`font-family`** to lista krojów w kolejności preferencji. Przeglądarka bierze pierwszy, który ma, a na końcu zawsze stoi ogólna rodzina (`sans-serif`, `serif`, `monospace`) jako koło ratunkowe. Na tym blogu stos zaczyna się od **Atkinson Hyperlegible Next** — kroju, który Braille Institute zaprojektował z myślą o osobach słabowidzących, więc `l`, `I` i `1` trudno ze sobą pomylić. Pliki czcionki są częścią bloga (paczka Fontsource), a nie ładują się z serwerów Google. Gdyby się nie wczytały, przeglądarka weźmie kolejną pozycję z listy, aż do `sans-serif` na końcu. Na starcie bloga było jeszcze prościej: żadnej własnej czcionki, sam stos krojów **systemowych** z Tailwinda.
 
 **`line-height`** to interlinia, czyli wysokość linii. Zwróć uwagę, że piszę ją **bez jednostki**. `1.75` znaczy „1,75 × rozmiar czcionki tego elementu” i dziedziczy się jako mnożnik. Gdybym napisał `28px`, nagłówek z czcionką 36px dostałby linię niższą niż litery.
 
 **Szerokość kolumny** to coś, czego długo nie zauważałem. Zbyt długie linie męczą oko — trudno trafić na początek następnej. Za wygodną długość uważa się mniej więcej **45–75 znaków**, i tu przydaje się `ch`.
 
 <Hare type="explain">
-Na tym blogu działają dwie granice naraz. Cała strona ma `max-w-3xl` (48rem, czyli 768px), żeby nawigacja, treść i stopka stały w jednej kolumnie. A sam wpis ma klasę `prose` z wtyczki typograficznej Tailwinda, która ustawia `max-width: 65ch`, `font-size: 1rem` i `line-height: 1.75`. Dlatego ten tekst nie rozlewa się na cały monitor, nawet na szerokim ekranie.
+Na tym blogu działają dwie granice naraz. Cała strona ma `max-w-6xl` (72rem, czyli 1152px), żeby obok tekstu zmieścił się margines zeszytu z notatkami. A sam wpis ma klasy `prose prose-lg` z wtyczki typograficznej Tailwinda — `prose-lg` ustawia `font-size: 1.125rem` i `line-height` około 1.78 — oraz `max-w-[70ch]`, czyli najwyżej ok. 70 znaków w linii. Dlatego ten tekst nie rozlewa się na cały monitor, nawet na szerokim ekranie.
 </Hare>
 
 ## Kolory i kontrast
@@ -82,38 +82,42 @@ Kolor w CSS możesz zapisać na kilka sposobów — `#c2410c`, `rgb(194 65 12)`,
 - **3:1** — dla dużego tekstu i dla grafiki: ramek, ikon, obrysów fokusu.
 
 <Hare type="debug">
-23 października zrobiłem audyt kontrastu tego bloga. Akcent „Froncie” to pomarańcz `#ea580c` — i nim były pisane linki. Wynik na białym tle: **3.6:1**. Ładnie wygląda, ale jako tekst nie przechodzi.
+23 października zrobiłem audyt kontrastu tego bloga. Akcent „Froncie” był wtedy pomarańczowy, `#ea580c` — i nim były pisane linki. Wynik na białym tle: **3.6:1**. Ładnie wygląda, ale jako tekst nie przechodzi.
 
 Poprawka nie polegała na wyrzuceniu koloru, tylko na podziale ról:
 
 - tekst i linki dostały ciemniejszy `#c2410c` — **5.2:1**,
 - ramki kart zostały w `#ea580c`, bo dla grafiki wystarcza 3:1,
-- przyciski mają tło `#c2410c` z białym napisem.
+- przyciski dostały tło `#c2410c` z białym napisem.
 
 Kontrast sprawdzisz w DevTools: kliknij kwadracik koloru przy `color` w zakładce **Styles**, a przeglądarka pokaże stosunek i czy spełnia normę.
 </Hare>
 
-Potem przyszedł ciemny motyw i niespodzianka. Ten sam `#c2410c`, który na białym był idealny, na granatowym tle ma ledwie **3.5:1**. Kontrast to zawsze para kolorów, nie jeden kolor. Dlatego w `global.css` link ma osobny odcień dla każdego motywu:
+Potem przyszedł ciemny motyw i niespodzianka. Ten sam `#c2410c`, który na białym był idealny, na granatowym tle miał ledwie **3.5:1**. Kontrast to zawsze para kolorów, nie jeden kolor. Dlatego w `global.css` link ma osobny odcień dla każdego motywu. Dziś linki są niebieskie, ale zasada się nie zmieniła — ciemny niebieski z jasnego motywu ma na granacie tylko 2.5:1:
 
 ~~~css
 @theme {
-  --color-link: #c2410c; /* jasny motyw */
+  --color-dlugopis: #2152c4; /* jasny motyw: 6.7:1 */
 }
 [data-theme="dark"] {
-  --color-link: #fb923c; /* ciemny motyw: ~7.9:1 */
+  --color-dlugopis: #8fb0ff; /* ciemny motyw: 8.1:1 */
 }
 ~~~
 
 (Te `--color-…` to zmienne CSS — wrócimy do nich w finale serii.)
+
+<Hare type="decision">
+W listopadzie blog przeszedł na „zeszyt w kratkę” i pomarańcz zniknął, ale podział ról został. Żółty zakreślacz `#ffd866` ma na papierze tylko 1.3:1, więc nigdy nie jest tekstem. Jest tłem pod ciemnym napisem (10.4:1), jak w przycisku „Zacznij od HTML, część 1” na stronie głównej.
+</Hare>
 
 ## Kolor to nie jedyny sygnał
 
 Jest jeszcze jedna zasada, o której łatwo zapomnieć: **informacja nie może być przekazywana samym kolorem**. Część osób nie rozróżnia barw, a na słońcu ekran telefonu i tak wszystko spłaszcza.
 
 <Hare type="tip">
-Dlatego linki w treści tego bloga mają **stałe podkreślenie**, a nie tylko inny kolor. Po najechaniu podkreślenie robi się grubsze (`text-decoration-thickness`), więc sygnał „to jest link” nie zależy od tego, czy widzisz pomarańcz.
+Dlatego linki w treści tego bloga mają **stałe podkreślenie**, a nie tylko inny kolor. Po najechaniu podkreślenie robi się grubsze (`text-decoration-thickness`), więc sygnał „to jest link” nie zależy od tego, czy widzisz niebieski.
 
-Działa to też w drugą stronę: **kolorowy tekst, który nie jest linkiem, udaje link**. Skróty klawiszowe zapisuję więc w `<kbd>`, jak np. <kbd>F12</kbd>, zamiast barwić je na pomarańczowo. Znowu ta sama myśl: HTML mówi, czym coś jest, CSS tylko to pokazuje.
+Działa to też w drugą stronę: **kolorowy tekst, który nie jest linkiem, udaje link**. Skróty klawiszowe zapisuję więc w `<kbd>`, jak np. <kbd>F12</kbd>, zamiast barwić je na niebiesko. Znowu ta sama myśl: HTML mówi, czym coś jest, CSS tylko to pokazuje.
 </Hare>
 
 <Hare type="learn">

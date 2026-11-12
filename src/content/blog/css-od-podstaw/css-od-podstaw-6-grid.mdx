@@ -1,6 +1,6 @@
 ---
 title: 'CSS od podstaw (cz. 6): Grid'
-description: 'Układ w dwóch wymiarach: grid-template-columns, jednostka fr, repeat(), minmax() i auto-fit. Na przykładzie kart projektów i mapy miejsc w samolocie, która wygląda jak tabela, ale tabelą nie jest.'
+description: 'Układ w dwóch wymiarach: grid-template-columns, jednostka fr, repeat(), minmax() i auto-fit. Na przykładzie strony Projekty i mapy miejsc w samolocie, która wygląda jak tabela, ale tabelą nie jest.'
 pubDate: 2026-10-29
 tags: ['css', 'podstawy', 'grid']
 series: 'css-od-podstaw'
@@ -43,9 +43,9 @@ Tak jak przy Flexboksie, wszystko zaczyna się na **rodzicu**:
 Czym to się różni od `50% 50%`? Procenty nie wiedzą o `gap`. Dwie kolumny po 50% plus odstęp między nimi dają ponad 100% i siatka wystaje poza rodzica — to ten sam problem, co z `width: 100%` w części 3. `fr` dzieli to, co **zostaje** po odjęciu odstępów, więc zawsze się mieści.
 
 <Hare type="explain">
-Strona **Projekty** na tym blogu to właśnie taka siatka. W Tailwindzie: `grid gap-6 sm:grid-cols-2`. Pod spodem `grid-cols-2` to `grid-template-columns: repeat(2, minmax(0, 1fr))`. Prefiks `sm:` sprawia, że dwie kolumny pojawiają się dopiero na szerszym ekranie, a na telefonie karty stoją jedna pod drugą. Jak to działa, pokażę w części 8.
+Strona **Projekty** na tym blogu to właśnie taka siatka. W Tailwindzie: `grid gap-14 md:grid-cols-2`. Pod spodem `grid-cols-2` to `grid-template-columns: repeat(2, minmax(0, 1fr))`. Prefiks `md:` sprawia, że dwie kolumny pojawiają się dopiero na szerszym ekranie, a na telefonie projekty stoją jeden pod drugim. Jak to działa, pokażę w części 8.
 
-To samo robią przyciski „Poprzednia część” i „Następna część” pod tym wpisem: `grid grid-cols-2 gap-4`, czyli dwie równe połówki.
+To samo robią przyciski „Poprzednia część” i „Następna część” pod tym wpisem: `grid gap-4 sm:grid-cols-2`, czyli na szerszym ekranie dwie równe połówki.
 </Hare>
 
 ## `repeat()` i `minmax()`
@@ -128,4 +128,4 @@ Bonus, gra do nauki Grida - [Grid Garden](https://cssgridgarden.com/#pl).
 - **Mniej liczenia:** `fr` sam dzieli wolne miejsce i pamięta o odstępach.
 - **Responsywność „za darmo”:** `repeat(auto-fit, minmax(…))` dopasowuje liczbę kolumn do ekranu.
 
-Flexbox i Grid ustawiają elementy **w przepływie** strony. W **części 7** wyjmiemy je z niego: **pozycjonowanie**, czyli jak cała karta wpisu stała się klikalna i skąd w rogu ekranu bierze się przycisk powrotu na górę. Do zobaczenia!
+Flexbox i Grid ustawiają elementy **w przepływie** strony. W **części 7** wyjmiemy je z niego: **pozycjonowanie**, czyli jak zrobić klikalną całą kartę bez linku w linku i skąd w rogu ekranu bierze się przycisk powrotu na górę. Do zobaczenia!

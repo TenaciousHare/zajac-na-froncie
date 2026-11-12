@@ -87,9 +87,9 @@ a:hover {
 }
 
 /* :focus-visible — przycisk wybrany Tabem:
-   pomarańczowy obrys pokazuje, gdzie jesteś */
+   niebieski obrys pokazuje, gdzie jesteś */
 button:focus-visible {
-  outline: 2px solid #c2410c;
+  outline: 3px solid #2152c4;
 }
 
 /* :not() — wszystkie przyciski OPRÓCZ .danger
@@ -113,7 +113,7 @@ li:first-child {
 Uwaga na `:first-child`: to nie „pierwszy z wybranych elementów”, tylko element, który jest **pierwszym dzieckiem swojego rodzica**. `li:first-child` działa w każdej liście osobno — jeśli na stronie są trzy listy, linia zniknie przy pierwszej pozycji w każdej z nich.
 
 <Hare type="tip">
-Czemu `:focus-visible`, a nie `:focus`? `:focus` zapala się także po kliknięciu myszą — i wtedy wiele osób po prostu usuwa obrys, psując nawigację klawiaturą. `:focus-visible` przeglądarka włącza wtedy, gdy obrys jest **potrzebny**. Wygląd i dostępność w jednym.
+Czemu `:focus-visible`, a nie `:focus`? `:focus` zapala się także po kliknięciu myszą — i wtedy wiele osób po prostu usuwa obrys, psując nawigację klawiaturą. `:focus-visible` przeglądarka włącza wtedy, gdy obrys jest **potrzebny**. Wygląd i dostępność w jednym. Wciśnij <kbd>Tab</kbd> na tej stronie: niebieska ramka, którą zobaczysz, to właśnie `:focus-visible` z `global.css` tego bloga.
 </Hare>
 
 ## Kaskada — kto wygrywa?

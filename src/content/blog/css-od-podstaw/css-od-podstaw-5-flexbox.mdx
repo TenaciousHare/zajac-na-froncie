@@ -90,15 +90,15 @@ W praktyce najczęściej piszesz skrót `flex: 1` („zabierz całe wolne miejsc
 Callout z zającem, który właśnie czytasz, to podręcznikowy przykład:
 
 ~~~html
-<aside class="flex items-center gap-4">
-  <img class="w-16 shrink-0" />
+<div class="flex items-start gap-3">
+  <img class="w-14 shrink-0" />
   <div class="flex-1 min-w-0">…</div>
-</aside>
+</div>
 ~~~
 
-Obrazek ma stałą szerokość i `shrink-0`, żeby długi tekst go nie ścisnął. Tekst ma `flex-1`, więc zabiera całą resztę. A `items-center` ustawia zająca na środku wysokości.
+Obrazek ma stałą szerokość i `shrink-0`, żeby długi tekst go nie ścisnął. Tekst ma `flex-1`, więc zabiera całą resztę. A `items-start` trzyma zająca na górze, przy początku dymka.
 
-Jest jeszcze jedno miejsce: na stronie **Projekty** każda karta to `flex flex-col`, a opis ma `grow`. Opis „puchnie”, więc linki do repo zawsze lądują na dole karty, nawet gdy opisy mają różną długość.
+Jest jeszcze jedna sztuczka: na szerokim ekranie krótkie notatki wyjeżdżają z tekstu na margines zeszytu i dostają `flex-direction: column`. Ten sam kontener, tylko osie zamieniają się miejscami — i zając staje nad tekstem.
 </Hare>
 
 ## Pułapka: `min-width: auto`

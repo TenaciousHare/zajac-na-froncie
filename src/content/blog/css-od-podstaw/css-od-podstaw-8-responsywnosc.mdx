@@ -59,9 +59,10 @@ Tailwind jest mobile-first z założenia. Klasa bez prefiksu działa zawsze, a p
 
 Na tym blogu:
 
-- strona **Projekty**: `grid gap-6 sm:grid-cols-2` — jedna kolumna na telefonie, dwie od `sm`,
+- strona **Projekty**: `grid gap-14 md:grid-cols-2` — jedna kolumna na telefonie, dwie od `md`,
 - nawigacja: `gap-4 sm:gap-6` — na wąskim ekranie odstępy między linkami są mniejsze, żeby wszystko się zmieściło,
-- przycisk na stronie głównej: na telefonie stoi pod obrazkiem z zającem, a od `md` dostaje `md:absolute` i ląduje **na** obrazku, przy dolnej krawędzi. Pozycjonowanie z części 7 włączone dopiero od pewnej szerokości.
+- strona główna: `grid gap-10 md:grid-cols-[minmax(0,1fr)_22rem]` — na telefonie Senior Hare z ciekawostką dnia stoi pod tekstem, a od `md` dostaje własną kolumnę po prawej. Grid z części 6 włączony dopiero od pewnej szerokości,
+- notatki Senior Hare'a: od `lg` krótkie notatki wyjeżdżają z tekstu na margines zeszytu. Zwęź okno przy tym wpisie, a zobaczysz, jak wracają do tekstu. Tu akurat bez Tailwinda — w `global.css` stoi zwykłe `@media (width >= 64rem)`, czyli nowszy zapis `min-width: 64rem`.
 </Hare>
 
 Jak dobrać breakpointy? Nie pod konkretne modele telefonów, tylko pod **treść**. Zwężaj okno przeglądarki i patrz, kiedy układ zaczyna się psuć. Tam jest Twój breakpoint.
