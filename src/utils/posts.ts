@@ -82,3 +82,15 @@ export function krotkiTytul(post: Wpis) {
   if (/[A-Z]/.test(pierwszeSlowo.slice(1))) return bezSerii;
   return bezSerii.charAt(0).toUpperCase() + bezSerii.slice(1);
 }
+
+// polski ma trzy formy liczby mnogiej, Intl.PluralRules wie, którą wybrać:
+// odmien(1, …) -> "1 wpis", odmien(3, …) -> "3 wpisy", odmien(35, …) -> "35 wpisów"
+const odmiana = new Intl.PluralRules("pl-PL");
+
+export function odmien(
+  n: number,
+  formy: { one: string; few: string; many: string },
+) {
+  const kategoria = odmiana.select(n) as keyof typeof formy;
+  return `${n} ${formy[kategoria] ?? formy.many}`;
+}

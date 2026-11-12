@@ -1,0 +1,45 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { krotkiTytul } from "../utils/posts";
+
+interface Props {
+  czesci: CollectionEntry<"blog">[];
+  wkrotce?: CollectionEntry<"blog">[];
+  /** dwie kolumny od sm: serie podstaw; serie z warsztatu mają jedną */
+  dwieKolumny?: boolean;
+}
+const { czesci, wkrotce = [], dwieKolumny = false } = Astro.props;
+
+const wiersz = "flex break-inside-avoid items-baseline gap-3 py-1.5";
+const numer =
+  "w-7 shrink-0 text-right font-reka text-lg font-semibold text-dlugopis";
+const data = "shrink-0 text-sm text-olowek tabular-nums";
+---
+
+<ol class:list={["mt-4", dwieKolumny && "gap-x-14 sm:columns-2"]}>
+  {czesci.map((post) => (
+    <li class={wiersz}>
+      <span aria-hidden="true" class={numer}>
+        {post.data.seriesPart}
+      </span>
+      <a
+        href={`/blog/${post.id}`}
+        class="flex-1 font-semibold text-atrament underline decoration-linia underline-offset-3 hover:text-dlugopis hover:decoration-dlugopis"
+      >
+        {krotkiTytul(post)}
+      </a>
+      <time datetime={post.data.pubDate.toISOString()} class={data}>
+        {post.data.pubDate.toLocaleDateString("pl-PL")}
+      </time>
+    </li>
+  ))}
+  {wkrotce.map((post) => (
+    <li class={wiersz}>
+      <span aria-hidden="true" class={numer}>
+        {post.data.seriesPart}
+      </span>
+      <span class="flex-1 text-olowek italic">{krotkiTytul(post)}</span>
+      <span class={data}>wkrótce</span>
+    </li>
+  ))}
+</ol>
