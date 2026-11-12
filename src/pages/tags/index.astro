@@ -1,31 +1,73 @@
 ---
 import Layout from "../../layouts/Layout.astro";
-import { getAllTags } from "../../utils/posts";
+import Wiersz from "../../components/Wiersz.astro";
+import { getAllTags, odmien } from "../../utils/posts";
 
 const tags = await getAllTags();
+
+// skorowidz jak na końcu zeszytu: tagi pogrupowane po pierwszej literze
+// (getAllTags sortuje już po polsku, więc grupy wychodzą w dobrej kolejności)
+const grupy = new Map<string, typeof tags>();
+for (const t of tags) {
+  const litera = t.tag.charAt(0).toLocaleUpperCase("pl-PL");
+  grupy.set(litera, [...(grupy.get(litera) ?? []), t]);
+}
+
+const liczbaTagow = odmien(tags.length, {
+  one: "tag",
+  few: "tagi",
+  many: "tagów",
+});
+const wpisy = (n: number) =>
+  odmien(n, { one: "wpis", few: "wpisy", many: "wpisów" });
 ---
 
 <Layout
   title="Tagi — Zając na Froncie"
   description="Wszystkie tematy na blogu Zając na Froncie — wybierz tag, żeby zobaczyć powiązane wpisy."
 >
-  <div class="max-w-3xl mx-auto">
-    <h1 class="mb-6 text-3xl font-bold text-atrament">Tagi</h1>
+  <!-- -my-8 znosi py-8 z <main>, więc linia marginesu dochodzi do nagłówka i stopki -->
+  <div class="zeszyt -my-8 pb-16 [--margines:1rem] md:[--margines:5.5rem]">
+    <Wiersz class="pt-12 md:pt-16">
+      <h1 class="text-[clamp(2.4rem,4.4vw,3.25rem)] leading-tight font-extrabold tracking-tight">
+        Tagi
+      </h1>
+      <p class="mt-3 max-w-[40em] text-lg text-pretty text-atrament-2">
+        {liczbaTagow} ze wszystkich wpisów, alfabetycznie. Liczba obok tagu to
+        liczba wpisów.
+      </p>
+    </Wiersz>
 
-    <ul class="flex flex-wrap gap-3">
-      {tags.map(({ tag, count }) => (
-        <li>
-          <a
-            href={`/tags/${tag}`}
-            class="inline-flex items-center gap-1.5 rounded-full bg-dlugopis/10 px-4 py-1.5 text-sm font-medium text-dlugopis transition hover:bg-dlugopis/20"
-          >
-            #{tag}
-            <span class="text-xs text-olowek">
-              <span class="sr-only">liczba wpisów:</span> {count}
-            </span>
-          </a>
-        </li>
-      ))}
-    </ul>
+    <Wiersz class="mt-10">
+      <div class="gap-x-12 sm:columns-2 lg:columns-3">
+        {[...grupy].map(([litera, lista]) => (
+          <section class="mb-8 break-inside-avoid">
+            <h2 class="font-reka text-2xl leading-none font-semibold text-dlugopis">
+              {litera}
+            </h2>
+            <ul class="mt-2">
+              {lista.map(({ tag, count }) => (
+                <li class="flex items-baseline gap-2 py-1">
+                  <a
+                    href={`/tags/${tag}`}
+                    class="font-semibold text-atrament underline decoration-linia underline-offset-3 hover:text-dlugopis hover:decoration-dlugopis"
+                  >
+                    {tag}
+                  </a>
+                  <span
+                    aria-hidden="true"
+                    class="min-w-4 flex-1 translate-y-[-0.25em] border-b-2 border-dotted border-linia"
+                  />
+                  <span class="text-sm text-olowek tabular-nums">
+                    <span aria-hidden="true">{count}</span>
+                    <span class="sr-only">, {wpisy(count)}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
+    </Wiersz>
   </div>
 </Layout>
