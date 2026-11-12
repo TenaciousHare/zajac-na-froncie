@@ -1,4 +1,9 @@
 import { getCollection, type CollectionEntry } from "astro:content";
+import { serie } from "../data/serie";
+
+type Wpis = CollectionEntry<"blog">;
+const poCzesci = (a: Wpis, b: Wpis) =>
+  (a.data.seriesPart ?? 0) - (b.data.seriesPart ?? 0);
 
 export async function getPublishedPosts() {
   const now = new Date();
@@ -41,4 +46,37 @@ export async function getPostsByTag(tag: string) {
   return (await getPublishedPosts()).filter((post) =>
     post.data.tags.includes(tag),
   );
+}
+
+// wpisy z przyszłą datą: opublikuje je codzienny rebuild z netlify/functions
+export async function getPlannedPosts() {
+  const now = new Date();
+  return (await getCollection("blog")).filter(
+    (post) => !post.data.draft && post.data.pubDate > now,
+  );
+}
+
+export async function getSeriesOverview() {
+  const [opublikowane, zaplanowane] = await Promise.all([
+    getPublishedPosts(),
+    getPlannedPosts(),
+  ]);
+  return Object.entries(serie)
+    .map(([klucz, meta]) => ({
+      klucz,
+      ...meta,
+      czesci: opublikowane
+        .filter((p) => p.data.series === klucz)
+        .sort(poCzesci),
+      wkrotce: zaplanowane
+        .filter((p) => p.data.series === klucz)
+        .sort(poCzesci),
+    }))
+    .sort((a, b) => a.kolejnosc - b.kolejnosc);
+}
+
+// "JavaScript od podstaw (cz. 8): zdarzenia, czyli…" -> "Zdarzenia, czyli…"
+export function krotkiTytul(post: Wpis) {
+  const bezSerii = post.data.title.replace(/^.*?\(cz\. \d+\):\s*/, "");
+  return bezSerii.charAt(0).toUpperCase() + bezSerii.slice(1);
 }

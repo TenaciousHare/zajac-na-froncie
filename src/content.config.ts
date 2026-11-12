@@ -1,5 +1,6 @@
 import { defineCollection, z } from "astro:content";
 import { glob } from "astro/loaders";
+import { serie, type KluczSerii } from "./data/serie";
 
 const blog = defineCollection({
   // skąd brać wpisy: wszystkie .md z folderu src/content/blog
@@ -20,7 +21,9 @@ const blog = defineCollection({
     updatedDate: z.coerce.date().optional(), // ustaw po istotnej edycji wpisu → trafi do sitemapy jako lastmod
     tags: z.array(z.string()).default([]),
     draft: z.boolean().default(false),
-    series: z.string().optional(),
+    series: z
+      .enum(Object.keys(serie) as [KluczSerii, ...KluczSerii[]])
+      .optional(),
     seriesPart: z.number().optional(),
   }),
 });

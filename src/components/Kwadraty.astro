@@ -1,0 +1,44 @@
+---
+import type { CollectionEntry } from "astro:content";
+
+interface Props {
+  tytulSerii: string;
+  czesci: CollectionEntry<"blog">[];
+  wkrotce?: CollectionEntry<"blog">[];
+  aktualnaId?: string;
+}
+const { tytulSerii, czesci, wkrotce = [], aktualnaId } = Astro.props;
+const kwadrat =
+  "grid size-11 place-items-center rounded-md border-[1.5px] font-bold no-underline";
+---
+
+<ol class="flex flex-wrap gap-1.5" aria-label={`Części serii ${tytulSerii}`}>
+  {czesci.map((post) => {
+    const tutaj = post.id === aktualnaId;
+    return (
+      <li>
+        <a
+          href={`/blog/${post.id}`}
+          aria-label={`Część ${post.data.seriesPart}: ${post.data.title}`}
+          aria-current={tutaj ? "page" : undefined}
+          class:list={[
+            kwadrat,
+            tutaj
+              ? "border-atrament bg-marker text-na-markerze"
+              : "border-dlugopis bg-dlugopis text-papier hover:bg-dlugopis-ciemny",
+          ]}
+        >
+          {post.data.seriesPart}
+        </a>
+      </li>
+    );
+  })}
+  {wkrotce.map((post) => (
+    <li>
+      <span class:list={[kwadrat, "border-dashed border-olowek text-olowek"]}>
+        <span aria-hidden="true">{post.data.seriesPart}</span>
+        <span class="sr-only">Część {post.data.seriesPart}, wkrótce</span>
+      </span>
+    </li>
+  ))}
+</ol>
