@@ -34,6 +34,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       document.documentElement.setAttribute("data-theme", theme);
     </script>
     <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
     <meta name="description" content={description} />
@@ -73,9 +74,9 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     ></script>
     <!-- End Cloudflare Web Analytics -->
   </head>
-  <body class="papier-w-kratke font-sans text-atrament">
+  <body class="flex min-h-dvh flex-col papier-w-kratke font-sans text-atrament">
     <Nav />
-    <main class="mx-auto max-w-6xl px-4 py-8">
+    <main class="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
       <slot />
     </main>
     <footer class="bg-papier border-t border-linia">
@@ -83,7 +84,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         <p>© {new Date().getFullYear()} Zając na Froncie</p>
         <SocialLinks />
       </div>
+      <!-- w stopce, żeby przycisk był w punkcie orientacyjnym; i tak jest przyklejony do rogu ekranu -->
+      <BackToTop />
     </footer>
-    <BackToTop />
   </body>
 </html>

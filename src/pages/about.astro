@@ -1,36 +1,61 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import Wiersz from "../components/Wiersz.astro";
+
+// tekst akapitów: na marginesie stoi krótki dopisek, jak w zeszycie
+const akapit = "max-w-[65ch] text-lg leading-[1.75] text-pretty text-atrament";
+const dopisek = "block pt-1 text-lg leading-snug font-semibold";
 ---
 
 <Layout
   title="O mnie — Zając na Froncie"
   description="Z lotniska do frontendu. Jak uczę się programować z zupełnie innej branży, buduję realne narzędzia i opisuję tę drogę — React, TypeScript, Astro."
 >
-  <article class="prose prose-zeszyt mx-auto">
-    <h1>O mnie</h1>
+  <!-- -my-8 znosi py-8 z <main>, więc linia marginesu dochodzi do nagłówka i stopki -->
+  <div class="zeszyt -my-8 pb-16 [--margines:1rem] md:[--margines:9rem]">
+    <Wiersz class="pt-12 md:pt-16">
+      <h1 class="text-[clamp(2.4rem,4.4vw,3.25rem)] leading-tight font-extrabold tracking-tight">
+        O mnie
+      </h1>
+    </Wiersz>
 
-    <p>
-      Cześć, jestem Paweł. Na co dzień pracuję w lotnictwie — jako Training
-      Coordinator w Aviation Support Poland szkolę i wdrażam ludzi do obsługi
-      naziemnej na lotnisku. Wcześniej byłem trenerem i liderem zespołu, więc od
-      lat zajmuję się tym samym: jak przekazać wiedzę tak, żeby naprawdę została
-      w głowie.
-    </p>
+    <Wiersz class="mt-8">
+      <span slot="margines" class={dopisek}>
+        Na co dzień
+      </span>
+      <p class={akapit}>
+        Cześć, jestem Paweł. Na co dzień pracuję w lotnictwie — jako Training
+        Coordinator w Aviation Support Poland szkolę i wdrażam ludzi do obsługi
+        naziemnej na lotnisku. Wcześniej byłem trenerem i liderem zespołu, więc
+        od lat zajmuję się tym samym: jak przekazać wiedzę tak, żeby naprawdę
+        została w głowie.
+      </p>
+    </Wiersz>
 
-    <p>
-      Programowanie interesowało mnie od dawna — brakowało mu tylko
-      zastosowania. Znalazłem je we własnej pracy: zacząłem budować małe
-      narzędzia webowe rozwiązujące realne problemy w szkoleniach i obsłudze
-      lotu — generator testów z destynacji, trenażer manualnego boardingu i
-      podgląd pogody lotniczej (METAR/TAF). Tak dawne zainteresowanie zamieniło
-      się w coś, co robię z prawdziwą przyjemnością: React, TypeScript i to
-      CSS-owe rzemiosło, które po prostu lubię.
-    </p>
+    <Wiersz class="mt-8">
+      <span slot="margines" class={dopisek}>
+        Skąd kod
+      </span>
+      <p class={akapit}>
+        Programowanie interesowało mnie od dawna — brakowało mu tylko
+        zastosowania. Znalazłem je we własnej pracy: zacząłem budować małe
+        narzędzia webowe rozwiązujące realne problemy w szkoleniach i obsłudze
+        lotu — generator testów z destynacji, trenażer manualnego boardingu i
+        podgląd pogody lotniczej (METAR/TAF). Tak dawne zainteresowanie
+        zamieniło się w coś, co robię z prawdziwą przyjemnością: React,
+        TypeScript i to CSS-owe rzemiosło, które po prostu lubię.
+      </p>
+    </Wiersz>
 
-    <p>
-      Teraz uczę się tego porządnie, od podstaw, i opisuję tę drogę tutaj. Jeśli
-      — tak jak ja — wchodzisz we front-end z zupełnie innej branży, mam
-      nadzieję, że znajdziesz coś dla siebie.
-    </p>
-  </article>
+    <Wiersz class="mt-8">
+      <span slot="margines" class={dopisek}>
+        Teraz
+      </span>
+      <p class={akapit}>
+        Teraz uczę się tego porządnie, od podstaw, i opisuję tę drogę tutaj.
+        Jeśli — tak jak ja — wchodzisz we front-end z zupełnie innej branży, mam
+        nadzieję, że znajdziesz coś dla siebie.
+      </p>
+    </Wiersz>
+  </div>
 </Layout>
