@@ -19,10 +19,10 @@
   --color-olowek: #55607a; /* daty, podpisy */
   --color-dlugopis: #2152c4; /* linki, numery, pismo Zająca */
   --color-dlugopis-ciemny: #153a92; /* hover linków */
-  --color-marker: #f47c42; /* tylko jako tło */
+  --color-marker: #ffd866; /* zakreślacz: tylko jako tło */
   --color-na-markerze: #1f2a44; /* tekst na tle marker */
   --color-margines: #e26c7e; /* czerwona linia */
-  --color-pulapka: #a63f0b; /* etykieta „Pułapka” */
+  --color-pulapka: #b8304a; /* czerwony długopis: etykieta „Pułapka” */
 }
 [data-theme="dark"] {
   --color-papier: #121a30;
@@ -34,10 +34,10 @@
   --color-olowek: #a9b3c9;
   --color-dlugopis: #8fb0ff;
   --color-dlugopis-ciemny: #b7ccff;
-  --color-marker: #ff8b4e;
+  --color-marker: #f2c94c;
   --color-na-markerze: #121a30;
   --color-margines: #b4475c;
-  --color-pulapka: #ff8b4e;
+  --color-pulapka: #ff8fa0;
 }
 
 @utility papier-w-kratke {
@@ -61,6 +61,14 @@
     width: 2px;
     background: var(--color-margines);
   }
+}
+
+/* jeden styl fokusu dla całej strony, w kolorze długopisu:
+   żółty zakreślacz na jasnym papierze ma 1,3:1, a ramka fokusu potrzebuje 3:1 */
+:focus-visible {
+  outline: 3px solid var(--color-dlugopis);
+  outline-offset: 3px;
+  border-radius: 4px;
 }
 
 a.heading-anchor {
@@ -174,4 +182,27 @@ a.heading-anchor:focus-visible {
   .wpis-z-marginesem .hare[data-margines] .ogonek {
     display: none;
   }
+}
+
+/* długie nazwy z kodu, np. requestAnimationFrame(update), łamią się
+   na wąskim telefonie, zamiast rozpychać stronę w bok */
+.wpis-z-marginesem article {
+  overflow-wrap: break-word;
+}
+
+/* szeroka tabela (np. operatory w JS cz. 3) zwęża się na telefonie:
+   komórki mogą łamać długi kod, więc tabela nie rozpycha strony */
+.wpis-z-marginesem article :is(td, th) {
+  overflow-wrap: anywhere;
+}
+
+/* krótka strona (np. O mnie): stopka zostaje na dole ekranu,
+   a zeszyt rośnie do niej razem z linią marginesu */
+main:has(> .zeszyt) {
+  display: flex;
+  flex-direction: column;
+}
+main > .zeszyt {
+  flex-grow: 1;
+  align-content: start;
 }

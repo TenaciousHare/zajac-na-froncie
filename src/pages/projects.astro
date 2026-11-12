@@ -1,7 +1,21 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import Wiersz from "../components/Wiersz.astro";
+import Kwadraty from "../components/Kwadraty.astro";
+import type { KluczSerii } from "../data/serie";
+import { getSeriesOverview, odmien } from "../utils/posts";
 
-const projects = [
+type Projekt = {
+  name: string;
+  description: string;
+  tech: string[];
+  live: string;
+  repo: string;
+  /** seria z warsztatu, w której opisuję budowę projektu */
+  seria?: KluczSerii;
+};
+
+const projects: Projekt[] = [
   {
     name: "Avia Weather",
     description:
@@ -16,6 +30,7 @@ const projects = [
     ],
     live: "https://avia-weather.netlify.app",
     repo: "https://github.com/TenaciousHare/Avia-Weather",
+    seria: "jak-powstal-metar",
   },
   {
     name: "Destinations",
@@ -24,6 +39,7 @@ const projects = [
     tech: ["React", "TypeScript", "Vite", "React Router", "Firebase", "Vitest"],
     live: "https://destinations-test.netlify.app",
     repo: "https://github.com/TenaciousHare/Destinations",
+    seria: "jak-powstal-destinations",
   },
   {
     name: "ManualBoarding",
@@ -36,65 +52,74 @@ const projects = [
   {
     name: "Zając na Froncie",
     description:
-      "Ten blog — nauka frontendu od zera, prowadzona przez komiksowego Senior Hare'a.",
+      "Ten blog: podstawy HTML, CSS i JavaScriptu na prawdziwym kodzie, z Senior Hare na marginesie.",
     tech: ["Astro", "MDX", "Tailwind", "TypeScript"],
     live: "https://zajac-na-froncie.netlify.app",
     repo: "https://github.com/TenaciousHare/zajac-na-froncie",
   },
 ];
+
+const serie = await getSeriesOverview();
+const czesci = (n: number) =>
+  odmien(n, { one: "część", few: "części", many: "części" });
+
+const link =
+  "font-semibold text-dlugopis underline decoration-linia underline-offset-3 hover:text-dlugopis-ciemny hover:decoration-dlugopis";
 ---
 
 <Layout
   title="Projekty — Zając na Froncie"
   description="Realne narzędzia webowe z pogranicza lotnictwa i frontendu: Avia Weather, Destinations, ManualBoarding i ten blog. React, TypeScript, Astro."
 >
-  <div class="max-w-3xl mx-auto">
-    <h1 class="mb-2 text-3xl font-bold text-atrament">Projekty</h1>
-    <p class="mb-6 text-atrament-2">
-      Narzędzia, które wyrosły z mojej pracy w lotnictwie — każde rozwiązuje
-      realny problem i każde jest na żywo.
-    </p>
+  <!-- -my-8 znosi py-8 z <main>, więc linia marginesu dochodzi do nagłówka i stopki -->
+  <div class="zeszyt -my-8 pb-16 [--margines:1rem] md:[--margines:5.5rem]">
+    <Wiersz class="pt-12 md:pt-16">
+      <h1 class="text-[clamp(2.4rem,4.4vw,3.25rem)] leading-tight font-extrabold tracking-tight">
+        Projekty
+      </h1>
+      <p class="mt-3 max-w-[40em] text-lg text-pretty text-atrament-2">
+        Narzędzia, które wyrosły z mojej pracy w lotnictwie — każde rozwiązuje
+        realny problem i każde jest na żywo.
+      </p>
+    </Wiersz>
 
-    <div class="grid gap-6 sm:grid-cols-2">
-      {projects.map((project) => (
-        <article class="flex flex-col rounded-xl border border-linia bg-kartka p-6 transition hover:border-dlugopis hover:shadow-md">
-          <div class="flex items-start justify-between gap-3">
-            <h2 class="text-xl font-semibold text-atrament">{project.name}</h2>
-            <span class="shrink-0 rounded-full bg-dlugopis/10 px-2.5 py-0.5 text-xs font-medium text-dlugopis">
-              live
-            </span>
-          </div>
-
-          <p class="mt-2 grow text-atrament-2">{project.description}</p>
-
-          <ul class="mt-3 flex flex-wrap gap-2">
-            {project.tech.map((t) => (
-              <li class="rounded-full bg-dlugopis/10 px-3 py-1 text-xs font-medium text-dlugopis">
-                {t}
-              </li>
-            ))}
-          </ul>
-
-          <div class="mt-4 flex gap-4 text-sm">
-            <a
-              href={project.live}
-              target="_blank"
-              rel="noopener"
-              class="font-medium text-dlugopis hover:underline underline-offset-2"
-            >
-              Zobacz live <span aria-hidden="true">→</span>
-            </a>
-            <a
-              href={project.repo}
-              target="_blank"
-              rel="noopener"
-              class="font-medium text-atrament-2 hover:text-dlugopis"
-            >
-              Kod na GitHubie
-            </a>
-          </div>
-        </article>
-      ))}
-    </div>
+    <Wiersz class="mt-12">
+      <div class="grid gap-x-14 gap-y-14 md:grid-cols-2">
+        {projects.map((p) => {
+          const seria = serie.find((s) => s.klucz === p.seria);
+          return (
+            <article class="flex flex-col gap-3">
+              <h2 class="text-[1.6rem] leading-tight font-extrabold tracking-tight">
+                {p.name}
+              </h2>
+              <p class="text-pretty text-atrament-2">{p.description}</p>
+              <p class="text-sm text-olowek">{p.tech.join(", ")}</p>
+              <p class="flex flex-wrap gap-x-6 gap-y-2">
+                <a href={p.live} target="_blank" rel="noopener" class={link}>
+                  Zobacz na żywo
+                  <span class="sr-only"> (otwiera się w nowej karcie)</span>
+                </a>
+                <a href={p.repo} target="_blank" rel="noopener" class={link}>
+                  Kod na GitHubie
+                  <span class="sr-only"> (otwiera się w nowej karcie)</span>
+                </a>
+              </p>
+              {seria && (
+                <div class="mt-2 flex flex-col gap-2">
+                  <p class="text-sm text-olowek">
+                    Jak powstawał: {czesci(seria.czesci.length)} na blogu
+                  </p>
+                  <Kwadraty
+                    tytulSerii={seria.tytul}
+                    czesci={seria.czesci}
+                    wkrotce={seria.wkrotce}
+                  />
+                </div>
+              )}
+            </article>
+          );
+        })}
+      </div>
+    </Wiersz>
   </div>
 </Layout>

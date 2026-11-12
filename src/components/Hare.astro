@@ -60,7 +60,9 @@ const naMargines = !html.includes("<pre") && tekst.length <= 220;
 const ostrzezenie = type === "bug" || type === "why";
 ---
 
-<aside
+<!-- div, nie aside: aside wewnątrz <article> i tak nie jest punktem orientacyjnym,
+     a axe i Lighthouse zgłaszają go jako zagnieżdżony landmark -->
+<div
   data-margines={naMargines ? "" : undefined}
   class="hare not-prose my-6 flex items-start gap-3"
 >
@@ -101,4 +103,4 @@ const ostrzezenie = type === "bug" || type === "why";
     </p>
     <Fragment set:html={html} />
   </div>
-</aside>
+</div>
