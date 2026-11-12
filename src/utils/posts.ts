@@ -78,5 +78,7 @@ export async function getSeriesOverview() {
 // "JavaScript od podstaw (cz. 8): zdarzenia, czyli…" -> "Zdarzenia, czyli…"
 export function krotkiTytul(post: Wpis) {
   const bezSerii = post.data.title.replace(/^.*?\(cz\. \d+\):\s*/, "");
+  const [pierwszeSlowo] = bezSerii.split(" ");
+  if (/[A-Z]/.test(pierwszeSlowo.slice(1))) return bezSerii;
   return bezSerii.charAt(0).toUpperCase() + bezSerii.slice(1);
 }

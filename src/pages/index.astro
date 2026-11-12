@@ -1,49 +1,241 @@
 ---
+import { Image } from "astro:assets";
 import Layout from "../layouts/Layout.astro";
-import { Picture } from "astro:assets";
-import heroLight from "../assets/hero-banner_light.png";
-import heroDark from "../assets/hero-banner_dark.png";
+import Wiersz from "../components/Wiersz.astro";
+import Kwadraty from "../components/Kwadraty.astro";
+import {
+  getPublishedPosts,
+  getSeriesOverview,
+  krotkiTytul,
+} from "../utils/posts";
+import { ciekawostki } from "../data/ciekawostki";
+import hareLupa from "../assets/hare/SeniorHare_1_explanations-tutorial.png";
+
+const serie = await getSeriesOverview();
+const podstawy = serie.filter((s) => s.rodzaj === "podstawy");
+const warsztat = serie.filter((s) => s.rodzaj === "warsztat");
+
+const wszystkie = await getPublishedPosts();
+const najnowsze = wszystkie.slice(0, 3);
+const start = podstawy[0].czesci[0];
+
+// codzienny rebuild z netlify/functions zmienia ciekawostkę raz na dobę
+const ciekawostka = ciekawostki[new Date().getDate() % ciekawostki.length];
+// "Czy wiesz, że `[1, 2]`…" -> co drugi kawałek to kod
+const kawalki = ciekawostka.tekst.split("`");
+
+const tytulSerii = (klucz?: string) =>
+  serie.find((s) => s.klucz === klucz)?.tytul;
 ---
 
 <Layout
-  title="Zając na Froncie — frontend od zera"
-  description="Nauka frontendu od podstaw z komiksowym Senior Hare. React, TypeScript, Astro i CSS — po polsku, krok po kroku."
+  title="Zając na Froncie: HTML, CSS i JavaScript od podstaw"
+  description="Powtarzam i utrwalam podstawy frontendu na prawdziwym kodzie. Po polsku, z Senior Hare na marginesie."
 >
-  <section class="w-screen ml-[calc(50%-50vw)] mr-[calc(50%-50vw)] bg-papier">
-    <div class="mx-auto max-w-5xl px-4 py-12">
-      <h1 class="sr-only">Zając na Froncie</h1>
+  <!-- -my-8 znosi py-8 z <main>, więc linia marginesu dochodzi do nagłówka i stopki -->
+  <div class="zeszyt -my-8 [--margines:1rem] md:[--margines:5.5rem]">
+    <!-- hero -->
+    <Wiersz class="py-12 md:py-16">
+      <div class="grid items-center gap-10 md:grid-cols-[minmax(0,1fr)_22rem]">
+        <div class="flex flex-col gap-6">
+          <h1 class="text-[clamp(2.5rem,5vw,4rem)] leading-[1.04] font-extrabold tracking-tight text-balance">
+            Frontend od podstaw, na prawdziwym kodzie.
+          </h1>
+          <p class="max-w-[34em] text-xl text-pretty text-atrament-2">
+            Powtarzam i utrwalam podstawy HTML, CSS i JavaScriptu. Przykłady
+            biorę z kodu tego bloga i z narzędzi, które zbudowałem do pracy na
+            lotnisku, a Senior Hare dopisuje na marginesie to, co łatwo
+            przeoczyć.
+          </p>
+          <div class="flex flex-wrap items-center gap-x-7 gap-y-4 pt-2">
+            <a
+              href={`/blog/${start.id}`}
+              class="inline-flex min-h-13 items-center rounded-[14px_11px_15px_12px] border-2 border-atrament bg-marker px-6 font-bold text-na-markerze no-underline transition-colors hover:bg-marker/85"
+            >
+              Zacznij od HTML, część 1
+            </a>
+            <a
+              href={`/blog/${najnowsze[0].id}`}
+              class="font-medium text-dlugopis underline-offset-3 hover:text-dlugopis-ciemny"
+            >
+              Najnowszy wpis: {krotkiTytul(najnowsze[0])}
+            </a>
+          </div>
+        </div>
 
-      <div class="relative">
-        <Picture
-          src={heroLight}
-          formats={["avif", "webp"]}
-          width={1024}
-          densities={[1, 2]}
-          alt="Zając na Froncie — Senior Hare"
-          loading="eager"
-          class="w-full dark:hidden"
-        />
-        <Picture
-          src={heroDark}
-          formats={["avif", "webp"]}
-          width={1024}
-          densities={[1, 2]}
-          alt="Zając na Froncie — Senior Hare"
-          loading="eager"
-          class="hidden w-full dark:block"
-        />
-
-        <a
-          href="/blog"
-          class="mt-4 block w-fit mx-auto md:mt-0 md:absolute md:bottom-6 md:left-1/2 md:-translate-x-1/2 rounded-lg bg-marker px-6 py-3 font-semibold text-na-markerze shadow-lg transition hover:bg-marker/85"
-        >
-          Czytaj blog
-        </a>
+        <figure class="flex flex-col items-end">
+          <div class="relative -rotate-1 self-start rounded-[1.6rem_1.4rem_1.75rem_1.25rem/1.4rem_1.75rem_1.25rem_1.6rem] border-2 border-atrament bg-kartka px-5 py-4 font-reka text-lg">
+            <p>
+              {kawalki.map((kawalek, i) =>
+                i % 2 === 1 ? (
+                  <code class="rounded bg-dlugopis/10 px-1 font-mono text-[0.9em] whitespace-nowrap">
+                    {kawalek}
+                  </code>
+                ) : (
+                  kawalek
+                ),
+              )}
+            </p>
+            <a
+              href={ciekawostka.link}
+              class="mt-2 inline-block font-semibold text-dlugopis hover:text-dlugopis-ciemny"
+            >
+              {ciekawostka.podpis}
+            </a>
+            <!-- ogonek dymka, wskazuje Zająca -->
+            <svg
+              aria-hidden="true"
+              class="absolute right-18 -bottom-6.75"
+              width="34"
+              height="30"
+              viewBox="0 0 34 30"
+            >
+              <path
+                d="M2 1 L22 28 L28 1"
+                class="fill-kartka stroke-atrament"
+                stroke-width="2"
+                stroke-linejoin="round"
+              ></path>
+              <path
+                d="M3 0 L27 0"
+                class="stroke-kartka"
+                stroke-width="3"
+              ></path>
+            </svg>
+          </div>
+          <Image
+            src={hareLupa}
+            alt=""
+            width={236}
+            densities={[1, 2]}
+            class="mt-5 mr-2"
+          />
+          <figcaption class="sr-only">
+            Ciekawostka dnia od Senior Hare
+          </figcaption>
+        </figure>
       </div>
+    </Wiersz>
 
-      <p class="mt-1 text-center text-lg text-atrament-2">
-        Frontend od zera — z Senior Hare w roli przewodnika.
+    <!-- ścieżka: trzy serie podstaw -->
+    <Wiersz class="pt-10">
+      <h2 class="text-3xl font-extrabold tracking-tight">Od czego zacząć</h2>
+      <p class="mt-2 text-olowek">
+        Trzy serie, najlepiej w tej kolejności. Każdy kwadrat to jedna część.
       </p>
-    </div>
-  </section>
+    </Wiersz>
+    {podstawy.map((s, i) => (
+      <Wiersz class="mt-10">
+        <span
+          slot="margines"
+          aria-hidden="true"
+          class="block text-3xl leading-none font-semibold"
+        >
+          {i + 1}.
+        </span>
+        <div class="flex flex-wrap items-start justify-between gap-x-10 gap-y-4">
+          <div class="max-w-md">
+            <h3 class="text-2xl font-extrabold">
+              <a
+                href={`/blog#${s.klucz}`}
+                class="text-atrament no-underline hover:text-dlugopis"
+              >
+                {s.tytul}
+              </a>
+            </h3>
+            <p class="mt-1 text-atrament-2">{s.opis}</p>
+            <p class="mt-1 text-sm text-olowek">
+              {s.czesci.length} części,{" "}
+              {s.zamknieta ? "seria zamknięta" : "kolejne w drodze"}
+            </p>
+          </div>
+          <Kwadraty
+            tytulSerii={s.tytul}
+            czesci={s.czesci}
+            wkrotce={s.wkrotce}
+          />
+        </div>
+      </Wiersz>
+    ))}
+
+    <!-- warsztat: serie o budowie narzędzi -->
+    <Wiersz class="pt-20">
+      <h2 class="text-3xl font-extrabold tracking-tight">Z warsztatu</h2>
+      <p class="mt-2 text-olowek">
+        Jak powstawały narzędzia, których używam na co dzień w szkoleniach na
+        lotnisku.
+      </p>
+    </Wiersz>
+    <Wiersz class="mt-8">
+      <div class="grid gap-x-12 gap-y-10 md:grid-cols-2">
+        {warsztat.map((s) => (
+          <article class="flex flex-col gap-2">
+            <h3 class="text-[1.375rem] font-extrabold">
+              <a
+                href={`/blog#${s.klucz}`}
+                class="text-atrament no-underline hover:text-dlugopis"
+              >
+                {s.tytul}
+              </a>
+            </h3>
+            <p class="max-w-[30em] text-atrament-2">{s.opis}</p>
+            <p class="text-sm text-olowek">{s.czesci.length} części</p>
+            <Kwadraty
+              tytulSerii={s.tytul}
+              czesci={s.czesci}
+              wkrotce={s.wkrotce}
+            />
+          </article>
+        ))}
+      </div>
+    </Wiersz>
+
+    <!-- najnowsze wpisy, data na marginesie -->
+    <Wiersz class="pt-20">
+      <h2 class="text-3xl font-extrabold tracking-tight">Najnowsze wpisy</h2>
+    </Wiersz>
+    {najnowsze.map((post) => {
+      const seria = tytulSerii(post.data.series);
+      return (
+        <Wiersz class="mt-8">
+          <time
+            slot="margines"
+            datetime={post.data.pubDate.toISOString()}
+            class="block pt-1 text-lg"
+          >
+            {post.data.pubDate.toLocaleDateString("pl-PL", {
+              day: "numeric",
+              month: "numeric",
+            })}
+          </time>
+          <article class="max-w-180">
+            {seria && (
+              <p class="text-sm text-olowek">
+                {seria}, część {post.data.seriesPart}
+              </p>
+            )}
+            <h3 class="mt-1 text-[1.4rem] leading-tight font-bold">
+              <a
+                href={`/blog/${post.id}`}
+                class="text-atrament decoration-linia hover:text-dlugopis"
+              >
+                {seria ? krotkiTytul(post) : post.data.title}
+              </a>
+            </h3>
+            <p class="mt-2 text-pretty text-atrament-2">
+              {post.data.description}
+            </p>
+          </article>
+        </Wiersz>
+      );
+    })}
+    <Wiersz class="mt-10 pb-16">
+      <a
+        href="/blog"
+        class="text-lg font-bold text-dlugopis hover:text-dlugopis-ciemny"
+      >
+        Wszystkie wpisy ({wszystkie.length})
+      </a>
+    </Wiersz>
+  </div>
 </Layout>

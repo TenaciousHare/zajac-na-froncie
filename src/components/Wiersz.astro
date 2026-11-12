@@ -5,11 +5,14 @@ interface Props {
 const { class: klasa } = Astro.props;
 ---
 
-{Astro.slots.has("margines") && (
-  <div class="col-start-2 pl-5 font-reka text-dlugopis md:col-start-1 md:pl-0 md:pr-4 md:text-right">
-    <slot name="margines" />
+<!-- class = odstępy całego rzędu; układ treści buduj w środku -->
+<div class:list={["col-span-full grid grid-cols-subgrid", klasa]}>
+  {Astro.slots.has("margines") && (
+    <div class="col-start-2 pl-5 font-reka text-dlugopis md:col-start-1 md:pr-4 md:pl-0 md:text-right">
+      <slot name="margines" />
+    </div>
+  )}
+  <div class="col-start-2 min-w-0 pl-5 md:pl-10">
+    <slot />
   </div>
-)}
-<div class:list={["col-start-2 min-w-0 pl-5 md:pl-10", klasa]}>
-  <slot />
 </div>
