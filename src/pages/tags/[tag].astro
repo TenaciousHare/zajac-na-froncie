@@ -1,7 +1,13 @@
 ---
-import PostCard from "../../components/PostCard.astro";
 import Layout from "../../layouts/Layout.astro";
-import { getAllTags, getPostsByTag } from "../../utils/posts";
+import Wiersz from "../../components/Wiersz.astro";
+import {
+  getAllTags,
+  getPostsByTag,
+  getSeriesOverview,
+  krotkiTytul,
+  odmien,
+} from "../../utils/posts";
 
 // Po jednej stronie na każdy istniejący tag
 export async function getStaticPaths() {
@@ -16,27 +22,80 @@ export async function getStaticPaths() {
 
 const { tag } = Astro.params;
 const { posts } = Astro.props;
+
+const serie = await getSeriesOverview();
+const tytulSerii = (klucz?: string) =>
+  serie.find((s) => s.klucz === klucz)?.tytul;
+const liczbaWpisow = odmien(posts.length, {
+  one: "wpis",
+  few: "wpisy",
+  many: "wpisów",
+});
 ---
 
 <Layout
   title={`#${tag} — Zając na Froncie`}
   description={`Wpisy oznaczone tagiem #${tag} na blogu Zając na Froncie.`}
 >
-  <div class="max-w-3xl mx-auto">
-    <p class="mb-6">
-      <a
-        href="/tags"
-        class="text-sm text-olowek transition hover:text-dlugopis"
+  <!-- -my-8 znosi py-8 z <main>, więc linia marginesu dochodzi do nagłówka i stopki -->
+  <div class="zeszyt -my-8 pb-16 [--margines:1rem] md:[--margines:5.5rem]">
+    <Wiersz class="pt-12 md:pt-16">
+      <span
+        slot="margines"
+        aria-hidden="true"
+        class="block text-2xl leading-tight font-semibold md:pt-3"
       >
-        <span aria-hidden="true">←</span> Wszystkie tagi
-      </a>
-    </p>
-    <h1 class="mb-6 text-3xl font-bold text-atrament">#{tag}</h1>
+        Tag:
+      </span>
+      <h1 class="text-[clamp(2.4rem,4.4vw,3.25rem)] leading-tight font-extrabold tracking-tight">
+        #{tag}
+      </h1>
+      <p class="mt-3 text-lg text-atrament-2">
+        {liczbaWpisow} z tym tagiem.{" "}
+        <a
+          href="/tags"
+          class="font-semibold text-dlugopis underline decoration-linia underline-offset-3 hover:text-dlugopis-ciemny hover:decoration-dlugopis"
+        >
+          Wszystkie tagi
+        </a>
+      </p>
+    </Wiersz>
 
-    <ul class="space-y-6">
-      {posts.map((post) => (
-        <PostCard post={post} />
-      ))}
-    </ul>
+    {posts.map((post) => {
+      const seria = tytulSerii(post.data.series);
+      return (
+        <Wiersz class="mt-10">
+          <time
+            slot="margines"
+            datetime={post.data.pubDate.toISOString()}
+            class="block pt-1 text-lg leading-tight"
+          >
+            {post.data.pubDate.toLocaleDateString("pl-PL", {
+              day: "numeric",
+              month: "numeric",
+            })}
+            <span class="block text-sm">{post.data.pubDate.getFullYear()}</span>
+          </time>
+          <article class="max-w-[45rem]">
+            {seria && (
+              <p class="text-sm text-olowek">
+                {seria}, część {post.data.seriesPart}
+              </p>
+            )}
+            <h2 class="mt-1 text-[1.4rem] leading-tight font-bold">
+              <a
+                href={`/blog/${post.id}`}
+                class="text-atrament decoration-linia hover:text-dlugopis"
+              >
+                {seria ? krotkiTytul(post) : post.data.title}
+              </a>
+            </h2>
+            <p class="mt-2 text-pretty text-atrament-2">
+              {post.data.description}
+            </p>
+          </article>
+        </Wiersz>
+      );
+    })}
   </div>
 </Layout>

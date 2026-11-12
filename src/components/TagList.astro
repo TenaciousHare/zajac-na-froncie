@@ -10,7 +10,7 @@ const widoczne = tags.filter((tag) => !ukryte.has(tag));
 ---
 
 {widoczne.length > 0 && (
-  <ul class="relative z-10 mt-3 flex flex-wrap gap-2">
+  <ul class="mt-3 flex flex-wrap gap-2">
     {widoczne.map((tag) => (
       <li>
         <a
