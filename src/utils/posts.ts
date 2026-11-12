@@ -17,7 +17,7 @@ export async function getSeriesParts(current: CollectionEntry<"blog">) {
 
   return (await getPublishedPosts())
     .filter((post) => post.data.series === series)
-    .sort((a, b) => (a.data.seriesPart ?? 0) - (b.data.seriesPart ?? 0));
+    .sort(poCzesci);
 }
 
 export async function getSeriesNav(current: CollectionEntry<"blog">) {

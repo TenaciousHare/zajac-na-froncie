@@ -1,11 +1,8 @@
 # 🐰 Zając na Froncie
 
-> Blog o nauce frontendu dla początkujących — prowadzony przez komiksowego **Senior Hare'a**. Zapis prawdziwej drogi od zera, z naciskiem na to, _jak_ się uczyć (również z pomocą AI).
+> Blog o nauce frontendu dla początkujących — prowadzony przez komiksowego **Senior Hare'a**. Podstawy HTML, CSS i JavaScriptu na prawdziwym kodzie, z naciskiem na to, _jak_ się uczyć (również z pomocą AI).
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./src/assets/hero-banner_dark.png">
-  <img alt="Zając na Froncie — Senior Hare" src="./src/assets/hero-banner_light.png">
-</picture>
+<img alt="Zając na Froncie — Senior Hare z lupą i hasło „Frontend od podstaw, na prawdziwym kodzie”" src="./public/og-image.png">
 
 🔗 **Demo na żywo:** [zajac-na-froncie.netlify.app](https://zajac-na-froncie.netlify.app)
 
@@ -23,7 +20,8 @@ Blog jest po polsku, z myślą o polskich początkujących.
 - 🔍 **SEO** — tytuły i opisy per strona, Open Graph, sitemap, robots.txt
 - 📊 **Analityka** — Cloudflare Web Analytics (bez ciasteczek, bez bannera)
 - 🏷️ **Tagi** — klikalne tagi we wpisach, lista wszystkich tagów i strona dla każdego tagu
-- 📚 **Serie wpisów** — nawigacja poprzedni–następny i lista części serii
+- 📚 **Serie wpisów** — kwadraty części pod tytułem, nawigacja poprzedni–następny i spis wszystkich serii na `/blog`
+- 📓 **Wygląd zeszytu w kratkę** — margines z odręcznymi dopiskami, krótkie notatki Senior Hare'a na marginesie wpisu, kolory jako tokeny w jednym miejscu
 - 📑 **Wygoda czytania** — spis treści, czas czytania, kotwice przy nagłówkach, przycisk „kopiuj” przy kodzie
 - 📡 **RSS** — kanał z wpisami
 - 🐰 **Komponent `<Hare>`** z 13 typami badge'y
@@ -35,6 +33,7 @@ Blog jest po polsku, z myślą o polskich początkujących.
 - **Tailwind CSS v4** (+ plugin `@tailwindcss/typography`) — stylowanie
 - **TypeScript** — bezpieczeństwo typów
 - **Content Collections** — wpisy z walidacją schematu (Zod)
+- **Fontsource** — Atkinson Hyperlegible Next i Mono oraz Shantell Sans (pismo Senior Hare'a)
 
 ## Uruchomienie lokalne
 
@@ -49,12 +48,13 @@ npm run preview  # podgląd buildu lokalnie
 
 ```
 src/
-├── assets/          # grafiki optymalizowane przez Astro (hero, badge'y)
+├── assets/          # grafiki optymalizowane przez Astro (badge'y, strona 404)
 │   └── hare/        # 13 badge'y Senior Hare'a
-├── components/      # Nav, Hare, Comments, PostCard, TagList, SeriesNav, TOC…
+├── components/      # Nav, Hare, Wiersz, Kwadraty, ListaCzesci, SeriesNav, TOC…
 ├── content/blog/    # wpisy w .mdx
 │   ├── css-od-podstaw/  # każda seria ma swój folder (html-, js-od-podstaw/, jak-powstal-…/)
 │   └── *.mdx            # pojedyncze wpisy spoza serii
+├── data/            # serie.ts (opisy serii), ciekawostki.ts (dymek na stronie głównej)
 ├── layouts/         # Layout.astro (szkielet strony)
 ├── lib/             # plugin remark: czas czytania
 ├── pages/           # routing: index, blog, blog/[id], tags, tags/[tag], projects, about, 404, rss.xml
@@ -104,18 +104,18 @@ Przykład:
 
 ```
 <Hare type="tip">
-  <div class="italic text-slate-600">
-    Najpierw spróbuj sam, dopiero potem pytaj.
-  </div>
+Najpierw spróbuj sam, dopiero potem pytaj.
 </Hare>
 ```
+
+Krótkie notatki bez bloku kodu (do 220 znaków) na szerokim ekranie lądują na marginesie wpisu. Dłuższe zostają komiksowym dymkiem w tekście.
 
 | `type`     | Nagłówek                | `type`         | Nagłówek           |
 | ---------- | ----------------------- | -------------- | ------------------ |
 | `explain`  | Wyjaśnienie             | `works`        | Działa!            |
 | `code`     | Kod                     | `debug`        | Debugowanie        |
 | `tip`      | Wskazówka               | `learn`        | Nauka              |
-| `bug`      | Bug                     | `question`     | Pytanie            |
+| `bug`      | Pułapka                 | `question`     | Pytanie            |
 | `why`      | Dlaczego to nie działa? | `simple`       | Proste rozwiązanie |
 | `success`  | Sukces!                 | `architecture` | Architektura       |
 | `decision` | Dlaczego tak?           |                |                    |
@@ -140,19 +140,20 @@ Przykład:
 - [x] Serie wpisów w osobnych folderach (bez zmiany adresów)
 - [x] Płynne przewijanie + przycisk powrotu na górę
 - [x] Przycisk „kopiuj" przy blokach kodu
-- [x] „Więcej z tej serii" / powiązane wpisy
+- [x] Nawigacja po częściach serii
 - [x] Zakładka Projekty / portfolio
 - [x] Klikalne tagi → strony tagów
 - [x] Seria „HTML od podstaw” (8 części)
-- [x] Seria „Jak powstał Destinations” i „Jak powstał METAR”
+- [x] Seria „Jak powstał Destinations” i „Jak powstał Avia Weather”
+- [x] Seria „CSS od podstaw” (9 części)
+- [x] Redesign „zeszyt w kratkę”: nowe fonty, kolory, strona główna, spis wpisów i wpis z marginesem
 
 **W trakcie**
 
-- [ ] Seria „CSS od podstaw” (cz. 1–3 opublikowane, w planach do cz. 9)
+- [ ] Seria „JavaScript od podstaw” (9 części opublikowanych)
 
 **W planach**
 
-- [ ] Seria „JavaScript od podstaw”
 - [ ] Kolejne serie „Jak powstał [projekt]”, na przemian z seriami podstaw
 
 ## Autor
