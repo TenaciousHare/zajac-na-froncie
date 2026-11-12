@@ -1,5 +1,6 @@
 ---
 import type { CollectionEntry } from "astro:content";
+import { krotkiTytul } from "../utils/posts";
 
 interface Props {
   prev?: CollectionEntry<"blog">;
@@ -7,43 +8,33 @@ interface Props {
 }
 
 const { prev, next } = Astro.props;
+const karta =
+  "group flex flex-col rounded-lg border border-linia p-4 transition-colors hover:border-dlugopis";
 ---
 
 {(prev || next) && (
   <nav
-    aria-label="Części serii"
-    class="not-prose mt-12 grid grid-cols-2 gap-4 border-t pt-6 border-linia"
+    aria-label="Sąsiednie części serii"
+    class="not-prose mt-12 grid gap-4 border-t border-linia pt-6 sm:grid-cols-2"
   >
     {prev ? (
-      <a
-        href={`/blog/${prev.id}`}
-        class="group flex flex-col rounded-lg border p-4 transition-colors border-linia hover:border-dlugopis"
-      >
-        <span class="text-xs uppercase tracking-wide text-olowek">
-          <span aria-hidden="true">←</span> Poprzednia część
-        </span>
-        <span class="mt-1 font-medium text-atrament group-hover:text-dlugopis-ciemny">
-          {prev.data.title}
+      <a href={`/blog/${prev.id}`} class={karta}>
+        <span class="text-sm text-olowek">Poprzednia część</span>
+        <span class="mt-1 font-semibold text-atrament group-hover:text-dlugopis">
+          {krotkiTytul(prev)}
         </span>
       </a>
     ) : (
-      <span></span>
+      <span class="hidden sm:block"></span>
     )}
 
-    {next ? (
-      <a
-        href={`/blog/${next.id}`}
-        class="group flex flex-col rounded-lg border p-4 text-right transition-colors border-linia hover:border-dlugopis"
-      >
-        <span class="text-xs uppercase tracking-wide text-olowek">
-          Następna część <span aria-hidden="true">→</span>
-        </span>
-        <span class="mt-1 font-medium text-atrament group-hover:text-dlugopis-ciemny">
-          {next.data.title}
+    {next && (
+      <a href={`/blog/${next.id}`} class:list={[karta, "sm:text-right"]}>
+        <span class="text-sm text-olowek">Następna część</span>
+        <span class="mt-1 font-semibold text-atrament group-hover:text-dlugopis">
+          {krotkiTytul(next)}
         </span>
       </a>
-    ) : (
-      <span></span>
     )}
   </nav>
 )}

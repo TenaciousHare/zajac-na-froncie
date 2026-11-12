@@ -10,8 +10,9 @@ interface Props {
   /** Minimalna liczba nagłówków, by pokazać spis */
   minHeadings?: number;
   /**
-   * inline — ramka nad treścią (mobile/tablet),
-   * sidebar — przyklejona kolumna z prawej (desktop, od xl)
+   * inline — lista w treści wpisu (etykieta „W tej lekcji” stoi na marginesie),
+   * sidebar — przyklejona kolumna z prawej; od kroku 8 nieużywana,
+   *   bo obok szerokiego marginesu nie ma na nią miejsca
    */
   variant?: "inline" | "sidebar";
 }
@@ -26,17 +27,13 @@ const toc = headings
 ---
 
 {toc.length >= minHeadings && variant === "inline" && (
-  <nav
-    aria-label="Spis treści"
-    class="not-prose my-8 rounded-lg border border-linia bg-kartka p-4 text-sm xl:hidden"
-  >
-    <p class="mb-2 font-semibold text-atrament">Spis treści</p>
-    <ul class="space-y-1">
+  <nav aria-label="Spis treści" class="not-prose">
+    <ul class="gap-x-8 leading-snug sm:columns-2">
       {toc.map((h) => (
-        <li class={h.depth === 3 ? "ml-4" : ""}>
+        <li class:list={["break-inside-avoid py-1", h.depth === 3 && "pl-4"]}>
           <a
             href={`#${h.slug}`}
-            class="text-atrament-2 transition hover:text-dlugopis"
+            class="text-dlugopis underline decoration-linia underline-offset-3 hover:text-dlugopis-ciemny hover:decoration-dlugopis"
           >
             {h.text}
           </a>

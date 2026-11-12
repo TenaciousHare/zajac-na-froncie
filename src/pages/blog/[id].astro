@@ -1,12 +1,16 @@
 ---
 import { render } from "astro:content";
 import {
+  getPlannedPosts,
   getPublishedPosts,
   getSeriesNav,
   getSeriesParts,
+  krotkiTytul,
 } from "../../utils/posts";
-import SeriesParts from "../../components/SeriesParts.astro";
+import { serie } from "../../data/serie";
 import Layout from "../../layouts/Layout.astro";
+import Wiersz from "../../components/Wiersz.astro";
+import Kwadraty from "../../components/Kwadraty.astro";
 import Comments from "../../components/Comments.astro";
 import SeriesNav from "../../components/SeriesNav.astro";
 import TableOfContents from "../../components/TableOfContents.astro";
@@ -26,37 +30,92 @@ export async function getStaticPaths() {
 const { post } = Astro.props;
 const { Content, headings, remarkPluginFrontmatter } = await render(post);
 
-// Pobranie innych części wpisu, jeśli istnieją
+// 3. Seria: sąsiednie części, wszystkie opublikowane i zaplanowane
 const { prev, next } = await getSeriesNav(post);
 const seriesParts = await getSeriesParts(post);
+const seria = post.data.series ? serie[post.data.series] : undefined;
+const zaplanowane = seria
+  ? (await getPlannedPosts()).filter((p) => p.data.series === post.data.series)
+  : [];
+
+// spis treści pokazujemy od 3 nagłówków h2–h3, tak jak TableOfContents
+const maSpis =
+  headings.filter((h) => h.depth === 2 || h.depth === 3).length >= 3;
 ---
 
 <Layout
   title={`${post.data.title} — Zając na Froncie`}
   description={post.data.description}
 >
-  <div class="max-w-3xl mx-auto">
-    <!-- relative: punkt odniesienia dla bocznego spisu treści (desktop) -->
-    <div class="relative">
-      <article
-        class="prose prose-zeszyt
-  prose-a:text-dlugopis prose-a:underline prose-a:underline-offset-2
-  prose-a:hover:decoration-2"
+  <!-- -my-8 znosi py-8 z <main>, więc linia marginesu dochodzi do nagłówka i stopki -->
+  <div class="wpis-z-marginesem zeszyt -my-8 pb-16 [--margines:1rem] md:[--margines:6rem] lg:[--margines:15rem]">
+    <!-- temat lekcji: tytuł bez nazwy serii, bo serię pokazują kwadraty -->
+    <Wiersz class="pt-12">
+      <span
+        slot="margines"
+        aria-hidden="true"
+        class="block text-2xl leading-tight font-semibold md:pt-3"
       >
-        <h1>{post.data.title}</h1>
-        <p class="text-sm text-olowek">
-          {post.data.pubDate.toLocaleDateString("pl-PL")} ·{" "}
+        Temat:
+      </span>
+      <h1 class="text-[clamp(2.25rem,4vw,3.1rem)] leading-[1.08] font-extrabold tracking-tight text-balance">
+        {krotkiTytul(post)}
+      </h1>
+    </Wiersz>
+
+    <Wiersz class="mt-5">
+      <div class="flex flex-col gap-3.5">
+        <p class="text-olowek">
+          {post.data.pubDate.toLocaleDateString("pl-PL")},{" "}
           {remarkPluginFrontmatter.minutesRead} min czytania
         </p>
+        {seria && (
+          <nav
+            aria-label="Części serii"
+            class="flex flex-wrap items-center gap-x-4 gap-y-2.5"
+          >
+            <a
+              href={`/blog#${post.data.series}`}
+              class="font-bold text-atrament underline decoration-linia underline-offset-3 hover:text-dlugopis hover:decoration-dlugopis"
+            >
+              {seria.tytul}, część {post.data.seriesPart} z{" "}
+              {seriesParts.length + zaplanowane.length}
+            </a>
+            <Kwadraty
+              tytulSerii={seria.tytul}
+              czesci={seriesParts}
+              wkrotce={zaplanowane}
+              aktualnaId={post.id}
+            />
+          </nav>
+        )}
+      </div>
+    </Wiersz>
+
+    {maSpis && (
+      <Wiersz class="mt-10">
+        <span
+          slot="margines"
+          aria-hidden="true"
+          class="block pt-0.5 text-lg leading-snug font-semibold"
+        >
+          W tej lekcji
+        </span>
         <TableOfContents headings={headings} />
+      </Wiersz>
+    )}
+
+    <Wiersz class="mt-10">
+      <!-- flow-root: notatki na marginesie nie wystają pod tagi i komentarze -->
+      <article class="prose prose-lg flow-root max-w-[70ch] prose-zeszyt prose-a:underline-offset-2 prose-a:hover:text-dlugopis-ciemny prose-a:hover:decoration-2">
         <Content />
       </article>
-      <TableOfContents headings={headings} variant="sidebar" />
-    </div>
-    <TagList tags={post.data.tags} />
-    <CodeCopy />
-    <SeriesParts parts={seriesParts} currentId={post.id} />
-    <SeriesNav prev={prev} next={next} />
-    <Comments />
+      <div class="max-w-[70ch]">
+        <TagList tags={post.data.tags} />
+        <SeriesNav prev={prev} next={next} />
+        <Comments />
+      </div>
+    </Wiersz>
   </div>
+  <CodeCopy />
 </Layout>
