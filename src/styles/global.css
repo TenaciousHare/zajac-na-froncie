@@ -146,3 +146,32 @@ a.heading-anchor:focus-visible {
 .prose code::after {
   content: none;
 }
+
+/* krótkie notatki Senior Hare na marginesie wpisu (od lg).
+   Technika „sidenote”: notatka płynie w lewo, a ujemny margin-left
+   większy niż jej szerokość wypycha ją z kolumny tekstu na margines. */
+@media (width >= 64rem) {
+  .wpis-z-marginesem .hare[data-margines] {
+    float: left;
+    clear: left;
+    width: 13rem;
+    /* 13rem notatki + 4rem: od tekstu do linii i od linii do notatki */
+    margin: 0.25rem 0 1.5rem -17rem;
+    flex-direction: column;
+    align-items: flex-end;
+    text-align: right;
+    rotate: -1deg;
+  }
+  .wpis-z-marginesem .hare[data-margines] .hare-obrazek {
+    width: 5.25rem;
+  }
+  .wpis-z-marginesem .hare[data-margines] .dymek {
+    border: 0;
+    background: none;
+    padding: 0;
+    font-size: 1rem;
+  }
+  .wpis-z-marginesem .hare[data-margines] .ogonek {
+    display: none;
+  }
+}
