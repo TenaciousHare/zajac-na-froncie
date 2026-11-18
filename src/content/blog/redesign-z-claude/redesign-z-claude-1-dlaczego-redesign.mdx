@@ -1,0 +1,98 @@
+---
+title: "Redesign z Claude (cz. 1): dlaczego blog potrzebował nowego wyglądu"
+description: "Pierwsza część krótkiej serii o tym, jak z pomocą Claude zmieniłem wygląd bloga. Zaczynam od tego, co było nie tak, od drobnych poprawek i od próby, która się nie udała."
+pubDate: 2026-11-18
+tags: ["redesign", "ai", "css", "tailwind"]
+series: "redesign-z-claude"
+seriesPart: 1
+---
+
+import Hare from "../../../components/Hare.astro";
+
+Jeśli czytasz ten blog od początku, mogłeś zauważyć, że w połowie listopada zmienił się nie do poznania. Zamiast białego tła i pomarańczowych akcentów jest teraz **zeszyt w kratkę**: czerwona linia marginesu, odręczne dopiski i Senior Hare, który zostawia notatki obok tekstu.
+
+W tej krótkiej serii opowiem, jak do tego doszło. Całość zrobiłem z pomocą **Claude**, czyli asystenta AI, i chcę pokazać ten proces uczciwie: co zrobił on, co ja i gdzie po drodze coś nie wyszło. Dziś zaczynam od pytania „po co?”.
+
+## Jak blog wyglądał wcześniej
+
+Blog stoi na **Astro** i **Tailwind CSS**. Tailwind to zestaw gotowych klas (np. `text-slate-700` czy `rounded-lg`), z których składasz wygląd prosto w HTML-u. Jest szybki i wygodny, ale ma jedną cechę: jeśli nie zmienisz jego domyślnych ustawień, każda strona wygląda trochę jak każda inna strona na Tailwindzie.
+
+U mnie tak właśnie było:
+
+- **systemowy font**, czyli ten, który akurat ma Twój komputer,
+- paleta **slate + orange**: szarości z domyślnej palety i pomarańczowe linki,
+- **karty** z zaokrąglonymi rogami na liście wpisów.
+
+Wszystko działało i było czytelne. Tylko że nic w tym wyglądzie nie mówiło, czym jest ten blog.
+
+<Hare type="question">
+Po co zmieniać wygląd strony, która działa? Bo wygląd też coś komunikuje. Szablon to tylko „kolejny blog”, a ja chciałem, żeby mówił „to miejsce nauki”, trochę jak w szkole.
+</Hare>
+
+## Małe poprawki, które niczego nie zmieniły
+
+Pod koniec października zrobiłem z Claude kilka drobnych ulepszeń. Każde było przydatne samo w sobie:
+
+1. **Przyklejony spis treści** we wpisach, który podświetlał sekcję, którą akurat czytasz.
+2. **Ikony social mediów w stopce**, czyli linki do LinkedIna, Instagrama i kanału RSS.
+3. **Foldery serii**: wpisy z jednej serii wylądowały w osobnym folderze w repozytorium, bez zmiany adresów.
+
+Trzecia zmiana w ogóle nie dotyczyła wyglądu, tylko porządku w kodzie. Dwie pierwsze dodały wygody. Ale po tych trzech zmianach blog wciąż wyglądał jak szablon, tylko z kilkoma dodatkami.
+
+<Hare type="explain">
+Repozytorium (w skrócie repo) to folder z całym kodem projektu i historią jego zmian. Mój blog leży w repo na GitHubie, a Netlify buduje z niego stronę.
+</Hare>
+
+## Próba, która się nie udała
+
+11 listopada spróbowałem czegoś większego. Chciałem zmienić **hero**, czyli duży baner na górze strony głównej. Dotąd był to obrazek z napisem „Zając na Froncie” w dwóch wersjach, osobno dla jasnego i ciemnego motywu. Plan był taki:
+
+- zamiast dwóch banerów jeden rysunek Senior Hare z przezroczystym tłem,
+- napis „Zając na Froncie” jako prawdziwy tekst, nie część obrazka,
+- nowa, wyrazista czcionka dla nazwy bloga w hero i w nawigacji.
+
+Claude przygotował pierwszą wersję z czcionką **Shrikhand**. Technicznie wszystko było w porządku: plik czcionki przycięty do polskich znaków ważył 15 KB, a strona główna pobierała mniej danych niż wcześniej. Tylko że czcionka mi się nie podobała. Poprosiłem o porównanie kilku innych krojów obok siebie. Żaden mnie nie przekonał.
+
+Zamknąłem temat słowami „nie jestem zadowolony z efektów, pomyślę nad tym innym razem”. Nic z tej próby nie trafiło wtedy na bloga.
+
+<Hare type="decision">
+Czasem najlepszą decyzją jest zatrzymać się. Lepiej odłożyć zmianę, niż wypchnąć coś, co Ci się nie podoba, tylko dlatego, żeby „było zrobione”.
+</Hare>
+
+## Co z tej porażki wyniosłem
+
+Z perspektywy widzę, dlaczego to nie wyszło. Próbowałem zmienić **jeden element**, a problem leżał w całości. Nowa czcionka w nagłówku nie mogła pasować do strony, która poza nim nie miała żadnego charakteru. Każdy krój wyglądał obco, bo nie miał do czego pasować.
+
+Ale nie wszystko poszło do kosza. Dwa pomysły z tamtej próby przeżyły i wróciły w redesignie:
+
+- **Napis jako prawdziwy tekst.** Wcześniej nazwa bloga była częścią obrazka, a nagłówek `<h1>` był ukryty dla oczu i czytany tylko przez czytniki ekranu. Teraz `<h1>` jest zwykłym, widocznym tekstem.
+- **Koniec dwóch banerów.** Wcześniej przeglądarka pobierała **oba** obrazki, także ten ukryty dla aktualnego motywu.
+
+<Hare type="bug">
+Obrazek schowany przez `display: none` i tak jest pobierany. Ukrycie w CSS nie oznacza, że przeglądarka go nie ściąga.
+</Hare>
+
+O tym, dlaczego tekst w obrazku to zły pomysł, pisałem w [HTML od podstaw (cz. 4)](/blog/html-od-podstaw-4-obrazy/): wyszukiwarka go nie przeczyta, nie przetłumaczysz go, a w ciemnym motywie nie zmieni koloru.
+
+## Jak pracuję z AI przy wyglądzie
+
+W [pierwszym wpisie na blogu](/blog/pierwszy-wpis/) wypisałem swoje zasady nauki z AI. Przy redesignie okazały się jeszcze ważniejsze, tylko w trochę innej wersji:
+
+- **Decyzje o wyglądzie są moje.** Claude może zaproponować dziesięć czcionek, ale to ja muszę chcieć patrzeć na bloga codziennie.
+- **Najpierw całość, potem szczegóły.** Tego nauczyła mnie próba z hero.
+- **Każdą zmianę sprawdzam także na telefonie**, w obu motywach, zanim trafi na bloga.
+- **Proszę o wyjaśnienie, nie tylko o kod.** Dzięki temu ta seria w ogóle mogła powstać.
+
+<Hare type="tip">
+Gdy AI proponuje coś, co Ci się nie podoba, powiedz to wprost i spróbuj nazwać, co dokładnie. „Nie podoba mi się” to dobry początek, ale „czcionka jest za ciężka lub kolor jest zbyt jaskrawy” daje znacznie lepsze efekty. Zasada jest dość prosta. AI pracuje na danych, więc im dokładniejsze dane mu dostarczysz, tym lepszy efekt uzyskasz. Oczywiście można przesadzić w drugą stronę, ale o tym innym razem.
+</Hare>
+
+<Hare type="learn">
+Jeśli chcesz zobaczyć, jak Tailwind pozwala zmienić domyślne kolory i fonty, zajrzyj do dokumentacji o [motywie w Tailwind CSS](https://tailwindcss.com/docs/theme). O obrazkach w HTML, także o tym, kiedy przeglądarka je pobiera, przeczytasz w MDN: [element img](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img).
+</Hare>
+
+## Co nam to daje?
+
+Ta część nie ma jeszcze kodu, ale ma najważniejszą lekcję całej serii: **zanim zaczniesz poprawiać szczegóły, sprawdź, czy problem nie leży w całości**. Trzy drobne poprawki i jedna nieudana próba doprowadziły mnie do decyzji, żeby zacząć od pomysłu na cały blog.
+
+W **części 2** pokażę, jak ten pomysł powstał: makietę zeszytu w kratkę, którą Claude narysował w czterech widokach, i plan wdrożenia rozpisany na małe kroki. Do zobaczenia!
