@@ -1,0 +1,140 @@
+---
+title: "Redesign z Claude (cz. 3): fonty i kolory jako tokeny"
+description: "Pierwszy krok wdrożenia: trzy nowe kroje pisma, w tym odręczne pismo Senior Hare, i kolory nazwane według roli. Dzięki temu jedna klasa działa w jasnym i nocnym motywie."
+pubDate: 2026-11-20
+tags: ["redesign", "css", "tailwind", "typografia", "dostępność"]
+series: "redesign-z-claude"
+seriesPart: 3
+---
+
+import Hare from "../../../components/Hare.astro";
+
+W [części 2](/blog/redesign-z-claude-2-makieta-i-plan/) była makieta zeszytu w kratkę i plan w dziewięciu krokach. Dziś pierwszy PR redesignu. Na stronie zmieniły się w nim tylko **pismo i kolory**, a układ został taki sam. Brzmi skromnie, ale to fundament, na którym stoi cała reszta.
+
+## Trzy kroje pisma
+
+Wcześniej blog używał **fontu systemowego**, czyli tego, który akurat ma Twój komputer albo telefon. Na Macu wyglądał inaczej niż na Windowsie, a na Androidzie jeszcze inaczej. Teraz są trzy kroje, każdy z własnym zadaniem:
+
+- **Atkinson Hyperlegible Next** do całego tekstu. Zaprojektowano go z myślą o osobach słabowidzących, więc litery, które łatwo pomylić (`I`, `l` i `1` albo `O` i `0`), wyraźnie się różnią.
+- **Atkinson Hyperlegible Mono** do kodu. Ta sama rodzina, tylko o stałej szerokości znaków, jak w edytorze.
+- **Shantell Sans** jako **pismo Senior Hare**. Wygląda jak odręczne, ale da się je czytać bez wysiłku.
+
+<Hare type="explain">
+Krój pisma o stałej szerokości (ang. monospace) daje każdej literze tyle samo miejsca. Dlatego kod w nim się wyrównuje, a wcięcia stoją jedno pod drugim.
+</Hare>
+
+## Fonty z własnego serwera
+
+Fonty mogłem wziąć z Google Fonts, ale wybrałem **Fontsource**. To zestaw paczek npm z fontami, więc pliki trafiają do mojego buildu i są serwowane razem z blogiem. Strona nie musi łączyć się z serwerami Google, a ja nie muszę się martwić, że coś tam się zmieni.
+
+W `Layout.astro` wystarczą trzy importy:
+
+~~~js
+import "@fontsource-variable/atkinson-hyperlegible-next";
+import "@fontsource-variable/atkinson-hyperlegible-mono";
+import "@fontsource-variable/shantell-sans/full.css";
+~~~
+
+Przy Shantell Sans importuję `full.css`, a nie domyślny plik. Domyślny ma tylko oś grubości. Pełna wersja dokłada dwie dodatkowe osie: **INFM** (jak bardzo nieformalne ma być pismo) i **BNCE** (jak bardzo litery „podskakują”). Bez nich pismo Zająca wyglądałoby jak zwykły, grzeczny krój bezszeryfowy.
+
+<Hare type="explain">
+Font zmienny (ang. variable font) to jeden plik, w którym da się płynnie zmieniać cechy pisma, np. grubość. Każda taka cecha to oś. Shantell Sans ma ich kilka.
+</Hare>
+
+Potem w `global.css` podpinam kroje pod Tailwinda:
+
+~~~css
+@theme {
+  --font-sans: "Atkinson Hyperlegible Next Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Atkinson Hyperlegible Mono Variable", ui-monospace, monospace;
+  --font-reka: "Shantell Sans Variable", "Comic Sans MS", cursive;
+  --font-reka--font-variation-settings: "INFM" 100, "BNCE" 35;
+}
+~~~
+
+Nadpisanie `--font-sans` zmienia krój całej strony. `--font-mono` przejmują bloki kodu. A `--font-reka` tworzy nową klasę `font-reka`, której używam wszędzie tam, gdzie „pisze” Senior Hare. Ostatnia linijka sprawia, że razem z krojem od razu włączają się obie osie.
+
+<Hare type="tip">
+Testując nowy font, wpisz „Zażółć gęślą jaźń”. To zdanie ma wszystkie polskie litery ze znakami diakrytycznymi, więc od razu zobaczysz, czy któraś nie wypada z kroju.
+</Hare>
+
+## Kolory nazwane według roli
+
+Wcześniej kolory w kodzie wyglądały tak: `text-slate-700 dark:text-slate-300`. Pierwsza klasa ustawia kolor w jasnym motywie, druga w nocnym. W całym projekcie było **115 klas `slate-*`**, większość z parą `dark:`.
+
+Nowe podejście: każdy kolor dostaje **nazwę według roli**, a nie według odcienia. Taką nazwaną wartość nazywa się **tokenem**. Paleta pochodzi z logo bloga i z piórnika:
+
+~~~css
+@theme {
+  --color-papier: #fbfcfd;   /* tło strony */
+  --color-atrament: #1f2a44; /* tekst */
+  --color-olowek: #55607a;   /* daty, podpisy */
+  --color-dlugopis: #2152c4; /* linki, numery, pismo Zająca */
+  --color-marker: #ffd866;   /* zakreślacz: tylko jako tło */
+  --color-margines: #e26c7e; /* czerwona linia */
+  --color-pulapka: #b8304a;  /* etykieta „Pułapka” */
+}
+~~~
+
+To tylko część palety, ale widać zasadę. Nie piszę „szary 500”, tylko „ołówek”. Gdy w komponencie widzę `text-olowek`, od razu wiem, że to coś drugoplanowego, jak data.
+
+## Motyw nocny bez `dark:`
+
+A teraz najprzyjemniejsza część. Motyw nocny **nie dodaje nowych klas**. Podmienia tylko wartości tych samych tokenów:
+
+~~~css
+[data-theme="dark"] {
+  --color-papier: #121a30;
+  --color-atrament: #e9edf6;
+  --color-olowek: #a9b3c9;
+  --color-dlugopis: #8fb0ff;
+}
+~~~
+
+Przełącznik motywu ustawia `data-theme="dark"` na elemencie `<html>`. Od tej chwili `text-atrament` jest jasny zamiast ciemnego, bez żadnego `dark:` w komponencie. Para `text-slate-700 dark:text-slate-300` zamieniła się w jedno `text-atrament-2`.
+
+To dokładnie ten pomysł, który opisałem w [CSS od podstaw (cz. 9)](/blog/css-od-podstaw-9-zmienne-css/) o zmiennych CSS. Tam był przykładem. Tu stał się podstawą całego wyglądu.
+
+<Hare type="success">
+Kolorowe warianty `dark:` zniknęły z komponentów. Zostały tylko `dark:hidden` i `dark:block`, które pokazują albo chowają elementy zależnie od motywu.
+</Hare>
+
+## Kontrast, czyli czy da się to przeczytać
+
+**Kontrast** to różnica jasności między tekstem a tłem, zapisywana jako stosunek, np. 4,5:1. Wytyczne dostępności (WCAG) wymagają co najmniej **4,5:1** dla zwykłego tekstu. Pisałem o tym w [CSS od podstaw (cz. 4)](/blog/css-od-podstaw-4-tekst-kolory-jednostki/).
+
+Claude sprawdził kontrast każdego tokenu tekstu na papierze w obu motywach. Kilka przykładów:
+
+| Token | Jasny | Nocny |
+| --- | --- | --- |
+| `atrament` | 13,9:1 | 14,7:1 |
+| `olowek` | 6,1:1 | 8,2:1 |
+| `dlugopis` | 6,7:1 | 8,1:1 |
+
+Przy okazji poprawił się kontrast tam, gdzie wcześniej był za słaby. Numery części w liście „Więcej z tej serii” miały 2,6:1 w jasnym motywie. Po zmianie mają 6,1:1.
+
+<Hare type="bug">
+Jasny kolor, np. żółty albo pomarańczowy, prawie nigdy nie nadaje się na kolor tekstu na jasnym tle. Używaj go jako tła pod ciemnym tekstem.
+</Hare>
+
+Dlatego `marker` ma w kodzie komentarz „tylko jako tło”. Na makiecie i w pierwszym PR-ze był to jeszcze pomarańcz. W ostatnim kroku zamieniłem go na żółty zakreślacz. Ciemny tekst na nim ma kontrast 10,4:1. A że wszystkie kolory były tokenami, ta zamiana to była zmiana czterech wartości w jednym pliku.
+
+## Jak sprawdziłem ten krok
+
+Zanim zmergowałem PR, przeszedłem jego listę kontrolną:
+
+- strona główna, `/blog`, jeden wpis i `/tags` w obu motywach,
+- polskie znaki w nagłówkach, treści, kodzie i notatkach,
+- odświeżenie strony w nocnym motywie: strona nie miga na jasno,
+- w DevTools, w karcie Network z filtrem Font: ładują się tylko pliki `latin` i `latin-ext`, bez cyrylicy i innych alfabetów,
+- telefon na Deploy Preview: szerokość 375 px, bez przewijania w bok.
+
+<Hare type="learn">
+Więcej o krojach zmiennych przeczytasz w MDN: [Variable fonts guide](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_fonts/Variable_fonts_guide). O tokenach i `@theme` w Tailwindzie: [Theme variables](https://tailwindcss.com/docs/theme). Kontrast sprawdzisz np. w [WebAIM Contrast Checker](https://webaim.org/resources/contrastchecker/).
+</Hare>
+
+## Co nam to daje?
+
+Po tym kroku blog wyglądał prawie tak samo, tylko z innym fontem i z nieco zmienionymi kolorami. Ale pod spodem zmieniło się dużo: każdy kolor ma teraz nazwę i rolę, motyw nocny działa bez dublowania klas, a kontrast jest sprawdzony w obu motywach. Każdy kolejny komponent używa już klas „atrament” i „długopis”.
+
+W **części 4** wreszcie pojawi się wspomniany już kilkukrotnie zeszyt: kratka na tle, czerwona linia marginesu i Senior Hare, który przenosi się ze środka tekstu na margines. Do zobaczenia!
