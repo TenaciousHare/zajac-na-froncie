@@ -1,0 +1,209 @@
+---
+title: "Redesign z Claude (cz. 4): papier w kratkę i notatki na marginesie"
+description: "Kratka z dwóch gradientów, czerwona linia marginesu z CSS Grid i Senior Hare, który na szerokim ekranie pisze na marginesie, a na telefonie zostaje komiksowym dymkiem."
+pubDate: 2026-11-21
+tags: ["redesign", "css", "grid", "dostępność"]
+series: "redesign-z-claude"
+seriesPart: 4
+---
+
+import Hare from "../../../components/Hare.astro";
+
+W [części 3](/blog/redesign-z-claude-3-fonty-i-kolory/) blog dostał nowe pismo i kolory z piórnika. Ale wciąż nie wyglądał jak zeszyt. Dziś trzy kroki, które to zmieniły: **kratka**, **margines** i **Senior Hare na marginesie**.
+
+W planie to były kroki 3, 4 i 8. Opisuję je razem, bo opowiadają jedną historię: jak zrobić z kartki zeszyt, a potem coś na tym zeszycie napisać.
+
+## Kratka z dwóch gradientów
+
+Tło w kratkę nie jest obrazkiem. To dwa **gradienty liniowe** w CSS, nałożone na siebie:
+
+```css
+@utility papier-w-kratke {
+  background-color: var(--color-papier);
+  background-image:
+    linear-gradient(var(--color-kratka) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-kratka) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+```
+
+Gradient zwykle płynnie przechodzi z jednego koloru w drugi. Tu jest sprytniej: przez pierwszy piksel kolor kratki, a potem od razu przezroczystość. Wychodzi jedna cienka linia. Pierwszy gradient rysuje linie poziome, drugi (obrócony o `90deg`) pionowe. `background-size: 24px 24px` powtarza ten wzór co 24 piksele.
+
+<Hare type="explain">
+`@utility` to sposób Tailwinda v4 na własną klasę. Po tej definicji wystarczy napisać `papier-w-kratke` na elemencie, jak każdą inną klasę Tailwinda.
+</Hare>
+
+Kolor kratki to też token, więc w nocnym motywie kratka sama robi się ciemna. Nagłówek i stopka leżą na gładkim papierze, więc kratka zaczyna się dopiero pod nimi.
+
+<Hare type="tip">
+Kratka ma być ledwo widoczna. Jeśli od razu rzuca się w oczy, przeszkadza w czytaniu. Sprawdź ją szczególnie w ciemnym motywie, bo tam łatwo o szary, brudny efekt.
+</Hare>
+
+## Margines, czyli Grid z czerwoną linią
+
+Klasa `zeszyt` to siatka z dwiema kolumnami: wąską na margines i szeroką na treść. Między nimi biegnie czerwona linia:
+
+```css
+@utility zeszyt {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--margines, 1rem) minmax(0, 1fr);
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    left: var(--margines, 1rem);
+    width: 2px;
+    background: var(--color-margines);
+  }
+}
+```
+
+Linia to pseudoelement `::before`, czyli element dopisany przez CSS, którego nie ma w HTML-u. Ma 2 piksele szerokości, rozciąga się od góry do dołu (`inset-block: 0`) i stoi dokładnie tam, gdzie kończy się kolumna marginesu.
+
+Szerokość marginesu to zmienna `--margines`. Każda strona ustawia ją sama, a do tego inaczej na różnych ekranach. Wpis ma na telefonie 1rem, na tablecie 6rem, a na komputerze aż 15rem, bo tam na marginesie stoją notatki Senior Hare.
+
+O Gridzie pisałem w [CSS od podstaw (cz. 6)](/blog/css-od-podstaw-6-grid/). `minmax(0, 1fr)` zamiast zwykłego `1fr` pilnuje, żeby długi kod nie rozpychał kolumny treści.
+
+## Komponent Wiersz i subgrid
+
+Na stronie głównej i w spisie wpisów jest wiele rzędów, w których coś stoi na marginesie (numer serii, data), a obok, za czerwoną linią, stoi treść. Żeby nie budować każdego takiego rzędu od nowa, powstał komponent `Wiersz`. Najpierw zobacz, jak się go używa:
+
+```astro
+<Wiersz class="mt-10">
+  <span slot="margines">1.</span>
+  <h3>HTML od podstaw</h3>
+</Wiersz>
+```
+
+Do środka wkładasz dwie rzeczy. To, co ma `slot="margines"`, trafia na margines. Cała reszta trafia do treści. A tak wygląda sam komponent:
+
+```astro
+<div class:list={["col-span-full grid grid-cols-subgrid", klasa]}>
+  {Astro.slots.has("margines") && (
+    <div class="col-start-2 md:col-start-1 ...">
+      <slot name="margines" />
+    </div>
+  )}
+  <div class="col-start-2 min-w-0 ...">
+    <slot />
+  </div>
+</div>
+```
+
+Rozbierzmy go linijka po linijce.
+
+### Zewnętrzny `div`: jeden rząd zeszytu
+
+```astro
+<div class:list={["col-span-full grid grid-cols-subgrid", klasa]}>
+```
+
+- `class:list` to sposób Astro na złożenie klasy z kilku kawałków. Tutaj łączy stałe klasy komponentu z tym, co przekażesz z zewnątrz. `klasa` to właśnie to `class="mt-10"` z przykładu wyżej, czyli odstęp tego jednego rzędu.
+- `col-span-full` mówi: „zajmij wszystkie kolumny rodzica”. Rodzic to `zeszyt` z poprzedniej sekcji, który ma dwie kolumny: margines i treść. Wiersz rozciąga się więc na obie.
+- `grid` robi z wiersza siatkę, żeby jego dzieci też dało się ustawiać w kolumnach.
+- `grid-cols-subgrid` to najważniejszy kawałek. **Subgrid** sprawia, że wiersz nie wymyśla własnych kolumn, tylko używa kolumn rodzica. Margines w każdym wierszu ma więc dokładnie tę samą szerokość co margines zeszytu, a numer zawsze stoi przy czerwonej linii.
+
+<Hare type="explain">
+Bez subgridu każdy wiersz liczyłby kolumny po swojemu. Wystarczy jeden dłuższy numer, np. „10.”, i margines w tym rzędzie robi się szerszy niż w pozostałych.
+</Hare>
+
+### Margines, ale tylko jeśli coś na nim jest
+
+```astro
+{Astro.slots.has("margines") && (
+  <div class="col-start-2 md:col-start-1 ...">
+    <slot name="margines" />
+  </div>
+)}
+```
+
+- **Slot** to dziura w komponencie, do której wkładasz własną treść. `<slot name="margines" />` to dziura z nazwą: tu trafia wszystko, co oznaczysz `slot="margines"`.
+- `Astro.slots.has("margines")` sprawdza, czy ktoś w ogóle coś do tej dziury włożył. Zwraca `true` albo `false`.
+- `&&` znasz z [JavaScript od podstaw (cz. 3)](/blog/js-od-podstaw-3-warunki/). Tutaj działa jak skrót od „jeśli”: gdy po lewej jest `true`, Astro wyświetla to, co stoi po prawej. Gdy `false`, nie wyświetla nic. Rząd bez numeru nie dostaje więc pustego `div`-a na marginesie.
+- `col-start-2 md:col-start-1` ustawia, w której kolumnie stoi margines. Na telefonie to kolumna 2, czyli ta sama co treść, więc numer ląduje nad tytułem. Od szerokości `md` (tablet) to kolumna 1, czyli prawdziwy margines na lewo od czerwonej linii.
+
+### Treść
+
+```astro
+<div class="col-start-2 min-w-0 ...">
+  <slot />
+</div>
+```
+
+Treść zawsze stoi w drugiej kolumnie, za czerwoną linią. `<slot />` bez nazwy to domyślna dziura: trafia do niej wszystko, czego nie oznaczyłeś `slot="margines"`. A `min-w-0` pozwala tej kolumnie się zwężać, żeby długi tytuł albo kod nie rozpychał strony.
+
+<Hare type="why">
+W pierwszej wersji odstęp, np. `mt-10`, był dodawany tylko do treści. Tytuł serii zjeżdżał w dół, a numer na marginesie zostawał na górze. Teraz odstęp dostaje cały wiersz, więc numer i tytuł przesuwają się razem.
+</Hare>
+
+## Senior Hare dostaje dymek
+
+Krok 4 to nowy wygląd notatek Senior Hare. We wpisach jest ich **180**, wszystkie w postaci `<Hare type="tip">…</Hare>`. Gdybym musiał zmieniać każde wywołanie, to byłby osobny projekt.
+
+Nie musiałem. Zmieniło się tylko **wnętrze** komponentu `Hare.astro`, a jego „wejście”, czyli props `type`, zostało takie samo. Notatka dostała:
+
+- komiksowy **dymek** z nieregularnie zaokrąglonymi rogami i ogonkiem wskazującym Zająca,
+- treść pisaną **Shantell Sans**, czyli pismem Zająca z części 3,
+- etykietę w kolorze długopisu, a przy ostrzeżeniach w kolorze czerwonego długopisu. „Bug” zmienił się w **„Pułapka”**.
+
+<Hare type="architecture">
+Komponent przyjmuje dane z zewnątrz przez propsy, tu tylko type. Dopóki one się nie zmieniają, możesz przebudować całe wnętrze, a miejsca, które go używają, nie trzeba ruszać. Dlatego 180 notatek we wpisach zostało bez jednej poprawki.
+</Hare>
+
+Przy okazji poprawiła się dostępność. Obrazek Senior Hare dostał pusty `alt=""`, bo jest **dekoracyjny**: to, czym jest notatka, mówi już widoczna etykieta. Wcześniej czytnik ekranu powtarzał „Senior Hare” 180 razy na całym blogu. O obrazkach dekoracyjnych pisałem w [HTML od podstaw (cz. 4)](/blog/html-od-podstaw-4-obrazy/).
+
+## Notatki na marginesie
+
+Najbardziej zeszytowy element całego redesignu. Na szerokim ekranie krótkie notatki Senior Hare wypływają na margines, jak dopiski ołówkiem obok tekstu. Pewnie widzisz kilka z nich obok tego akapitu, jeśli czytasz na komputerze.
+
+Która notatka się tam zmieści? Decyduje o tym `Hare.astro`:
+
+```js
+const html = await Astro.slots.render("default");
+const tekst = html.replace(/<[^>]+>/g, "");
+const naMargines = !html.includes("<pre") && tekst.length <= 220;
+```
+
+Komponent bierze treść notatki jako HTML, wycina z niej znaczniki i liczy znaki. Notatka bez bloku kodu i krótsza niż 220 znaków dostaje atrybut `data-margines`. Dziś na margines trafia **71 ze 160** notatek bez kodu.
+
+Resztę robi CSS, techniką zwaną **sidenote** (notatka boczna):
+
+```css
+@media (width >= 64rem) {
+  .wpis-z-marginesem .hare[data-margines] {
+    float: left;
+    clear: left;
+    width: 13rem;
+    margin: 0.25rem 0 1.5rem -17rem;
+    rotate: -1deg;
+  }
+}
+```
+
+Notatka **płynie w lewo** (`float: left`), a ujemny lewy margines, większy niż jej szerokość, wypycha ją poza kolumnę tekstu, prosto na margines. `clear: left` układa dwie bliskie notatki jedna pod drugą, zamiast obok siebie. A `rotate: -1deg` przechyla ją lekko, jak dopisek zrobiony w pośpiechu.
+
+<Hare type="bug">
+Notatka na samym końcu wpisu wystawała pod tagi i komentarze. Pomogło `flow-root` na artykule: dzięki temu artykuł „obejmuje” elementy pływające w środku.
+</Hare>
+
+## Coś za coś: przyklejony spis treści
+
+Pamiętasz z [części 1](/blog/redesign-z-claude-1-dlaczego-redesign/) przyklejony spis treści z podświetlaniem sekcji? To była jedna z moich małych poprawek z października. W kroku 8 musiała odejść.
+
+Spis stał po prawej stronie wpisu. Z szerokim marginesem po lewej nie było już na niego miejsca w szerokości strony. Mogłem poszerzyć całą stronę albo zrezygnować z marginesu. Wybrałem trzecią drogę: spis treści **„W tej lekcji”** stoi teraz pod tytułem, w dwóch kolumnach, z etykietą na marginesie.
+
+<Hare type="decision">
+Redesign to też rezygnacje. Każdy element musi pasować do całości, nawet jeśli sam w sobie był dobry.
+</Hare>
+
+<Hare type="learn">
+Więcej w MDN: [Subgrid](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_grid_layout/Subgrid), [linear-gradient()](https://developer.mozilla.org/en-US/docs/Web/CSS/gradient/linear-gradient) i [float](https://developer.mozilla.org/en-US/docs/Web/CSS/float).
+</Hare>
+
+## Co nam to daje?
+
+Kratka i czerwona linia to kilkanaście linijek CSS, a zmieniają charakter całego bloga. Senior Hare zmienił wygląd w 180 miejscach dzięki zmianie jednego pliku. A notatki na marginesie pokazują, że stara technika (`float`) dalej ma swoje miejsce obok Grida.
+
+W **części 5**, ostatniej, zajmiemy się seriami i nową stroną główną, a potem listą kontrolną: dostępnością, telefonem 320 px i tym, co znalazło się dopiero przy przeglądzie całego bloga. Do zobaczenia!
