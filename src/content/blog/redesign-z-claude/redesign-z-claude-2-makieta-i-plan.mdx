@@ -1,0 +1,118 @@
+---
+title: "Redesign z Claude (cz. 2): makieta na kanwie i plan w małych krokach"
+description: "Skąd pomysł na zeszyt w kratkę, jak Claude narysował makietę bloga w czterech widokach i dlaczego cały redesign podzieliłem na dziewięć małych PR-ów."
+pubDate: 2026-11-19
+tags: ["redesign", "ai", "git", "netlify"]
+series: "redesign-z-claude"
+seriesPart: 2
+---
+
+import Hare from "../../../components/Hare.astro";
+
+W [części 1](/blog/redesign-z-claude-1-dlaczego-redesign/) opisałem, dlaczego drobne poprawki i próba z nowym hero nie wystarczyły. Problem leżał w całości, więc tym razem zacząłem od całości: od jednego pomysłu na wygląd całego bloga.
+
+Dziś pokażę dwie rzeczy, które powstały, zanim zmieniłem choćby jedną linijkę kodu: **makietę** i **plan wdrożenia**.
+
+## Pomysł: blog wygląda jak zeszyt
+
+Ten blog jest o nauce. Powtarzam podstawy, robię notatki, wracam do starych tematów. Pytanie brzmiało: jak wygląda nauka na papierze? Odpowiedź przyszła sama: **zeszyt w kratkę**.
+
+Z tego jednego skojarzenia wynikło prawie wszystko:
+
+- **tło w kratkę**, delikatne, żeby nie męczyło oczu,
+- **czerwona linia marginesu**, jak w szkolnym zeszycie,
+- **margines na dopiski**: tytuł „Temat:”, numery serii, daty,
+- **Senior Hare pisze odręcznie** na marginesie, jak ktoś, kto czyta Twoje notatki i dopisuje uwagi,
+- **kolory z piórnika**: atrament, ołówek, długopis i zakreślacz zamiast szarości i pomarańczu z domyślnej palety.
+
+<Hare type="decision">
+Jeden mocny pomysł podpowiada dziesiątki małych decyzji. Gdy nie wiesz, jaki kolor dać datom, pytasz: „czym pisze się w zeszycie mniej istotne rzeczy?”. Ołówkiem. 
+</Hare>
+
+## Makieta na kanwie
+
+**Makieta** (ang. *mockup*) to obraz strony, który wygląda jak gotowa strona, ale nie jest jeszcze połączony z prawdziwym kodem projektu. Pozwala zobaczyć efekt i podjąć decyzje, zanim zainwestujesz czas we wdrożenie.
+
+Makietę zrobił Claude na swojej **kanwie**, czyli w narzędziu do projektowania, w którym obok siebie leży kilka widoków strony. Moja kanwa ma tytuł „Zając na Froncie: zeszyt w kratkę” i cztery widoki:
+
+1. **Strona główna** z nagłówkiem „Frontend od podstaw, na prawdziwym kodzie.”, dymkiem z ciekawostką od Senior Hare i ścieżką trzech serii podstaw.
+2. **Wszystkie wpisy**, czyli `/blog` zamieniony w spis treści zeszytu.
+3. **Wpis z notatkami na marginesie**: tytuł z dopiskiem „Temat:”, kwadraty części serii i krótkie notatki Senior Hare po lewej stronie czerwonej linii.
+4. **Wpis na telefonie w motywie nocnym**.
+
+Ten ostatni widok był ważny. Większość ludzi czyta blogi na telefonie, a sporo z nich wieczorem, w ciemnym motywie. Na wąskim ekranie nie ma miejsca na szeroki margines, więc notatki Senior Hare wracają tam do tekstu jako komiksowe dymki.
+
+<Hare type="explain">
+Makieta była „prawdziwym” HTML-em i CSS-em, tylko uproszczonym. Dzięki temu dało się w niej klikać, przechodzić Tabem i sprawdzić kontrast, a nie tylko popatrzeć na obrazek.
+</Hare>
+
+## Co zmieniło się po drodze
+
+Makieta nie była świętością. Kilka rzeczy wygląda dziś inaczej niż na kanwie:
+
+- Na makiecie przycisk i aktualna część serii miały **pomarańczowe** tło. Na blogu jest teraz **żółty zakreślacz**, który lepiej pasuje do zeszytu i do żółtych kół na rysunkach Senior Hare.
+- Ramka **fokusu** (obrys, który widzisz, przechodząc po stronie klawiszem Tab) była pomarańczowa. Na jasnym papierze miała za mały kontrast, więc jest w kolorze długopisu.
+- Etykieta „Pułapka” zmieniła kolor z pomarańczowego na **czerwony długopis**.
+
+W dokumencie z planem była jedna zasada, która dobrze to opisuje: **gdy coś w kodzie wyjdzie lepiej niż na makiecie, zostaw kod**.
+
+<Hare type="tip">
+Traktuj makietę jak szkic w zeszycie, a nie jak umowę. Jej zadaniem jest pomóc Ci zdecydować, nie zamknąć Ci drogę do lepszego pomysłu.
+</Hare>
+
+## Plan: dziewięć małych kroków
+
+Druga rzecz, którą przygotował Claude, to dokument „wdrożenie redesignu krok po kroku”. Zaczynał się od zdania, które ustawiło całą pracę:
+
+> Całość dzielisz na 8 małych PR-ów. Każdy zostawia bloga w działającym stanie.
+
+Najpierw dwa pojęcia, jeśli jeszcze ich nie znasz:
+
+- **Gałąź** (ang. *branch*) to osobna linia zmian w repozytorium. Pracujesz na niej, a główna wersja bloga zostaje nietknięta.
+- **PR** (ang. *pull request*) to prośba o włączenie zmian z gałęzi do głównej wersji. Na GitHubie widzisz w nim wszystkie zmienione pliki i możesz je przejrzeć przed połączeniem (to połączenie nazywa się **merge**).
+
+Plan wyglądał tak:
+
+1. fonty,
+2. kolory jako tokeny,
+3. papier w kratkę i linia marginesu,
+4. notatki Senior Hare jako dymki,
+5. dane serii i kwadraty części,
+6. nowa strona główna,
+7. `/blog` jako spis treści,
+8. wpis z marginesem,
+9. lista kontrolna: dostępność, telefon, Lighthouse i szlify.
+
+Kroki 1 i 2 trafiły w końcu do jednego PR-a, a krok 9 stał się osobnym PR-em z poprawkami. Do tego doszły dwa PR-y „po sprzątaniu”. W sumie dziesięć PR-ów w dwa dni, 11 i 12 listopada.
+
+<Hare type="architecture">
+Mały PR jest łatwy do przejrzenia i łatwy do cofnięcia. Jeden wielki PR „redesign” z setkami zmian to coś, czego nikt, łącznie z Tobą, naprawdę nie przeczyta.
+</Hare>
+
+## Dlaczego kolejność ma znaczenie
+
+Fonty i kolory poszły na początek nie bez powodu. Wszystkie późniejsze komponenty używają nazw w rodzaju `text-atrament` zamiast surowych kolorów. Gdyby tych nazw jeszcze nie było, każdy kolejny krok musiałbym potem poprawiać.
+
+Druga zasada: **każdy krok zostawia bloga w działającym stanie**. Na przykład w kroku 3 powstał komponent `Wiersz`, czyli jeden rząd zeszytu, ale żadna strona jeszcze go nie używała. Pierwszy raz pojawił się na stronie głównej w kroku 6. Wcześniej jedynie przetestowałem komponent lokalnie na testowej stronie, którą przed PR-em usuwałem. Dzięki temu mogłem zmergować krok 3 i spokojnie iść dalej.
+
+## Deploy Preview i zrzuty „przed”
+
+Dwie rzeczy z dokumentu, które bardzo polecam, nawet przy małych projektach:
+
+**Deploy Preview.** Netlify buduje osobną, tymczasową wersję strony dla każdego PR-a i daje do niej link. Każdy krok sprawdzałem tam, także na telefonie i w obu motywach, zanim go zmergowałem.
+
+**Zrzuty ekranu „przed”.** Zanim zacząłem, zrobiłem zrzuty strony głównej, `/blog` i jednego wpisu, w jasnym i ciemnym motywie, na telefonie i na komputerze. Po wszystkim trudno pamiętać, jak było, a porównanie „przed i po” bardzo dobrze pokazuje, co się zmieniło.
+
+<Hare type="bug">
+Bez zrzutów „przed” szybko zapomnisz, jak było, i nie zauważysz, że jakaś zmiana coś popsuła. Zrób je, zanim zmienisz pierwszą linijkę.
+</Hare>
+
+<Hare type="learn">
+Więcej o pull requestach przeczytasz w dokumentacji GitHuba: [About pull requests](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests). Jak działają podglądy PR-ów na Netlify: [Deploy Previews](https://docs.netlify.com/site-deploys/deploy-previews/).
+</Hare>
+
+## Co nam to daje?
+
+Zanim zmieniłem jedną linijkę kodu, miałem już trzy rzeczy: **pomysł** (zeszyt w kratkę), **obraz** (makietę w czterech widokach) i **drogę** (dziewięć kroków, z których każdy da się sprawdzić osobno). Przy próbie z hero brakowało mi wszystkich trzech.
+
+W **części 3** zaczynamy wdrożenie od fundamentu: trzech nowych krojów pisma i kolorów nazwanych według roli, a nie według odcienia. Do zobaczenia!
