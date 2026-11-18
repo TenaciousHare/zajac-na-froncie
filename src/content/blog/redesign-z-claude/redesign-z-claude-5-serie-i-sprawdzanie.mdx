@@ -1,0 +1,161 @@
+---
+title: "Redesign z Claude (cz. 5): serie, strona główna i sprawdzanie"
+description: "Finał serii: kwadraty części, nowa strona główna i /blog jako spis treści zeszytu, a potem lista kontrolna, czyli dostępność, telefon 320 px i poprawki, które wyszły dopiero przy przeglądzie całego bloga."
+pubDate: 2026-11-22
+tags: ["redesign", "astro", "typescript", "dostępność", "ai"]
+series: "redesign-z-claude"
+seriesPart: 5
+---
+
+import Hare from "../../../components/Hare.astro";
+
+W [części 4](/blog/redesign-z-claude-4-zeszyt-i-margines/) blog stał się zeszytem: kratka, czerwona linia i Senior Hare na marginesie. Dziś ostatnia część. Najpierw **serie**, bo to one porządkują cały blog, potem **strona główna** i **spis treści dla wpisów**, a na koniec to, co mało kto lubi, czyli **sprawdzanie**.
+
+## Serie w jednym pliku
+
+Wpisy już wcześniej miały w nagłówku (we frontmatterze) pola `series` i `seriesPart`, czyli nazwę serii i numer części. Brakowało jednak miejsca, w którym seria sama w sobie jest opisana: jak się nazywa, o czym jest, w jakiej kolejności ją czytać.
+
+Takim miejscem został plik `src/data/serie.ts`:
+
+```ts
+export const serie = {
+  "html-od-podstaw": {
+    tytul: "HTML od podstaw",
+    opis: "Znaczenie zamiast wyglądu: tekst, linki, obrazy, formularze, tabele i ARIA.",
+    rodzaj: "podstawy",
+    kolejnosc: 1,
+    zamknieta: true,
+  },
+  // … pozostałe serie, także ta, którą właśnie czytasz
+};
+```
+
+Do tego jedna zmiana w schemacie wpisów: pole `series` przestało być dowolnym tekstem i stało się listą dozwolonych wartości (**enum**), wziętą z kluczy tego obiektu.
+
+<Hare type="explain">
+Enum to zamknięta lista dozwolonych wartości. Jeśli wpiszesz coś spoza niej, np. literówkę w nazwie serii, build zatrzyma się z błędem.
+</Hare>
+
+Wcześniej literówka w `series` po cichu wyrzucała wpis z serii. Teraz blog się nie zbuduje, dopóki jej nie poprawię. Wolę błąd na ekranie niż wpis, który zniknął i nikt tego nie zauważył.
+
+## Kwadraty z numeracją serii
+
+Na makiecie każda seria miała rząd **kwadratów**, jeden na każdą część. Widzisz je pod tytułem tego wpisu. Komponent `Kwadraty.astro` ma trzy stany:
+
+- **opublikowana część**: niebieski kwadrat, który jest linkiem,
+- **część, którą właśnie czytasz**: kwadrat na żółtym zakreślaczu, z `aria-current="page"`,
+- **część zaplanowana**: przerywana ramka, bez linku, bo strona jeszcze nie istnieje.
+
+Każdy kwadrat ma 44 na 44 piksele. To nie przypadek: tyle wynosi zalecany minimalny rozmiar celu dotyku na telefonie, żeby trafić palcem bez celowania.
+
+<Hare type="tip">
+`aria-current="page"` mówi czytnikowi ekranu „tu jesteś”. Kolor zakreślacza widzi tylko ktoś, kto patrzy. Atrybut działa też dla tych, którzy słuchają.
+</Hare>
+
+Kwadrat zaplanowanej części ma liczbę ukrytą przed czytnikiem i osobny tekst tylko dla czytnika: „Część 5, wkrótce”. Sama cyfra „5” niewiele by powiedziała.
+
+## Strona główna i spis treści dla wpisów
+
+Nowa strona główna ma prawdziwy nagłówek `<h1>` zamiast napisu w obrazku. To pomysł, który przeżył nieudaną próbę z hero z części 1. Obok stoi Senior Hare z lupą i dymek z **ciekawostką dnia**. Ciekawostki leżą w osobnym pliku, a codzienny automatyczny build bloga wybiera jedną z nich raz na dobę.
+
+Niżej jest ścieżka trzech serii podstaw z numerami na marginesie, serie „z warsztatu” i trzy najnowsze wpisy. Wszystko to bierze się z kolekcji wpisów i z `serie.ts`, więc nowy wpis sam pojawi się w kwadratach i na liście najnowszych.
+
+Strona `/blog` przestała być listą kilkudziesięciu kart. Jest **spisem treści zeszytu**: najpierw serie podstaw w kolejności nauki, potem warsztat, a na końcu wpisy spoza serii. W każdym wierszu tylko numer części, tytuł i data.
+
+<Hare type="simple">
+„1 wpis”, „3 wpisy”, „36 wpisów”. Polski ma trzy formy liczby mnogiej, a `Intl.PluralRules` z przeglądarki wie, którą wybrać. Nie trzeba pisać własnych warunków.
+</Hare>
+
+Poniżej funkcja, która odmienia słowa przez formy liczby mnogiej:
+
+```ts
+const odmiana = new Intl.PluralRules("pl-PL");
+
+export function odmien(n, formy) {
+  const kategoria = odmiana.select(n); // "one", "few" albo "many"
+  return `${n} ${formy[kategoria] ?? formy.many}`;
+}
+
+odmien(36, { one: "wpis", few: "wpisy", many: "wpisów" }); // "36 wpisów"
+```
+
+## Lista kontrolna
+
+Ostatni krok planu nie dodawał nowych stron. To był **przegląd całego bloga**: każda strona, oba motywy, telefon i komputer, klawiatura i czytnik ekranu. Do tego Claude uruchamiał automatyczne testy dostępności (narzędzie **axe-core**) i sprawdzał każdą stronę przy szerokości 320 pikseli.
+
+Wyszło kilka rzeczy, których nie widać na pierwszy rzut oka:
+
+- **Nagłówek przewijał się w bok na wąskim telefonie.** Przy 320 px logo, trzy linki i przycisk motywu się nie mieściły, więc *każda* strona dawała się przesunąć o około 60 pikseli w bok. Teraz nagłówek zawija się do dwóch linijek.
+- **Fokus był za słaby.** Obrys przy nawigacji klawiaturą potrzebuje kontrastu co najmniej 3:1. Jasne kolory go nie dawały, więc cały blog ma teraz jeden styl fokusu w kolorze długopisu.
+- **Notatka Senior Hare była „punktem orientacyjnym”.** Była elementem `<aside>` wewnątrz `<article>`, a narzędzia do testów zgłaszały to jako zagnieżdżony landmark. Zamiana na zwykły `<div>` niczego nie zmieniła wizualnie.
+- **Długi kod rozpychał wpisy.** Nazwy w rodzaju `requestAnimationFrame(update)` i szeroka tabela operatorów wychodziły poza ekran. Pomogło `overflow-wrap` w CSS.
+
+<Hare type="bug">
+Test na 320 px wydaje się przesadą, bo kto ma taki mały telefon? Ale tyle ma ekran przy dużym powiększeniu tekstu. Jeśli strona tam się rozjeżdża, rozjeżdża się komuś, kto słabiej widzi.
+</Hare>
+
+## Nowe rysunki Senior Hare
+
+Przegląd objął też samego Senior Hare. Stare rysunki do notatek miały różne wymiary (np. 255 na 300 pikseli), a kolorowa plama w tle często była ucięta przy krawędzi. Obok nowego dymka i pisma Zająca wyglądały jak z innej bajki. Nowe są jednolite:
+
+- każdy jest kwadratem 512 na 512 pikseli,
+- Zając zawsze siedzi w pełnym kolorowym kole, w tym samym kadrze: głowa i ramiona,
+- kreska, okulary i oliwkowa koszula są takie same na wszystkich trzynastu rysunkach.
+
+Rysunki wygenerowałem w ChatGPT, z tym samym opisem postaci, którego używam do grafik na Instagram. Nazwy plików zostały stare, więc w kodzie nie trzeba było zmieniać ani jednej linijki.
+
+<Hare type="tip">
+Jeśli generujesz grafiki AI z jedną postacią, trzymaj jej opis w osobnej notatce i wklejaj go za każdym razem. Bez tego każdy obrazek wyjdzie trochę inny.
+</Hare>
+
+Oryginały z generatora ważyły razem 22 MB, więc przed wrzuceniem do repo zmniejszyłem je do 512 pikseli, czyli do 4,6 MB. Więcej nie trzeba, bo największy rysunek na blogu ma 236 pikseli szerokości, a ekrany retina potrzebują dwa razy tyle. Na stronę i tak nie trafia sam plik PNG: Astro robi z niego lekką wersję w rozmiarze, w jakim obrazek jest wyświetlany.
+
+Przy okazji powstały dwie rzeczy z Zającem z lupą. Pierwsza to nowy obrazek, który widać przy udostępnianiu linku na LinkedInie czy w komunikatorze (**og-image**): 294 KB zamiast 1,1 MB. Druga to ikonka w karcie przeglądarki (**favicon**): 11 KB zamiast 253 KB.
+
+<Hare type="success">
+Wynik końcowy: axe-core nie zgłosił żadnego błędu na 9 rodzajach stron w obu motywach, a żadna z 41 stron nie przewija się w bok przy 320 px.
+</Hare>
+
+## Po redesignie: wpisy, które mówiły nieprawdę
+
+Jedna rzecz zaskoczyła mnie na samym końcu. Wiele wpisów z serii o CSS używa przykładów z tego bloga: „linki są pomarańczowe”, „treść ma szerokość `max-w-3xl`”, „karty na liście wpisów”. Po redesignie żaden z tych przykładów nie był już prawdziwy.
+
+Ostatni PR poprawił więc wpisy CSS cz. 1–9, jeden wpis z serii HTML i dwa z serii JavaScript. Historie z przeszłości, np. audyt kontrastu, zostały w czasie przeszłym, a przykłady opisują dzisiejszego bloga.
+
+<Hare type="tip">
+Jeśli piszesz o własnym kodzie, pamiętaj, że kod się zmienia. Po większej zmianie przejrzyj wpisy, które go opisują.
+</Hare>
+
+## Co robił Claude, a co ja
+
+Obiecałem w części 1, że opowiem to uczciwie. Podział wyglądał tak:
+
+**Claude:** narysował makietę w czterech widokach, rozpisał plan na kroki z gotowym kodem do każdego z nich, sprawdzał kontrast, uruchamiał testy dostępności i pomagał poprawiać to, co wyszło przy przeglądzie.
+
+**Ja:** wybrałem kierunek (i odrzuciłem kilka, w tym całe hero), sprawdzałem każdy krok na Deploy Preview, także na telefonie, decydowałem, co zostaje z makiety, a co nie, i mergowałem każdy PR.
+
+Moje zasady nauki z AI z [pierwszego wpisu](/blog/pierwszy-wpis/) sprawdziły się i tutaj. Najważniejsza okazała się ta o pytaniu „dlaczego?”. Gdybym tylko kopiował kod z planu, nie umiałbym napisać tej serii.
+
+<Hare type="learn">
+Więcej o tym, co tu wyszło: [aria-current](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Attributes/aria-current) i [Intl.PluralRules](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/PluralRules) w MDN. Testy dostępności możesz zrobić sam rozszerzeniem [axe DevTools](https://www.deque.com/axe/devtools/) albo w Lighthouse w Chrome.
+</Hare>
+
+## Morał całej serii
+
+Przez pięć części przeszliśmy drogę od szablonu do zeszytu:
+
+- **dlaczego**: małe poprawki nie pomogą, gdy problem leży w całości,
+- **makieta i plan**: najpierw obraz i droga, potem kod,
+- **fonty i tokeny**: kolory nazwane według roli, motyw nocny bez dublowania klas,
+- **zeszyt**: kratka, margines i notatki, które wiedzą, gdzie mają trafić,
+- **serie i sprawdzanie**: porządek w treści i lista kontrolna, która znajduje to, czego nie widać na pierwszy rzut oka.
+
+AI bardzo przyspieszyło tę pracę. Dziesięć PR-ów w dwa dni to tempo, którego sam bym nie osiągnął. Decyzje zostały jednak po mojej stronie: co zostaje z makiety, co odpada i kiedy zmiana jest gotowa do merge’a, bo sprawdziłem ją w obu motywach, także na telefonie.
+
+## Co dalej?
+
+Redesign się skończył, ale blog dalej się zmienia. Mam w głowie kilka pomysłów, m.in. filtry serii na stronie `/blog` w miejsce zwykłych kotwic. Nowe serie, tym razem dla średnio zaawansowanych, też są w drodze.
+
+Jeśli nie chcesz ich przegapić, zajrzyj na mój [LinkedIn](https://www.linkedin.com/in/pawel-zajaczkowski91/), [Instagram](https://www.instagram.com/zajac.na.froncie/) albo dodaj [kanał RSS](/rss.xml) do swojego czytnika.
+
+Dzięki, że przeszedłeś ze mną przez cały redesign. Do zobaczenia!

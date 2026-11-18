@@ -45,6 +45,13 @@ export const serie = {
     kolejnosc: 2,
     zamknieta: true,
   },
+  "redesign-z-claude": {
+    tytul: "Redesign z Claude",
+    opis: "Jak blog zamienił się w zeszyt w kratkę: makieta, plan w małych krokach, tokeny, margines i sprawdzanie dostępności.",
+    rodzaj: "warsztat",
+    kolejnosc: 3,
+    zamknieta: true,
+  },
 } satisfies Record<string, Seria>;
 
 export type KluczSerii = keyof typeof serie;
