@@ -1,34 +1,36 @@
 ---
 import { Picture } from "astro:assets";
 import Layout from "../layouts/Layout.astro";
-import notFoundLight from "../assets/not-found_light.png";
-import notFoundDark from "../assets/not-found_dark.png";
+import notFound from "../assets/not-found.png";
 ---
 
 <Layout
   title="404 — nie znaleziono strony — Zając na Froncie"
   description="Tej strony nie znaleźliśmy. Ale przynajmniej u Senior Hare działa."
 >
-  <section class="w-screen ml-[calc(50%-50vw)] mr-[calc(50%-50vw)] bg-papier">
-    <h1 class="sr-only">404 — nie znaleźliśmy tej strony</h1>
+  <section class="scena mx-auto max-w-5xl">
+    <div class="napisy">
+      <h1 class="font-reka text-atrament">
+        <span class="numer block text-dlugopis">404</span>
+        <span class="sr-only"> — </span>
+        <span class="haslo block">
+          It works <mark class="zakreslacz">on my machine.</mark>
+        </span>
+      </h1>
+      <p class="opis text-atrament-2">
+        Nie znaleźliśmy tej strony.<br />
+        Ale przynajmniej u Senior Hare działa.
+      </p>
+    </div>
 
     <Picture
-      src={notFoundLight}
+      src={notFound}
       formats={["avif", "webp"]}
       width={1024}
       densities={[1, 2]}
-      alt="Senior Hare rozparty w fotelu z nogami na biurku — strona nie znaleziona"
+      alt="Senior Hare rozparty w fotelu z nogami na biurku, na monitorze napis 404 Not Found"
       loading="eager"
-      class="mx-auto w-full max-w-4xl dark:hidden"
-    />
-    <Picture
-      src={notFoundDark}
-      formats={["avif", "webp"]}
-      width={1024}
-      densities={[1, 2]}
-      alt="Senior Hare rozparty w fotelu z nogami na biurku — strona nie znaleziona"
-      loading="eager"
-      class="mx-auto hidden w-full max-w-4xl dark:block"
+      class="obrazek w-full"
     />
   </section>
 
@@ -41,3 +43,82 @@ import notFoundDark from "../assets/not-found_dark.png";
     </a>
   </div>
 </Layout>
+
+<style>
+  /* Telefon: napisy nad obrazkiem, wyśrodkowane. */
+  .scena {
+    container-type: inline-size;
+    position: relative;
+  }
+
+  .napisy {
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+
+  .numer {
+    font-size: 6rem;
+    font-weight: 800;
+    line-height: 0.9;
+  }
+
+  .haslo {
+    margin-top: 0.5rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .zakreslacz {
+    background: var(--color-marker);
+    color: var(--color-na-markerze);
+    padding: 0 0.2em;
+    border-radius: 0.2em;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+
+  .opis {
+    margin-top: 1rem;
+    font-size: 1.0625rem;
+    line-height: 1.5;
+  }
+
+  /* W motywie nocnym czarne kontury zlewają się z granatowym tłem,
+     więc obrazek dostaje jasną, cienką poświatę. */
+  :global([data-theme="dark"]) .obrazek {
+    filter: drop-shadow(0 0 1px rgb(233 237 246 / 0.55))
+      drop-shadow(0 0 6px rgb(143 176 255 / 0.18));
+  }
+
+  /* Szerszy ekran: napisy w pustym miejscu po lewej stronie obrazka.
+     Jednostki cqi to procent szerokości sceny, więc napisy skalują się
+     razem z obrazkiem. */
+  @container (min-width: 760px) {
+    .napisy {
+      position: absolute;
+      top: 3cqi;
+      left: 1cqi;
+      width: 55cqi;
+      margin: 0;
+      text-align: left;
+      z-index: 1;
+    }
+
+    .numer {
+      font-size: 12cqi;
+    }
+
+    .haslo {
+      margin-top: 0.4cqi;
+      font-size: 3.4cqi;
+      white-space: nowrap;
+    }
+
+    .opis {
+      max-width: 36cqi;
+      margin-top: 1.2cqi;
+      font-size: max(0.875rem, 1.6cqi);
+    }
+  }
+</style>
