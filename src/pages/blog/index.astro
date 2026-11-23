@@ -10,6 +10,10 @@ import {
 
 const serie = await getSeriesOverview();
 const podstawy = serie.filter((s) => s.rodzaj === "podstawy");
+// seria pojawia się dopiero z pierwszą opublikowaną częścią
+const dalej = serie.filter(
+  (s) => s.rodzaj === "srednio-zaawansowane" && s.czesci.length > 0,
+);
 const warsztat = serie.filter((s) => s.rodzaj === "warsztat");
 
 const wszystkie = await getPublishedPosts();
@@ -26,6 +30,7 @@ const czesci = (n: number) =>
 // skróty na górze strony: kotwice do sekcji, działają bez JavaScriptu
 const skroty = [
   ...podstawy.map((s) => ({ href: `#${s.klucz}`, nazwa: s.tytul })),
+  ...dalej.map((s) => ({ href: `#${s.klucz}`, nazwa: s.tytul })),
   { href: "#z-warsztatu", nazwa: "Z warsztatu" },
   ...(pozostale.length ? [{ href: "#pozostale", nazwa: "Pozostałe" }] : []),
 ];
@@ -76,6 +81,34 @@ const skroty = [
             <h2 class="text-[1.75rem] leading-tight font-extrabold tracking-tight">
               {s.tytul}
             </h2>
+            <p class="text-sm text-olowek">
+              {czesci(s.czesci.length)},{" "}
+              {s.zamknieta ? "seria zamknięta" : "kolejne w drodze"}
+            </p>
+          </div>
+          <ListaCzesci czesci={s.czesci} wkrotce={s.wkrotce} dwieKolumny />
+        </section>
+      </Wiersz>
+    ))}
+
+    <!-- średnio zaawansowane: jak podstawy, ale bez numeru na marginesie -->
+    {dalej.length > 0 && (
+      <Wiersz class="mt-20">
+        <h2 class="text-[1.75rem] leading-tight font-extrabold tracking-tight">
+          Krok dalej
+        </h2>
+        <p class="mt-2 text-olowek">
+          Serie dla średnio zaawansowanych, gdy podstawy masz już za sobą.
+        </p>
+      </Wiersz>
+    )}
+    {dalej.map((s) => (
+      <Wiersz class="mt-8">
+        <section id={s.klucz} class="scroll-mt-6">
+          <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+            <h3 class="text-[1.5rem] leading-tight font-extrabold tracking-tight">
+              {s.tytul}
+            </h3>
             <p class="text-sm text-olowek">
               {czesci(s.czesci.length)},{" "}
               {s.zamknieta ? "seria zamknięta" : "kolejne w drodze"}

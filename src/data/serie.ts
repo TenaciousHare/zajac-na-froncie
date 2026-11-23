@@ -1,4 +1,4 @@
-export type RodzajSerii = "podstawy" | "warsztat";
+export type RodzajSerii = "podstawy" | "srednio-zaawansowane" | "warsztat";
 
 type Seria = {
   tytul: string;
@@ -30,6 +30,13 @@ export const serie = {
     rodzaj: "podstawy",
     kolejnosc: 3,
     zamknieta: true,
+  },
+  "ts-w-praktyce": {
+    tytul: "TypeScript w praktyce",
+    opis: "Wnioskowanie, kształt obiektów, unie, generyki i dane z zewnątrz, na kodzie tego bloga, Avia Weather i Destinations.",
+    rodzaj: "srednio-zaawansowane",
+    kolejnosc: 1,
+    zamknieta: false,
   },
   "jak-powstal-destinations": {
     tytul: "Jak powstał Destinations",
