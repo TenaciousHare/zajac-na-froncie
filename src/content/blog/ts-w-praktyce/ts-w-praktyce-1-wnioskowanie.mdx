@@ -1,0 +1,218 @@
+---
+title: 'TypeScript w praktyce (cz. 1): kiedy pisać typy, a kiedy nie'
+description: 'Startuje pierwsza seria dla średnio zaawansowanych. Wnioskowanie typów, trzy miejsca, w których typ trzeba dopisać, tryb strict i astro check, który znalazł na tym blogu 11 podpowiedzi.'
+pubDate: 2026-11-24
+tags: ['typescript', 'średnio-zaawansowane', 'astro']
+series: 'ts-w-praktyce'
+seriesPart: 1
+---
+
+import Hare from "../../../components/Hare.astro";
+
+Seria [JavaScript od podstaw](/blog/js-od-podstaw-1-czym-jest-javascript) skończyła się na pytaniu, czym jest TypeScript. W [części 11](/blog/js-od-podstaw-11-moduly-i-typescript) zobaczyłeś pierwsze typy: `code: string`, `Record<string, string>` i dopisek `<HTMLIFrameElement>`. Wiesz już, że TypeScript sprawdza kod, **zanim** się uruchomi, a przeglądarka i tak dostaje zwykły JavaScript.
+
+Ta seria jest o tym, co dalej. To moja pierwsza seria dla **średnio zaawansowanych**, a przy okazji też notatki z mojej własnej nauki. Kod bloga, Avia Weather i Destinations jest w TypeScripcie, ale sporo rzeczy pisałem „bo tak działało”. Teraz chciałbym to wszystko lepiej zrozumieć.
+
+Zaczynamy od pytania, które sam zadałem sobie na początku przygody z TypeScriptem: **czy muszę dopisywać typ wszędzie?** Krótka odpowiedź: nie. Dłuższa jest w tym wpisie.
+
+## TypeScript sam zgaduje typy
+
+Spójrz na trzy linijki:
+
+~~~ts
+const now = new Date();
+let licznik = 0;
+licznik = "dużo";
+~~~
+
+Nie ma tu ani jednego typu. A jednak ostatnia linijka zostanie podkreślona na czerwono:
+
+~~~text
+Type 'string' is not assignable to type 'number'.
+~~~
+
+Skąd TypeScript wie, że `licznik` to liczba? Z wartości, którą dostał na start. `0` to liczba, więc zmienna jest liczbowa i tak zostaje. Tak samo `new Date()` daje datę, więc `now` jest typu `Date`.
+
+To się nazywa **wnioskowanie typów** (ang. *type inference*). TypeScript patrzy na wartość po prawej stronie znaku `=` i sam ustala typ zmiennej. Nie musisz pisać `let licznik: number = 0`, bo to powtarzanie tej samej informacji dwa razy.
+
+Wnioskowanie działa też na wyniki funkcji. Oto funkcja z tego bloga, która zbiera opublikowane wpisy:
+
+~~~ts
+export async function getPublishedPosts() {
+  const now = new Date();
+  return (await getCollection("blog"))
+    .filter((post) => !post.data.draft && post.data.pubDate <= now)
+    .sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime());
+}
+~~~
+
+Czytamy po kolei:
+
+- `getCollection("blog")` pobiera wszystkie wpisy z kolekcji `blog`. Astro wie, jak wygląda wpis, bo opisałem to w pliku z konfiguracją kolekcji (wrócimy do niego w części 6),
+- `filter` zostawia tylko wpisy, które nie są szkicem i mają datę z przeszłości,
+- `sort` układa je od najnowszego.
+
+Nigdzie nie napisałem, co ta funkcja zwraca. A TypeScript i tak wie, że to obietnica tablicy wpisów z kolekcji `blog`. `filter` i `sort` nie zmieniają rodzaju elementów, więc typ przechodzi przez cały łańcuch bez zmian. Dzięki temu w każdym miejscu, gdzie używam `getPublishedPosts()`, edytor podpowiada mi `post.data.title`, `post.data.tags` i resztę pól.
+
+<Hare type="tip">
+Zanim dopiszesz typ, **najedź kursorem** na nazwę zmiennej albo funkcji w edytorze. VS Code pokaże w okienku typ, który TypeScript już ustalił. Jeśli jest dobry, nie musisz niczego dopisywać. W pliku, który zbiera wpisy na tym blogu, prawie żadna funkcja nie ma dopisanego typu wyniku, a podpowiedzi i tak działają wszędzie.
+</Hare>
+
+Jeszcze jedna drobna rzecz. Przy `const tytul = "Zając"` TypeScript zapamiętuje nie tylko „tekst”, ale dokładnie tekst `"Zając"`, bo `const` się nie zmieni. Przy `let` byłby to po prostu `string`. Ta różnica przyda się w części 3, przy uniach.
+
+## Trzy miejsca, w których typ trzeba dopisać
+
+Wnioskowanie potrzebuje wartości, z której może coś wyczytać. Tam, gdzie takiej wartości nie ma, musisz pomóc.
+
+**1. Parametry funkcji.** Funkcja dostaje wartość dopiero wtedy, gdy ktoś ją wywoła. W chwili pisania TypeScript nie ma skąd wiedzieć, co przyjdzie:
+
+~~~ts
+function podwoj(minuty) {
+  return minuty * 2;
+}
+~~~
+
+W edytorze ta linijka będzie podkreślona, a `astro check` (o nim za chwilę) zgłosi błąd:
+
+~~~text
+Parameter 'minuty' implicitly has an 'any' type.
+~~~
+
+`any` to typ „cokolwiek”. Przy `any` TypeScript przestaje cokolwiek sprawdzać. Wystarczy dopisać typ parametru: `function podwoj(minuty: number)`. Typu tego, co funkcja **zwraca**, już dopisywać nie trzeba, bo `liczba * 2` to liczba i TypeScript to wywnioskuje.
+
+**2. Puste kolekcje.** Z pustej mapy nie da się wyczytać, co w niej będzie. W funkcji, która liczy wpisy przy każdym tagu, mapa jest pusta na starcie:
+
+~~~ts
+const counts = new Map<string, number>();
+for (const post of posts) {
+  for (const tag of post.data.tags) {
+    counts.set(tag, (counts.get(tag) ?? 0) + 1);
+  }
+}
+~~~
+
+Dopisek `<string, number>` mówi: klucze to teksty (nazwy tagów), a wartości to liczby (ile wpisów). Bez niego mapa byłaby typu `Map<any, any>`, czyli znowu „cokolwiek”. Wtedy `counts.get(tag)` też byłoby `any` i TypeScript nie zauważyłby, gdybym przez pomyłkę wstawił do mapy tekst zamiast liczby.
+
+Nawiasy ostre `<…>` to **generyki**. Na razie wystarczy, że wiesz, jak je czytać. Całą część 5 poświęcimy temu, jak działają.
+
+**3. Dane z zewnątrz.** Odpowiedź z API, wartość z `localStorage`, tekst wpisany w formularz. Tych danych nie ma w kodzie, więc TypeScript nie ma z czego wnioskować. W Avia Weather pogodę pobiera funkcja `fetchAvwx`, i tam typ trzeba podać ręcznie. To najciekawszy i najbardziej podchwytliwy temat całej serii, dlatego dostanie własną część 6.
+
+<Hare type="decision">
+Moja zasada brzmi tak: **typ dopisuję tam, gdzie wchodzi coś nowego, a resztę zostawiam wnioskowaniu.** Parametry funkcji, puste kolekcje i dane z zewnątrz dostają typ. Zmienne z wartością na start i wyniki funkcji zwykle nie.
+
+Wyjątek robię dla funkcji, które eksportuję i używam w wielu plikach. Tam czasem dopisuję typ wyniku, choćby `): string`, żeby od razu było widać, co funkcja oddaje, bez zaglądania do środka. Tak jest w dekoderze chmur z Avia Weather z [części 11](/blog/js-od-podstaw-11-moduly-i-typescript).
+</Hare>
+
+## Tryb strict, czyli jak surowy jest TypeScript
+
+To, jak dokładnie TypeScript sprawdza kod, ustawiasz w pliku `tsconfig.json`. Na tym blogu wygląda on tak:
+
+~~~json
+{
+  "extends": "astro/tsconfigs/strict",
+  "include": [".astro/types.d.ts", "**/*"],
+  "exclude": ["dist"]
+}
+~~~
+
+Najważniejsza jest pierwsza linijka. `extends` znaczy „weź ustawienia z innego pliku”. Astro ma trzy gotowe zestawy: `base`, `strict` i `strictest`. Wybrałem środkowy, a on włącza jedną opcję: `"strict": true`.
+
+`strict` to w rzeczywistości kilka opcji naraz. Na start ważne są dwie:
+
+- **`noImplicitAny`** — to ona zgłosiła błąd przy parametrze `minuty`. Nie pozwala, żeby `any` pojawiało się „po cichu”,
+- **`strictNullChecks`** — pilnuje, żebyś nie zapomniał o `null` i `undefined`.
+
+Drugą opcję zobaczysz w akcji, gdy usuniesz z bloga dwa znaki. Funkcja, która układa części serii po numerach, wygląda tak:
+
+~~~ts
+const poCzesci = (a: Wpis, b: Wpis) =>
+  (a.data.seriesPart ?? 0) - (b.data.seriesPart ?? 0);
+~~~
+
+Numer części jest w frontmatterze opcjonalny, bo wpis spoza serii go nie ma. Jeśli usunę `?? 0`, dostanę:
+
+~~~text
+'a.data.seriesPart' is possibly 'undefined'.
+~~~
+
+Bez trybu strict TypeScript by to przepuścił. A odejmowanie od `undefined` daje `NaN`, więc kolejność części w serii byłaby przypadkowa.
+
+<Hare type="decision">
+Dlaczego `strict` od pierwszego dnia? Bo włączenie go później jest dużo trudniejsze. Przy starym projekcie nagle wyskakuje kilkadziesiąt błędów naraz. Przy nowym poprawiasz je po jednym, w chwili gdy powstają. Blog, Avia Weather i Destinations mają tryb strict włączony.
+</Hare>
+
+## Kto właściwie sprawdza typy?
+
+Łatwo założyć, że skoro strona się buduje, to typy są w porządku. Tak nie jest.
+
+`astro build` typów **nie sprawdza**. Przy budowaniu TypeScript jest po prostu wycinany i zostaje JavaScript. Błąd typu nie zatrzyma budowania. Edytor też sprawdza tylko pliki, które masz otwarte.
+
+Żeby sprawdzić **cały** projekt naraz, Astro ma osobne polecenie: `astro check`. Potrzebuje dwóch dodatkowych paczek:
+
+~~~bash
+npm install -D @astrojs/check typescript@6
+npx astro check
+~~~
+
+- `-D` instaluje paczki jako narzędzia deweloperskie, bo przeglądarka ich nie potrzebuje,
+- `typescript@6` to TypeScript w wersji 6. Numer wersji jest tu ważny, wyjaśniam niżej,
+- `npx astro check` przechodzi przez wszystkie pliki `.ts` i `.astro` i wypisuje każdy problem.
+
+<Hare type="bug">
+Za pierwszym razem zainstalowałem TypeScript bez numeru wersji i dostałem najnowszy, czyli 7. `astro check` od razu się zatrzymał:
+
+~~~text
+astro check does not currently support TypeScript 7.0. To continue using astro check, install TypeScript 6 instead.
+~~~
+
+Komunikat mówi wprost, co zrobić: zainstalować TypeScript 6. Wystarczy `npm install -D typescript@6`, a npm podmieni wersję 7 na 6.
+</Hare>
+
+Skąd ten problem? TypeScript 7 to nowa wersja, w której twórcy przepisali kompilator od nowa, a narzędzia wokół niego dopiero się do niej dostosowują. Astro zapowiada, że `astro check` zostanie kiedyś wycofany. Jego następcą ma być paczka `@astrojs/ts-content-mapper`, dzięki której pliki `.astro` sprawdzi sam TypeScript, bez osobnego polecenia. Wymaga jednak TypeScriptu 7.1, który jest na razie w wersji testowej (beta). Do tego czasu zostaję przy TypeScripcie 6 i `astro check`.
+
+Uruchomiłem to na blogu. Wynik:
+
+~~~text
+Result (30 files):
+- 0 errors
+- 0 warnings
+- 11 hints
+~~~
+
+Zero błędów, ale 11 podpowiedzi. Wszystkie dotyczyły jednej linijki w pliku z konfiguracją kolekcji:
+
+~~~ts
+import { defineCollection, z } from "astro:content";
+~~~
+
+i brzmiały tak samo: `'z' is deprecated`. `z` to narzędzie do opisywania kształtu frontmattera (część 6). Astro przeniosło je w inne miejsce, a import ze starego zostanie usunięty w Astro 8. Poprawka to rozbicie importu na dwa:
+
+~~~ts
+import { defineCollection } from "astro:content";
+import { z } from "astro/zod";
+~~~
+
+Dziś blog działa. Ale po aktualizacji Astro do wersji 8 przestałby się budować, a ja szukałbym przyczyny. `astro check` pokazał mi to z wyprzedzeniem.
+
+<Hare type="tip">
+Żeby nie pamiętać o osobnym poleceniu, możesz połączyć sprawdzanie z budowaniem w `package.json`:
+
+~~~json
+"build": "astro check && astro build"
+~~~
+
+`&&` znaczy „uruchom drugie polecenie tylko wtedy, gdy pierwsze się udało”. Wtedy błąd typu zatrzyma budowanie, także na Netlify, i nie trafi na stronę. Minus jest jeden: budowanie trwa kilka sekund dłużej.
+</Hare>
+
+<Hare type="learn">
+Szczegóły w dokumentacji TypeScriptu: [wnioskowanie typów](https://www.typescriptlang.org/docs/handbook/type-inference.html) i [opcja strict](https://www.typescriptlang.org/tsconfig/#strict). O `tsconfig.json` i `astro check` w Astro przeczytasz w przewodniku [TypeScript w Astro](https://docs.astro.build/en/guides/typescript/).
+</Hare>
+
+## Co nam to daje?
+
+- **Mniej pisania:** TypeScript sam ustala typy z wartości, więc dopisujesz je tylko tam, gdzie trzeba.
+- **Jasna zasada:** typ dostają parametry funkcji, puste kolekcje i dane z zewnątrz.
+- **Tryb strict:** nie pozwala na ciche `any` i pilnuje `undefined`.
+- **`astro check`:** sprawdza cały projekt, bo samo budowanie tego nie robi.
+
+W **części 2** zajmiemy się **kształtem obiektów**: `type` i `interface`, pola opcjonalne i `Props` w komponentach. Na przykładzie listy projektów na tym blogu i destynacji z Destinations. Do zobaczenia!
