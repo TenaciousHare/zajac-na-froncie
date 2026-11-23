@@ -14,6 +14,10 @@ import hareLupa from "../assets/hare/SeniorHare_1_explanations-tutorial.png";
 
 const serie = await getSeriesOverview();
 const podstawy = serie.filter((s) => s.rodzaj === "podstawy");
+// seria pojawia się dopiero z pierwszą opublikowaną częścią
+const dalej = serie.filter(
+  (s) => s.rodzaj === "srednio-zaawansowane" && s.czesci.length > 0,
+);
 const warsztat = serie.filter((s) => s.rodzaj === "warsztat");
 
 const wszystkie = await getPublishedPosts();
@@ -136,6 +140,42 @@ const czesci = (n: number) =>
         >
           {i + 1}.
         </span>
+        <div class="flex flex-wrap items-start justify-between gap-x-10 gap-y-4">
+          <div class="max-w-md">
+            <h3 class="text-2xl font-extrabold">
+              <a
+                href={`/blog#${s.klucz}`}
+                class="text-atrament no-underline hover:text-dlugopis"
+              >
+                {s.tytul}
+              </a>
+            </h3>
+            <p class="mt-1 text-atrament-2">{s.opis}</p>
+            <p class="mt-1 text-sm text-olowek">
+              {czesci(s.czesci.length)},{" "}
+              {s.zamknieta ? "seria zamknięta" : "kolejne w drodze"}
+            </p>
+          </div>
+          <Kwadraty
+            tytulSerii={s.tytul}
+            czesci={s.czesci}
+            wkrotce={s.wkrotce}
+          />
+        </div>
+      </Wiersz>
+    ))}
+
+    <!-- średnio zaawansowane: kolejny krok po trzech seriach podstaw -->
+    {dalej.length > 0 && (
+      <Wiersz class="pt-20">
+        <h2 class="text-3xl font-extrabold tracking-tight">Krok dalej</h2>
+        <p class="mt-2 text-olowek">
+          Serie dla średnio zaawansowanych, gdy podstawy masz już za sobą.
+        </p>
+      </Wiersz>
+    )}
+    {dalej.map((s) => (
+      <Wiersz class="mt-10">
         <div class="flex flex-wrap items-start justify-between gap-x-10 gap-y-4">
           <div class="max-w-md">
             <h3 class="text-2xl font-extrabold">
