@@ -1,0 +1,362 @@
+---
+title: 'TypeScript w praktyce (cz. 3): unie i zawężanie'
+description: 'Typy dosłowne, unie, czyli „to albo to”, i zawężanie typu po zwykłym if. Do tego unia z wyróżnikiem zamiast trzech osobnych flag, na przykładzie serii na tym blogu, lotnisk w Destinations i reguł lotów w Avia Weather.'
+pubDate: 2026-11-26
+tags: ['typescript', 'średnio-zaawansowane', 'unie']
+series: 'ts-w-praktyce'
+seriesPart: 3
+---
+
+import Hare from "../../../components/Hare.astro";
+
+W [części 2](/blog/ts-w-praktyce-2-obiekty) opisywaliśmy obiekty: jakie mają pola i co w tych polach jest. Kilka razy pojawiła się przy tym pionowa kreska, na przykład `{ value: number } | null`.
+
+Ta kreska `|` tworzy **unię**, czyli typ „to albo to”. Wartość może być jednym z dwóch lub nawet kilku wariantów, a TypeScript pilnuje, żeby nie wpisać niczego spoza takiej listy. Zobaczysz też, jak TypeScript **zawęża** typ, czyli po zwykłym `if` sam wie, który wariant masz w danym miejscu kodu.
+
+## Typ dosłowny, czyli konkretny tekst jako typ
+
+Do tej pory typem było zawsze coś ogólnego: `string`, `number`, `boolean`. Ale typem może być też jeden konkretny tekst:
+
+~~~ts
+let poziom: "podstawy" = "podstawy";
+~~~
+
+Taka zmienna przyjmie tylko tekst `"podstawy"`. Każdy inny, nawet `"Podstawy"` z wielkiej litery, to błąd. To **typ dosłowny** (ang. *literal type*): typem jest sama wartość.
+
+Sam w sobie nie jest zbyt przydatny, bo zmienna, która może mieć tylko jedną wartość, niewiele różni się od stałej. Robi się ciekawie, gdy połączymy kilka takich typów kreską.
+
+## Unia, czyli „to albo to”
+
+Na tym blogu każda seria ma swój rodzaj: podstawy, średnio zaawansowane albo warsztat. Od tego zależy, w której sekcji strony głównej się pojawi. W pliku `src/data/serie.ts` stoi:
+
+~~~ts
+export type RodzajSerii = "podstawy" | "srednio-zaawansowane" | "warsztat";
+
+type Seria = {
+  tytul: string;
+  opis: string;
+  rodzaj: RodzajSerii;
+  kolejnosc: number;
+  zamknieta: boolean;
+};
+~~~
+
+- `RodzajSerii` to unia trzech typów dosłownych. Czytamy ją: „podstawy **albo** srednio-zaawansowane **albo** warsztat”,
+- pole `rodzaj` w każdej serii musi być jednym z tych trzech tekstów.
+
+Gdybym przy dodawaniu nowej serii napisał `rodzaj: "warsztaty"`, z „y” na końcu, dostałbym:
+
+~~~text
+Type '"warsztaty"' is not assignable to type 'RodzajSerii'. Did you mean '"warsztat"'?
+~~~
+
+TypeScript nie tylko mówi, że takiego rodzaju nie ma, ale podpowiada, o który pewnie mi chodziło. Bez unii, z `rodzaj: string`, ta literówka przeszłaby bez słowa, a seria po prostu nie pojawiłaby się w żadnej sekcji strony głównej. Szukałbym wtedy błędu w szablonie, a nie w danych.
+
+Edytor też na tym korzysta. Gdy wpisuję `rodzaj: ""`, VS Code pokazuje listę trzech dozwolonych rodzajów. Nie muszę pamiętać, czy pisałem „srednio” z „ś”, czy bez.
+
+<Hare type="explain">
+Unia nie musi składać się z tekstów. W części 2 była unia obiektu i `null`: `{ value: number } | null`. A w części 1 TypeScript ostrzegał, że `seriesPart` jest „possibly 'undefined'”. Pole jest opcjonalne, więc jego typ to `number | undefined`, czyli „liczba albo nic”. Za każdym razem, gdy TypeScript ostrzega „possibly 'undefined'”, chodzi właśnie o unię z `undefined`.
+</Hare>
+
+## Unie w Destinations
+
+W Destinations unie opisują dwie rzeczy, które mają z góry ustaloną listę wartości. Pierwsza to strefa:
+
+~~~ts
+export type Zone = "Schengen" | "Non-Schengen";
+~~~
+
+Każda destynacja jest w strefie Schengen albo poza nią. Trzeciej możliwości nie ma, więc nie ma sensu pozwalać na dowolny tekst. Gdy na kopii projektu wpisałem strefę małą literą, dostałem:
+
+~~~text
+Type '"schengen"' is not assignable to type 'Zone'. Did you mean '"Schengen"'?
+~~~
+
+To ważne, bo destynacje trafiają do bazy danych. Tekst `"schengen"` zapisałby się bez problemu, a potem filtr po strefie by go nie znalazł.
+
+Druga rzecz to lotnisko. Pole `airport: Airport` z części 2 też jest unią: listą kodów lotnisk, dla których szkoleniowcy przygotowują testy. Kod spoza listy, np. literówka `"KWT"` zamiast `"KTW"`, kończy się błędem:
+
+~~~text
+Type '"KWT"' is not assignable to type 'Airport'.
+~~~
+
+## Unia zbudowana z innej unii
+
+W panelu szkoleniowca jest tabela wszystkich destynacji z filtrem. Można pokazać destynacje jednego lotniska albo wszystkie naraz. Do tego „wszystkie” potrzebna była jeszcze jedna wartość, więc w `AdminPanel.tsx` powstał nowy typ:
+
+~~~ts
+type FilterAirport = Airport | "ALL";
+~~~
+
+To unia z unii: wszystkie lotniska z `Airport` **i** dodatkowo tekst `"ALL"`. Nie przepisuję kodów lotnisk drugi raz. Gdy dojdzie nowe lotnisko, filtr dostanie je automatycznie.
+
+Ważne jest to, czego tu nie zrobiłem: nie dopisałem `"ALL"` do samego `Airport`. „Wszystkie lotniska” to opcja filtra, a nie lotnisko. Destynacja z `airport: "ALL"` nie miałaby sensu, więc typ `Destination` nie powinien na nią pozwalać.
+
+## Zawężanie, czyli TypeScript czyta Twoje if-y
+
+W zmiennej `filterAirport` jest to, co wybrano w filtrze: konkretne lotnisko albo `"ALL"`. Destynacja potrzebuje jednak prawdziwego lotniska. Co się stanie, gdy przypiszę jedno do drugiego?
+
+Taka sytuacja jest w panelu. Po dodaniu destynacji formularz się czyści, a pole z lotniskiem ustawia się na to, które jest wybrane w filtrze. Dzięki temu szkoleniowiec nie musi go wybierać od nowa. Najprostszy zapis:
+
+~~~ts
+airport: filterAirport,
+~~~
+
+daje błąd:
+
+~~~text
+Type 'FilterAirport' is not assignable to type 'Airport'.
+  Type '"ALL"' is not assignable to type 'Airport'.
+~~~
+
+TypeScript mówi: w filtrze może być `"ALL"`, a takiego lotniska nie ma. W prawdziwym kodzie jest więc tak:
+
+~~~ts
+airport: filterAirport !== "ALL" ? filterAirport : "KTW",
+~~~
+
+Czytamy: jeśli filtr nie jest `"ALL"`, weź lotnisko z filtra. W przeciwnym razie wstaw `"KTW"`.
+
+Teraz błędu nie ma. TypeScript przeczytał warunek `filterAirport !== "ALL"` i wie, że część po `?` wykona się tylko wtedy, gdy warunek jest spełniony. W tym miejscu filtr na pewno nie jest `"ALL"`, więc z unii zostały same lotniska. To jest **zawężanie** (ang. *narrowing*): po sprawdzeniu warunku TypeScript zawęża typ do tych wariantów, które ten warunek przepuszcza.
+
+Operator `? :` to tylko krótszy zapis `if`. Ze zwykłym `if` działa to tak samo:
+
+~~~ts
+if (filterAirport !== "ALL") {
+  // tutaj filterAirport to już Airport
+}
+~~~
+
+<Hare type="explain">
+Zawężanie działa po każdym sprawdzeniu, które TypeScript umie zrozumieć. Najczęściej spotkasz:
+
+- porównanie `===` i `!==`, jak wyżej,
+- `typeof` z [części 2 serii JS](/blog/js-od-podstaw-2-zmienne-i-typy): po `if (typeof x === "number")` w środku `x` jest liczbą,
+- zwykłe sprawdzenie prawdziwości, np. `if (metar.wind_gust)`, które odrzuca `null` i `undefined`.
+
+Nie musisz niczego dopisywać. Wystarczy normalny `if`, który i tak byś napisał.
+</Hare>
+
+## Zawężanie z return
+
+Zawężać można też „od tyłu”: najpierw obsłużyć przypadek, który nie pasuje, i wyjść z funkcji. Na tym blogu robi tak funkcja, która zbiera wszystkie części serii dla nawigacji pod wpisem:
+
+~~~ts
+export async function getSeriesParts(current: CollectionEntry<"blog">) {
+  const { series, seriesPart } = current.data;
+  if (!series || seriesPart === undefined) return [];
+
+  // …
+}
+~~~
+
+`series` i `seriesPart` są we frontmatterze opcjonalne, bo nie każdy wpis należy do serii. Na starcie oba mają w typie `undefined`. Trzecia linijka mówi: jeśli nie ma serii albo numeru części, zwróć pustą listę i zakończ. Poniżej tej linijki TypeScript wie, że obie wartości istnieją, i nie każe sprawdzać ich drugi raz.
+
+W Destinations ten sam pomysł chroni całą aplikację. Informacja o zalogowanym użytkowniku jest w **kontekście** Reacta, czyli w miejscu, z którego każdy komponent może ją odczytać. Odczytuje się ją przez funkcję `useAuth`:
+
+~~~ts
+export const useAuth = (): AuthContextType => {
+  const ctx = useContext(AuthContext);
+  if (ctx === undefined) {
+    throw new Error("useAuth musi być użyty wewnątrz AuthProvider");
+  }
+  return ctx;
+};
+~~~
+
+- `useContext` zwraca `AuthContextType | undefined`. `undefined` pojawia się wtedy, gdy komponent jest poza `AuthProvider`, czyli poza miejscem, które ten kontekst dostarcza,
+- `if (ctx === undefined)` w takim przypadku przerywa program z czytelnym komunikatem,
+- po tym `if`-ie zostaje już tylko `AuthContextType`, więc `return ctx` zgadza się z typem, który funkcja obiecuje.
+
+Dzięki temu w żadnym komponencie nie piszę `if (auth === undefined)`. Sprawdzenie jest w jednym miejscu, a reszta aplikacji dostaje pewny typ.
+
+## Tekst z zewnątrz zawężony do unii
+
+Avia Weather ma przełącznik jasnego i ciemnego motywu. Wybrany motyw zapisuje w `localStorage`, tak jak ten blog (opisywałem to w [części 9 serii JS](/blog/js-od-podstaw-9-localstorage-i-motyw)). Stan motywu ma typ unii:
+
+~~~tsx
+const [theme, setTheme] = useState<"light" | "dark">(() => {
+  const saved = localStorage.getItem("theme");
+  if (saved === "light" || saved === "dark") return saved;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
+});
+~~~
+
+Problem w tym, że `localStorage.getItem` zwraca `string | null`. Może tam być cokolwiek: zapis z innej wersji aplikacji, ręczna zmiana w DevTools albo nic. Gdybym od razu zwrócił `saved`, dostałbym:
+
+~~~text
+Type 'string | null' is not assignable to type '"light" | "dark"'.
+  Type 'null' is not assignable to type '"light" | "dark"'.
+~~~
+
+Warunek `saved === "light" || saved === "dark"` zawęża dowolny tekst do dwóch dozwolonych. Wewnątrz `if` TypeScript wie, że `saved` to `"light"` albo `"dark"`, więc `return saved` jest poprawne. Każda inna wartość spada niżej, do ustawień systemu.
+
+<Hare type="tip">
+To dobry nawyk przy wszystkim, co przychodzi spoza Twojego kodu: z `localStorage`, z adresu strony, z formularza. Nie zakładaj, że dostaniesz to, czego się spodziewasz. Sprawdź i zawęź. O danych z zewnątrz będzie cała część 6.
+</Hare>
+
+## Reguły lotów zasługują na coś lepszego niż string
+
+W Avia Weather każda depesza ma pole `flight_rules`, czyli reguły lotów: `VFR`, `MVFR`, `IFR` albo `LIFR`. Od nich zależy kolor etykiety w aplikacji. Dziś typ i funkcja wyglądają tak:
+
+~~~ts
+// types.ts
+flight_rules: string;
+
+// flightRules.ts
+export function flightRuleColor(rules: string): string {
+  const colors: Record<string, string> = {
+    VFR: "green",
+    MVFR: "blue",
+    IFR: "red",
+    LIFR: "purple",
+  };
+  return colors[rules] ?? "gray";
+}
+~~~
+
+To działa, ale TypeScript niewiele tu pilnuje. `Record<string, string>` znaczy „obiekt, w którym kluczem jest dowolny tekst”. Gdybym usunął z niego `LIFR`, nic by się nie stało przy budowaniu. Etykieta przy bardzo trudnych warunkach po prostu zrobiłaby się szara.
+
+Wartości są cztery i znam je z góry, więc to idealne miejsce na unię:
+
+~~~ts
+export type FlightRules = "VFR" | "MVFR" | "IFR" | "LIFR";
+
+export function flightRuleColor(rules: FlightRules): string {
+  const colors: Record<FlightRules, string> = {
+    VFR: "green",
+    MVFR: "blue",
+    IFR: "red",
+    LIFR: "purple",
+  };
+  return colors[rules] ?? "gray";
+}
+~~~
+
+Zmieniły się dwie rzeczy:
+
+- parametr `rules` przyjmuje już tylko jedną z czterech reguł,
+- `Record<FlightRules, string>` znaczy „obiekt, który ma klucz dla **każdej** reguły z unii”.
+
+Teraz brak `LIFR` w kolorach to błąd:
+
+~~~text
+Property 'LIFR' is missing in type '{ VFR: string; MVFR: string; IFR: string; }' but required in type 'Record<FlightRules, string>'.
+~~~
+
+A wywołanie z literówką, np. `flightRuleColor("VRF")`, też nie przejdzie:
+
+~~~text
+Argument of type '"VRF"' is not assignable to parameter of type 'FlightRules'.
+~~~
+
+<Hare type="question">
+Skoro typ obiecuje jedną z czterech reguł, po co zostawiłem `?? "gray"`? Bo typ to tylko obietnica. `flight_rules` przychodzi z serwisu AVWX i TypeScript nie ma jak sprawdzić, co naprawdę przyśle. Jeśli kiedyś pojawi się tam coś spoza listy, szara etykieta jest lepsza niż żadna. Jak pogodzić unię z danymi, którym nie można do końca ufać, pokażę w części 6. Dlatego tę poprawkę w Avia Weather zrobię dopiero wtedy.
+</Hare>
+
+## Unia z wyróżnikiem
+
+Na koniec coś, co najbardziej zmieniło to, jak myślę o stanie w komponentach. W Destinations generator testów pobiera destynacje z bazy. W tym czasie może być w jednym z trzech stanów: ładuje się, wystąpił błąd albo dane są gotowe. Dziś opisują to trzy osobne zmienne:
+
+~~~tsx
+const [destinations, setDestinations] = useState<...>(/* puste listy */);
+const [loading, setLoading] = useState(true);
+const [error, setError] = useState(false);
+~~~
+
+I trzy `if`-y w kodzie komponentu:
+
+~~~tsx
+if (loading) {
+  return <div className="loading-container">Ładowanie danych z bazy...</div>;
+}
+
+if (error) {
+  return (/* komunikat o błędzie */);
+}
+
+return (/* generator z danymi */);
+~~~
+
+Działa, bo sprawdzam stany w dobrej kolejności. Ale typy pozwalają na sytuacje bez sensu: `loading` i `error` jednocześnie `true` albo `error` równe `true`, a obok niego stare dane. TypeScript nie wie, że te trzy zmienne są ze sobą powiązane.
+
+Można to opisać jednym typem:
+
+~~~ts
+type Stan =
+  | { status: "loading" }
+  | { status: "error" }
+  | { status: "ok"; dane: Destination[] };
+~~~
+
+To unia trzech obiektów. Każdy ma pole `status` z innym typem dosłownym. To pole to **wyróżnik**, bo po nim od razu widać, z którym wariantem masz do czynienia. Po angielsku taka konstrukcja to *discriminated union*, czasem też *tagged union*.
+
+Najważniejsze jest to, że `dane` istnieją tylko w wariancie `"ok"`. Gdy spróbuję sięgnąć po nie bez sprawdzenia:
+
+~~~text
+Property 'dane' does not exist on type 'Stan'.
+  Property 'dane' does not exist on type '{ status: "loading"; }'.
+~~~
+
+TypeScript mówi: „w stanie ładowania nie ma danych, więc nie pozwolę Ci ich użyć”. Dopiero po `if (stan.status === "ok")` zawęża typ do trzeciego wariantu i `stan.dane` jest dostępne. Nie da się przez przypadek pokazać danych w stanie błędu, bo w tym wariancie ich po prostu nie ma.
+
+<Hare type="architecture">
+Zasada, którą warto zapamiętać: **nie pozwalaj typom opisywać sytuacji, które nie mogą się zdarzyć**. Dwie flagi i lista danych pozwalają na wiele kombinacji, a sensowne są tylko trzy. Unia z wyróżnikiem ma dokładnie trzy warianty, tyle ile naprawdę jest stanów.
+
+W Avia Weather nie musiałem tego pisać sam. Pobieraniem danych zajmuje się tam biblioteka TanStack Query, która zwraca `isLoading`, `isError` i `data` i sama pilnuje, żeby stany się nie mieszały. Gdy jednak piszesz pobieranie ręcznie, jak w Destinations, unia z wyróżnikiem to dobre rozwiązanie.
+</Hare>
+
+## Czy obsłużyłem wszystkie warianty?
+
+Unia z wyróżnikiem świetnie współpracuje ze `switch`. Do tego jest mała sztuczka, która pilnuje, żeby żaden wariant nie został pominięty:
+
+~~~ts
+function opis(stan: Stan): string {
+  switch (stan.status) {
+    case "loading":
+      return "Ładowanie danych z bazy...";
+    case "error":
+      return "Nie udało się pobrać danych.";
+    case "ok":
+      return `Wczytano ${stan.dane.length} destynacji.`;
+    default: {
+      const nieobsluzony: never = stan;
+      throw new Error(`Nieobsłużony stan: ${JSON.stringify(nieobsluzony)}`);
+    }
+  }
+}
+~~~
+
+Najciekawsze dzieje się w gałęzi `default`, więc po kolei:
+
+- `switch` zawęża typ tak samo jak `if`. Do `default` trafia tylko to, czego nie złapał żaden `case`. Skoro obsłużone są wszystkie trzy statusy, nie zostaje nic. Typ „nic” nazywa się w TypeScripcie `never`,
+- `const nieobsluzony: never = stan` to pytanie do TypeScriptu: „czy w `stan` naprawdę nic już nie zostało?”. Sama zmienna nie jest do niczego potrzebna. Liczy się tylko to, że TypeScript sprawdza to przypisanie. Nazwa jest dowolna, ale `nieobsluzony` dobrze wygląda w komunikacie błędu,
+- `throw new Error(…)` przerywa program, gdyby mimo wszystko trafiło tu coś nieoczekiwanego, np. dziwne dane z bazy. Funkcja i tak musi coś zrobić w każdej gałęzi, a czytelny błąd jest lepszy niż zwrócenie przypadkowej wartości.
+
+Ale gdy dopiszę do `Stan` czwarty wariant, np. `{ status: "pusto" }` dla bazy bez destynacji, i zapomnę o nim w `switch`, dostanę:
+
+~~~text
+Type '{ status: "pusto"; }' is not assignable to type 'never'.
+~~~
+
+Komunikat od razu mówi, który wariant nie ma swojego `case`. W dużym projekcie, gdzie ten sam stan obsługuje kilka komponentów, to szybki sposób, żeby znaleźć wszystkie miejsca do poprawki.
+
+<Hare type="bug">
+Częsty błąd przy osobnych flagach: sprawdzasz `loading`, zapominasz o `error` i renderujesz dane, których nie ma. W Destinations generator pokazałby wtedy pusty test zamiast komunikatu o błędzie, bo listy destynacji zostałyby puste. Przy unii z wyróżnikiem ten błąd nie przejdzie przez TypeScript, bo bez sprawdzenia `status` nie ma dostępu do `dane`.
+</Hare>
+
+<Hare type="learn">
+Szczegóły w dokumentacji TypeScriptu: [unie](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#union-types) i [typy dosłowne](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#literal-types) w rozdziale o codziennych typach, a [zawężanie](https://www.typescriptlang.org/docs/handbook/2/narrowing.html) razem z [unią z wyróżnikiem](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#discriminated-unions) i [sprawdzaniem przez never](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#exhaustiveness-checking) w rozdziale o zawężaniu.
+</Hare>
+
+## Co nam to daje?
+
+- **Typy dosłowne i unie:** zamiast „dowolny tekst” dokładna lista dozwolonych wartości. Literówka to błąd z podpowiedzią, a edytor pokazuje wszystkie opcje.
+- **Unia z unii:** `Airport | "ALL"` rozszerza listę bez przepisywania jej od nowa.
+- **Zawężanie:** zwykły `if`, `===` albo `return` mówi TypeScriptowi, który wariant masz w danym miejscu.
+- **`Record` z unią:** obiekt, który musi mieć wpis dla każdego wariantu.
+- **Unia z wyróżnikiem:** stany, które się wykluczają, opisane jednym typem. Danych nie da się użyć, zanim się pojawią.
+
+W **części 4** zobaczysz, jak zrobić typ z danych, które już masz. Na tym blogu `keyof`, `typeof` i `satisfies` sprawiają, że nowa seria dopisana w jednym pliku od razu jest sprawdzana we frontmatterze każdego wpisu, a `<Hare type="tipp">` się nie zbuduje. Do zobaczenia!

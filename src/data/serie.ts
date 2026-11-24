@@ -33,7 +33,7 @@ export const serie = {
   },
   "ts-w-praktyce": {
     tytul: "TypeScript w praktyce",
-    opis: "Wnioskowanie, kształt obiektów, unie, generyki i dane z zewnątrz, na kodzie tego bloga, Avia Weather i Destinations.",
+    opis: "Wnioskowanie, typy obiektów, unie, generyki i dane z zewnątrz, na kodzie tego bloga, Avia Weather i Destinations.",
     rodzaj: "srednio-zaawansowane",
     kolejnosc: 1,
     zamknieta: false,
