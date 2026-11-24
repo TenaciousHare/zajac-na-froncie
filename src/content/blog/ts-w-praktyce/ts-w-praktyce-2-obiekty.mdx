@@ -1,0 +1,265 @@
+---
+title: 'TypeScript w praktyce (cz. 2): typy obiektów'
+description: 'type i interface, pola opcjonalne, różnica między ? a | null, extends i readonly. Do tego Props w komponentach Astro i React, na przykładzie listy projektów na tym blogu, pogody z Avia Weather i destynacji z Destinations.'
+pubDate: 2026-11-25
+tags: ['typescript', 'średnio-zaawansowane', 'obiekty']
+series: 'ts-w-praktyce'
+seriesPart: 2
+---
+
+import Hare from "../../../components/Hare.astro";
+
+W [części 1](/blog/ts-w-praktyce-1-wnioskowanie) ustaliliśmy, że TypeScript sam zgaduje typy z wartości, a my dopisujemy je tam, gdzie wchodzi coś nowego. Dziś zajmiemy się tym, co w prawdziwym kodzie pojawia się najczęściej: **obiektami**. Wpis na blogu, projekt, depesza pogodowa, destynacja. Każda z tych rzeczy to obiekt z kilkoma polami, a TypeScript pozwala opisać, jakie to pola i co w nich jest.
+
+Taki opis to **typ obiektu**, czyli opis jego **struktury**: jakie pola ma obiekt i co w nich jest. W angielskiej dokumentacji i na Stack Overflow zobaczysz też słowo *shape* (dosłownie „kształt”). Zobaczysz, jak go zapisać, co zrobić z polem, którego czasem nie ma, i jak opisać, co przyjmuje komponent.
+
+## type, czyli nazwany typ obiektu
+
+Na stronie [Projekty](/projects) są cztery karty: Avia Weather, Destinations, ManualBoarding i ten blog. Dane do nich trzymam w tablicy obiektów, a nad nią stoi opis jednego projektu:
+
+~~~ts
+type Projekt = {
+  name: string;
+  description: string;
+  tech: string[];
+  live: string;
+  repo: string;
+  /** seria z warsztatu, w której opisuję budowę projektu */
+  seria?: KluczSerii;
+};
+
+const projects: Projekt[] = [
+  {
+    name: "Avia Weather",
+    description: "Pogoda lotnicza METAR & TAF…",
+    tech: ["React", "TypeScript", "Vite"],
+    live: "https://avia-weather.netlify.app",
+    repo: "https://github.com/TenaciousHare/Avia-Weather",
+    seria: "jak-powstal-metar",
+  },
+  // …
+];
+~~~
+
+Czytamy od góry:
+
+- `type Projekt = { … }` tworzy nową nazwę typu. Od teraz `Projekt` znaczy „obiekt z takimi polami”,
+- każda linijka w środku to jedno pole: nazwa, dwukropek i typ. `name: string` to pole `name`, w którym jest tekst,
+- `tech: string[]` to **tablica tekstów**. Nawiasy `[]` po typie znaczą „wiele takich”,
+- `seria?: KluczSerii` ma znak zapytania. O nim za chwilę,
+- `const projects: Projekt[]` mówi, że cała tablica składa się z projektów.
+
+W części 1 pisałem, że zmienne z wartością na start zwykle nie potrzebują typu. Tu go jednak dopisuję i mam ku temu powód. Bez `: Projekt[]` TypeScript wywnioskowałby typ z samych danych i przyjąłby wszystko, co w nich wpiszę. Z dopiskiem pilnuje, żeby każdy projekt wyglądał tak samo.
+
+Sprawdziłem to na kopii bloga. Gdy w jednym projekcie wpiszę `nazwa` zamiast `name`, dostaję:
+
+~~~text
+Object literal may only specify known properties, and 'nazwa' does not exist in type 'Projekt'.
+~~~
+
+A gdy w innym zapomnę o polu `name`:
+
+~~~text
+Property 'name' is missing in type '{ description: string; … }' but required in type 'Projekt'.
+~~~
+
+Pierwszy komunikat mówi: „takiego pola w projekcie nie ma”. Drugi: „brakuje pola, które jest obowiązkowe”. Obie pomyłki skutkowałyby pustą kartą na stronie, a tak widzę je od razu w edytorze.
+
+<Hare type="tip">
+Zwróć uwagę na komentarz nad polem `seria`. Zaczyna się od `/**`, a nie od `//`. Taki komentarz edytor pokazuje w podpowiedzi: gdy za miesiąc najadę kursorem na `seria` w zupełnie innym miejscu, VS Code wyświetli „seria z warsztatu, w której opisuję budowę projektu”. To dokumentacja, która jest zawsze pod ręką.
+</Hare>
+
+## Pole opcjonalne, czyli znak zapytania
+
+Nie każdy projekt ma serię na blogu. Avia Weather i Destinations mają swoje „Jak powstał”, ale ManualBoarding nie. Dlatego pole wygląda tak:
+
+~~~ts
+seria?: KluczSerii;
+~~~
+
+Znak `?` po nazwie znaczy: **to pole może nie istnieć**. Projekt bez `seria` jest poprawny i TypeScript go przepuści.
+
+Ma to jednak konsekwencję. Skoro pola może nie być, to `p.seria` jest albo kluczem serii, albo `undefined`. TypeScript o tym pamięta. Gdy na kopii bloga dopisałem `p.seria.length`, dostałem:
+
+~~~text
+'p.seria' is possibly 'undefined'.
+~~~
+
+To ten sam strażnik co w części 1, przy numerze części serii. W prawdziwym kodzie strony Projekty problem jest obsłużony tak:
+
+~~~ts
+const seria = serie.find((s) => s.klucz === p.seria);
+~~~
+
+~~~astro
+{seria && (
+  <Kwadraty tytulSerii={seria.tytul} czesci={seria.czesci} />
+)}
+~~~
+
+- `find` szuka serii o kluczu z projektu. Dla ManualBoarding nic nie znajdzie i zwróci `undefined`,
+- `seria && (…)` pokazuje kwadraty części tylko wtedy, gdy seria się znalazła.
+
+Dlatego karta ManualBoarding nie ma kwadratów, a pozostałe mają.
+
+## ? czy | null
+
+Jest jeszcze drugi sposób na „czasem nic tu nie ma”. W Avia Weather opisałem odpowiedź z serwisu pogodowego AVWX tak (to fragment):
+
+~~~ts
+export interface Metar {
+  station: string;
+  temperature: { value: number };
+  wind_speed: { value: number };
+  wind_gust: { value: number } | null;
+  wind_direction: { value: number | null; repr: string } | null;
+  clouds: { type: string; altitude: number; repr: string }[];
+}
+~~~
+
+Kilka nowych rzeczy naraz, więc po kolei:
+
+- `temperature: { value: number }` to **obiekt w obiekcie**. Temperatura nie jest liczbą, tylko obiektem, który ma pole `value`. Tak zwraca ją AVWX, więc tak ją opisuję,
+- `clouds: { … }[]` to tablica obiektów, bo warstw chmur może być kilka,
+- `wind_gust: { value: number } | null` to porywy wiatru. Pionowa kreska `|` znaczy „albo”. Pole zawsze jest, ale może w nim być obiekt z liczbą **albo** `null`.
+
+Czym to się różni od `?` ? Znak zapytania mówi: pola może w ogóle nie być w obiekcie. `| null` mówi: pole jest zawsze, ale czasem jest puste. AVWX przy spokojnej pogodzie nie pomija porywów, tylko wysyła `"wind_gust": null`. Dlatego opis odpowiada temu, co naprawdę przychodzi.
+
+W komponencie z depeszą wygląda to tak:
+
+~~~tsx
+{metar.wind_gust &&
+  `, w porywach do ${knotsToMps(metar.wind_gust.value)} m/s`}
+~~~
+
+Jeśli porywów nie ma, `metar.wind_gust` to `null` i dopisek się nie pojawia. Jeśli są, TypeScript wie, że w środku jest obiekt z `value`, więc pozwala po nie sięgnąć.
+
+<Hare type="explain">
+`wind_direction` ma `null` aż w dwóch miejscach. Cały obiekt może być `null`, gdy wiatru nie ma wcale. A sam kierunek, `value`, może być `null`, gdy wiatr jest zmienny. W depeszy METAR zapisuje się go jako `VRB` i nie da się podać jednego kąta. Wtedy aplikacja pokazuje surowy zapis z `repr` i dopisek „(zmienny)”. Typ dokładnie odwzorowuje dwa różne powody, dla których kierunku może nie być.
+</Hare>
+
+## interface i extends
+
+Obok `type` jest drugi sposób opisania obiektu: **`interface`**. W Destinations wygląda to tak:
+
+~~~ts
+export interface Destination {
+  abbreviation: string; // kod IATA, np. "WAW"
+  expansion: string; // miasto
+  country: string; // państwo
+  zone: Zone; // strefa np. Schengen
+  airport: Airport; // lotnisko
+}
+
+export interface DestinationWithId extends Destination {
+  id: string;
+}
+~~~
+
+Pierwszy interfejs opisuje jedną destynację. Drugi zaczyna się od `extends Destination`, co znaczy: **weź wszystkie pola z `Destination` i dodaj do nich `id`**.
+
+Po co dwa typy? Bo `id` nadaje baza danych Firestore dopiero przy zapisie. W panelu szkoleniowca formularz dodawania nowej destynacji trzyma dane jako `Destination`, bo nowa destynacja jeszcze nie ma `id`. Lista destynacji pobranych z bazy to już `DestinationWithId[]`, bo każdą można usunąć przyciskiem w tabeli, a do tego potrzebny jest jej identyfikator. Gdybym miał jeden typ z `id`, formularz musiałby wymyślać sztuczne `id` na start. Gdybym miał jeden typ bez `id`, lista nie mogłaby go użyć.
+
+`extends` pilnuje też, żeby oba typy się nie rozjechały. Kiedy dodam do `Destination` nowe pole, `DestinationWithId` dostanie je automatycznie.
+
+<Hare type="decision">
+**type czy interface?** Do opisywania obiektów oba działają prawie tak samo. W moim kodzie jest mieszanka: na blogu `type Projekt`, w Destinations `interface Destination`, a w komponentach Astro zawsze `interface Props`.
+
+Różnice są dwie. Pierwsza to rozszerzanie: interfejs rozszerzasz przez `extends`, jak `DestinationWithId` wyżej. Typ też da się rozszerzyć, ale innym zapisem: `type DestinationWithId = Destination & { id: string }`. Znak `&` znaczy „i to, i to”. Druga różnica: jeśli zadeklarujesz interfejs o tej samej nazwie drugi raz, TypeScript nie zgłosi błędu, tylko dopisze nowe pola do pierwszego. Przy `type` druga deklaracja o tej samej nazwie to błąd.
+
+Dokumentacja TypeScriptu podpowiada prostą zasadę: **używaj `interface`, dopóki nie potrzebujesz czegoś, co umie tylko `type`**. Najczęściej chodzi o unie, czyli „to albo to”, jak `type Airport = "KTW" | "KRK"`. Interfejs nie może sam być unią, choć jego pola mogą. O uniach będzie cała część 3.
+
+Najważniejsze, żeby w jednym projekcie trzymać się jednej zasady. TypeScriptowi jest prawie wszystko jedno, ale człowiekowi czytającemu kod już nie.
+</Hare>
+
+## readonly, czyli pole tylko do odczytu
+
+Ostatnie słowo, które warto znać, to `readonly`:
+
+~~~ts
+type Punkt = { readonly x: number };
+
+const p: Punkt = { x: 1 };
+p.x = 2;
+~~~
+
+Ostatnia linijka da błąd:
+
+~~~text
+Cannot assign to 'x' because it is a read-only property.
+~~~
+
+Pamiętasz z [części 6 serii JS](/blog/js-od-podstaw-6-obiekty), że `const` nie chroni obiektu przed zmianą? `const` blokuje tylko podmianę całego obiektu. `readonly` blokuje zmianę konkretnego pola. Ale uwaga: to ochrona tylko w TypeScripcie. Po zbudowaniu `readonly` znika jak każdy inny typ, a w przeglądarce obiekt da się zmienić jak zwykle.
+
+W moich projektach `readonly` na razie nie używam. Wspominam o nim, bo możesz spotkać je w cudzym kodzie i w dokumentacji bibliotek.
+
+## Props, czyli co przyjmuje komponent
+
+Komponent to kawałek strony, którego używam w wielu miejscach. Pod każdym wpisem na tym blogu są tagi, a rysuje je komponent `TagList`:
+
+~~~astro
+---
+interface Props {
+  tags: string[];
+}
+const { tags } = Astro.props;
+---
+~~~
+
+`interface Props` to umowa: „ten komponent potrzebuje tablicy tagów”. Astro rozpoznaje typ o nazwie `Props` i według niego sprawdza każde użycie komponentu. W szablonie wpisu stoi:
+
+~~~astro
+<TagList tags={post.data.tags} />
+~~~
+
+Gdy na kopii bloga usunąłem `tags={…}`, `astro check` zgłosił:
+
+~~~text
+Property 'tags' is missing in type '{}' but required in type 'Props'.
+~~~
+
+Właściwości komponentu mogą też być opcjonalne. Główny szablon bloga przyjmuje tytuł i opis strony:
+
+~~~astro
+---
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const {
+  title,
+  description = "Blog o nauce frontendu dla początkujących — z Senior Hare w roli przewodnika.",
+} = Astro.props;
+---
+~~~
+
+Tytuł jest obowiązkowy, bo każda strona musi go mieć. Opis ma `?`, a przy wyciąganiu go z `Astro.props` dostaje **wartość domyślną**. Jeśli strona nie poda opisu, wstawi się ten ogólny. Dzięki temu w dalszej części szablonu `description` jest zawsze tekstem i TypeScript nie każe sprawdzać `undefined`.
+
+W React jest dokładnie tak samo, tylko inaczej się to zapisuje. W Avia Weather karta z prognozą TAF ma:
+
+~~~tsx
+interface TafCardProps {
+  taf: Taf;
+}
+
+export function TafCard({ taf }: TafCardProps) {
+  // …
+}
+~~~
+
+Zasada jest ta sama: interfejs opisuje, jakie właściwości przyjmuje komponent, a TypeScript sprawdza każde jego użycie. Różni się tylko zapis. W Astro interfejs musi nazywać się `Props`, a wartości odczytujesz z `Astro.props`. W React nazwa jest dowolna (tu `TafCardProps`), a komponent dostaje właściwości jako parametr funkcji, czyli `{ taf }` w nawiasie.
+
+<Hare type="learn">
+Szczegóły w dokumentacji TypeScriptu: [typy obiektów](https://www.typescriptlang.org/docs/handbook/2/objects.html) (pola opcjonalne, `readonly`, `extends`) i [różnice między type a interface](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#differences-between-type-aliases-and-interfaces). O `Props` w Astro przeczytasz w przewodniku [właściwości komponentu](https://docs.astro.build/en/basics/astro-components/#component-props).
+</Hare>
+
+## Co nam to daje?
+
+- **Struktura obiektu w jednym miejscu:** `type` albo `interface` opisują pola raz, a TypeScript pilnuje ich wszędzie.
+- **Literówki i braki widać od razu:** zła nazwa pola albo zapomniane pole to błąd w edytorze, a nie pusta karta na stronie.
+- **`?` i `| null`:** pole, którego może nie być, i pole, które bywa puste, to dwie różne rzeczy. TypeScript każe obsłużyć obie.
+- **`extends`:** nowy typ na bazie starego, bez przepisywania pól.
+- **`Props`:** komponent mówi, czego potrzebuje, a każde jego użycie jest sprawdzane.
+
+W **części 3** zajmiemy się **uniami**, czyli wartościami typu „to albo to”. Zobaczysz, dlaczego w Destinations lotnisko nie jest zwykłym tekstem, jak TypeScript zawęża typ po zwykłym `if` i czemu reguły lotów w Avia Weather zasługują na coś lepszego niż `string`. Do zobaczenia!

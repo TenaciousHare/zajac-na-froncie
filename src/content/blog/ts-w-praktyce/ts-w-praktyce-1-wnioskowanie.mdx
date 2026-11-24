@@ -185,7 +185,7 @@ Zero błędów, ale 11 podpowiedzi. Wszystkie dotyczyły jednej linijki w pliku 
 import { defineCollection, z } from "astro:content";
 ~~~
 
-i brzmiały tak samo: `'z' is deprecated`. `z` to narzędzie do opisywania kształtu frontmattera (część 6). Astro przeniosło je w inne miejsce, a import ze starego zostanie usunięty w Astro 8. Poprawka to rozbicie importu na dwa:
+i brzmiały tak samo: `'z' is deprecated`. `z` to narzędzie do opisywania struktury frontmattera (część 6). Astro przeniosło je w inne miejsce, a import ze starego zostanie usunięty w Astro 8. Poprawka to rozbicie importu na dwa:
 
 ~~~ts
 import { defineCollection } from "astro:content";
@@ -215,4 +215,4 @@ Szczegóły w dokumentacji TypeScriptu: [wnioskowanie typów](https://www.typesc
 - **Tryb strict:** nie pozwala na ciche `any` i pilnuje `undefined`.
 - **`astro check`:** sprawdza cały projekt, bo samo budowanie tego nie robi.
 
-W **części 2** zajmiemy się **kształtem obiektów**: `type` i `interface`, pola opcjonalne i `Props` w komponentach. Na przykładzie listy projektów na tym blogu i destynacji z Destinations. Do zobaczenia!
+W **części 2** zajmiemy się **typami obiektów**: `type` i `interface`, pola opcjonalne i `Props` w komponentach. Na przykładzie listy projektów na tym blogu i destynacji z Destinations. Do zobaczenia!
