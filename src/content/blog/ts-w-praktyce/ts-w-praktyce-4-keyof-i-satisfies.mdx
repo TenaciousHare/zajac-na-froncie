@@ -1,0 +1,338 @@
+---
+title: 'TypeScript w praktyce (cz. 4): typy zrobione z danych'
+description: 'typeof i keyof w typach, as const i satisfies. Jak jeden obiekt w serie.ts pilnuje frontmattera każdego wpisu, dlaczego edytor podpowiada 13 typów notatek Hare i czemu w Destinations nie da się zapomnieć o lotnisku.'
+pubDate: 2026-11-27
+tags: ['typescript', 'średnio-zaawansowane']
+series: 'ts-w-praktyce'
+seriesPart: 4
+---
+
+import Hare from "../../../components/Hare.astro";
+
+W [części 3](/blog/ts-w-praktyce-3-unie) pisaliśmy unie ręcznie: `"podstawy" | "srednio-zaawansowane" | "warsztat"`, `"Schengen" | "Non-Schengen"`. To działa, gdy lista jest krótka i rzadko się zmienia.
+
+Czasem jednak dane już są w kodzie: obiekt z seriami, obiekt z obrazkami, lista reguł lotów. Pisanie obok nich unii z tymi samymi nazwami to podwójna robota. Gorzej, że przy zmianie łatwo poprawić jedno miejsce i zapomnieć o drugim. Dziś zobaczysz, jak zrobić typ **z danych, które już masz**. Służą do tego cztery słowa: `typeof`, `keyof`, `as const` i `satisfies`. Cały mechanizm serii i notatek na tym blogu opiera się właśnie na nich.
+
+## typeof w typach, czyli „daj mi typ tej wartości”
+
+`typeof` znasz z [części 2 serii JS](/blog/js-od-podstaw-2-zmienne-i-typy). W zwykłym kodzie działa w trakcie działania programu i zwraca tekst:
+
+~~~js
+typeof "KTW"; // "string"
+typeof 42; // "number"
+~~~
+
+W TypeScripcie to samo słowo ma drugie znaczenie. Gdy stoi w miejscu, gdzie pisze się typ (po dwukropku, w nawiasach `<…>`, po `type X =`), nie zwraca tekstu, tylko **typ podanej wartości**. Takie `typeof` znika przy budowaniu razem z resztą typów.
+
+Na tym blogu jest przykład na stronie z listą tagów, w `src/pages/tags/index.astro`:
+
+~~~ts
+const tags = await getAllTags();
+
+const grupy = new Map<string, typeof tags>();
+~~~
+
+Po kolei:
+
+- `getAllTags()` zwraca listę tagów z liczbą wpisów, czyli tablicę obiektów `{ tag: string; count: number }`. Ten typ TypeScript wywnioskował sam, nigdzie go nie zapisałem,
+- `grupy` to mapa, w której kluczem jest pierwsza litera, a wartością lista tagów na tę literę,
+- `typeof tags` znaczy „taki sam typ jak zmienna `tags`”.
+
+Bez `typeof` musiałbym napisać `new Map<string, { tag: string; count: number }[]>()`. Działałoby, ale gdybym kiedyś dodał do tagów nowe pole, musiałbym pamiętać o poprawce w dwóch miejscach. Z `typeof` mapa zawsze ma ten sam typ co lista.
+
+## keyof, czyli „daj mi listę kluczy”
+
+`keyof` bierze typ obiektu i zwraca unię jego kluczy. W Destinations jest `interface Destination` z części 2:
+
+~~~ts
+export interface Destination {
+  abbreviation: string;
+  expansion: string;
+  country: string;
+  zone: Zone;
+  airport: Airport;
+}
+~~~
+
+A w panelu szkoleniowca, w `AdminPanel.tsx`, stoi:
+
+~~~ts
+type SortKey = keyof Destination;
+~~~
+
+`SortKey` to teraz unia `"abbreviation" | "expansion" | "country" | "zone" | "airport"`. Tabelę destynacji można sortować po każdej kolumnie, a funkcja `requestSort(key: SortKey)` przyjmie tylko nazwę pola, które naprawdę istnieje. Gdybym napisał `requestSort("city")`, bo w tabeli kolumna nazywa się „Miasto”, dostałbym:
+
+~~~text
+Argument of type '"city"' is not assignable to parameter of type 'keyof Destination'.
+~~~
+
+To samo robi funkcja losująca pytania do testu w `src/utils/random.ts`:
+
+~~~ts
+export function losoweWartosci(
+  tablica: Destination[],
+  ilosc: number,
+  klucz: keyof Destination,
+): string[] {
+  // …
+}
+~~~
+
+Generator wywołuje ją dwa razy: `losoweWartosci(lista, 20, "abbreviation")` dla kodów lotnisk i `losoweWartosci(lista, 20, "expansion")` dla miast. Parametr `klucz` przyjmie tylko nazwę pola z `Destination`.
+
+Najważniejsze: gdy dodam do `Destination` nowe pole, na przykład `region`, `SortKey` sam je dostanie. Nie przepisuję listy kluczy, bo jest jedna, w interfejsie.
+
+## keyof typeof, czyli klucze prawdziwego obiektu
+
+`keyof` działa na typie. `Destination` już jest typem, więc wystarczy `keyof Destination`. Co jednak, gdy mam zwykły obiekt z wartościami, a nie typ?
+
+Tak jest w komponencie `Hare.astro`, który rysuje notatki Senior Hare na marginesie. Na górze jest obiekt z obrazkami:
+
+~~~ts
+const badges = {
+  explain,
+  code,
+  tip,
+  bug,
+  // … razem 13 obrazków
+  decision,
+};
+~~~
+
+`badges` to wartość, a nie typ, więc `keyof badges` się nie skompiluje. Trzeba najpierw wziąć typ obiektu przez `typeof`, a potem jego klucze przez `keyof`:
+
+~~~ts
+interface Props {
+  type: keyof typeof badges;
+}
+~~~
+
+<Hare type="simple">
+`keyof typeof badges` najłatwiej czytać od prawej do lewej: weź obiekt `badges`, zrób z niego typ (`typeof`), wypisz jego klucze (`keyof`). Wychodzi unia `"explain" | "code" | "tip" | …`, trzynaście nazw.
+</Hare>
+
+Dzięki temu edytor przy `<Hare type="` od razu pokazuje listę wszystkich trzynastu notatek. A gdy w pliku `.astro` wpiszę `<Hare type="tipp">`, `astro check` zgłasza:
+
+~~~text
+Type '"tipp"' is not assignable to type '"success" | "code" | "explain" | "tip" | "bug" | "why" | "works" | "debug" | "learn" | "question" | "simple" | "architecture" | "decision"'. Did you mean '"tip"'?
+~~~
+
+Kilka linijek niżej w tym samym komponencie jest drugi obiekt, z podpisami notatek:
+
+~~~ts
+const labels: Record<keyof typeof badges, string> = {
+  explain: "Wyjaśnienie",
+  code: "Kod",
+  tip: "Wskazówka",
+  // …
+};
+~~~
+
+`Record` z unią jako kluczem znasz z części 3: obiekt musi mieć wpis dla każdego wariantu. Gdy dorysuję czternasty obrazek i dodam go do `badges`, TypeScript od razu powie, że w `labels` brakuje dla niego podpisu. Nowa notatka nie pojawi się na stronie bez etykiety.
+
+<Hare type="debug">
+Przy pisaniu tego wpisu sprawdziłem, co się dzieje z literówką **we wpisie**, czyli w pliku `.mdx`. Wynik mnie zaskoczył: `astro check` zwrócił 0 błędów, bo nie sprawdza typów w plikach MDX. Za to `astro build` się wysypał z błędem `ExpectedImage`, bo `badges["tipp"]` to `undefined` i komponent obrazka nie dostał pliku. Czyli w plikach `.astro` pilnuje mnie TypeScript, a we wpisach dopiero budowanie strony. Też dobrze, bo wpis z literówką nie trafi do internetu, ale komunikat jest dużo mniej czytelny.
+</Hare>
+
+## as const, czyli „zapamiętaj dokładnie”
+
+Zanim dojdziemy do `satisfies`, trzeba zobaczyć, jak TypeScript zgaduje typy tekstów. Z części 1 wiesz, że robi to sam. Ale robi to w dwóch trybach:
+
+~~~ts
+let kolor = "green"; // typ: string
+const kolor2 = "green"; // typ: "green"
+~~~
+
+`let` może się później zmienić, więc TypeScript zakłada ogólny `string`. `const` się nie zmieni, więc dostaje typ dosłowny `"green"`. Ale w obiektach i tablicach nawet `const` nie wystarcza:
+
+~~~ts
+const seria = { rodzaj: "podstawy" }; // rodzaj: string
+const reguly = ["VFR", "MVFR", "IFR", "LIFR"]; // string[]
+~~~
+
+Pola obiektu i elementy tablicy da się później zmienić (`seria.rodzaj = "warsztat"`), więc TypeScript znowu zakłada `string`.
+
+Dopisek `as const` mówi: „ta wartość się nie zmieni, zapamiętaj ją dokładnie”:
+
+~~~ts
+const reguly = ["VFR", "MVFR", "IFR", "LIFR"] as const;
+// typ: readonly ["VFR", "MVFR", "IFR", "LIFR"]
+~~~
+
+Tablica staje się tylko do odczytu (`readonly` z części 2), a TypeScript pamięta każdy tekst osobno. Z takiej tablicy da się zrobić unię:
+
+~~~ts
+type FlightRules = (typeof reguly)[number];
+// "VFR" | "MVFR" | "IFR" | "LIFR"
+~~~
+
+Znowu od prawej: weź tablicę `reguly`, zrób z niej typ (`typeof`), a `[number]` znaczy „typ elementu pod dowolnym numerem”. Wychodzi unia wszystkich czterech reguł.
+
+Po co to? Gdy listę potrzebujesz **i w kodzie, i w typach**. Na przykład żeby zbudować z niej opcje w `<select>` i jednocześnie mieć typ, który przyjmie tylko te opcje. Lista jest raz, a typ robi się z niej sam. W części 6 to samo zrobi za nas biblioteka Zod, przy poprawce reguł lotów w Avia Weather.
+
+## satisfies, czyli sprawdź, ale nie zmieniaj
+
+Teraz najważniejszy przykład. W `src/data/serie.ts` jest obiekt ze wszystkimi seriami na blogu:
+
+~~~ts
+type Seria = {
+  tytul: string;
+  opis: string;
+  rodzaj: RodzajSerii;
+  kolejnosc: number;
+  zamknieta: boolean;
+};
+
+export const serie = {
+  "html-od-podstaw": {
+    tytul: "HTML od podstaw",
+    rodzaj: "podstawy",
+    // …
+  },
+  "ts-w-praktyce": {
+    tytul: "TypeScript w praktyce",
+    rodzaj: "srednio-zaawansowane",
+    // …
+  },
+  // … pozostałe serie
+} satisfies Record<string, Seria>;
+
+export type KluczSerii = keyof typeof serie;
+~~~
+
+Od końca:
+
+- `KluczSerii` to `keyof typeof serie`, czyli unia nazw wszystkich serii: `"html-od-podstaw" | "css-od-podstaw" | … | "redesign-z-claude"`,
+- `satisfies Record<string, Seria>` sprawdza, czy obiekt pasuje do typu „obiekt, w którym każda wartość to `Seria`”.
+
+Sprawdza naprawdę. Gdy w nowej serii zapomnę o polu `kolejnosc`, dostanę:
+
+~~~text
+Property 'kolejnosc' is missing in type '{ tytul: string; rodzaj: "podstawy"; … }' but required in type 'Seria'.
+~~~
+
+A literówka w rodzaju kończy się tym samym błędem co w części 3: `Type '"warsztaty"' is not assignable to type 'RodzajSerii'. Did you mean '"warsztat"'?`
+
+Ale przecież tak samo sprawdzałaby zwykła adnotacja z dwukropkiem. Po co nowe słowo? Zobaczmy, co się stanie, gdy zamiast `satisfies` napiszę:
+
+~~~ts
+export const serie: Record<string, Seria> = {
+  // … te same serie
+};
+
+export type KluczSerii = keyof typeof serie;
+~~~
+
+Sprawdzanie zostaje to samo. Ale adnotacja robi coś jeszcze: **zastępuje** typ wywnioskowany z wartości tym, który podałem. Od tej chwili TypeScript nie wie, jakie serie są w obiekcie. Wie tylko, że to „jakiś obiekt z tekstowymi kluczami”. Więc `keyof typeof serie` to po prostu `string`.
+
+W praktyce oznacza to, że w `projects.astro` to przejdzie bez słowa:
+
+~~~ts
+seria: "jak-powstal-mtar", // literówka, a KluczSerii to teraz string
+~~~
+
+Tak samo `serie["cokolwiek"]` nie będzie błędem. TypeScript uzna, że skoro klucz może być dowolnym tekstem, to taka seria pewnie istnieje.
+
+Z `satisfies` ta sama literówka daje:
+
+~~~text
+Type '"jak-powstal-mtar"' is not assignable to type '"html-od-podstaw" | "css-od-podstaw" | "js-od-podstaw" | "ts-w-praktyce" | "jak-powstal-destinations" | "jak-powstal-metar" | "redesign-z-claude" | undefined'. Did you mean '"jak-powstal-metar"'?
+~~~
+
+TypeScript rozpisał tu całą unię `KluczSerii`, a na końcu dodał `undefined`, bo pole `seria` jest opcjonalne (to z części 3: pole z `?` to unia z `undefined`).
+
+Różnica w jednym zdaniu:
+
+- **adnotacja `: Typ`** sprawdza wartość i zapomina, co w niej było. Zostaje tylko typ z adnotacji,
+- **`satisfies Typ`** sprawdza wartość i zostawia jej dokładny typ. Klucze, teksty i liczby są dalej znane.
+
+Przy okazji `satisfies` zachowuje też typy dosłowne w środku. `serie["html-od-podstaw"].rodzaj` ma typ `"podstawy"`, a nie całą unię `RodzajSerii`.
+
+<Hare type="decision">
+Kiedy co wybieram? Adnotację piszę, gdy chcę, żeby zmienna miała dokładnie ten typ i nic więcej, na przykład `const projects: Projekt[]` w `projects.astro`. Lista projektów to po prostu lista, nie robię z niej żadnych nowych typów. `satisfies` wybieram, gdy z wartości chcę potem zrobić typ, tak jak `KluczSerii` z `serie`. Jeśli piszesz `keyof typeof` na obiekcie z adnotacją, to sygnał, że chodziło Ci o `satisfies`.
+</Hare>
+
+## Jedno źródło prawdy
+
+Teraz widać, po co to wszystko. Nazwy serii są na tym blogu wpisane **raz**, jako klucze obiektu `serie`. Z nich korzysta cały projekt:
+
+- `KluczSerii` powstaje z obiektu przez `keyof typeof`,
+- `type Projekt` w `projects.astro` ma pole `seria?: KluczSerii`, więc projekt może wskazywać tylko istniejącą serię,
+- schemat frontmattera w `src/content.config.ts` sprawdza pole `series` w każdym wpisie:
+
+~~~ts
+series: z
+  .enum(Object.keys(serie) as [KluczSerii, ...KluczSerii[]])
+  .optional(),
+~~~
+
+`Object.keys(serie)` zwraca w trakcie budowania prawdziwą listę nazw serii, a `z.enum` z biblioteki Zod pozwala tylko na wartości z tej listy. Dlaczego jest tu `as` i co dokładnie robi, wyjaśnię w części 6. Na razie wystarczy, że wpis z literówką we frontmatterze, np. `series: 'ts-w-prkatyce'`, zatrzymuje budowanie:
+
+~~~text
+[InvalidContentEntryDataError] blog → ts-w-praktyce-3-unie data does not match collection schema.
+  series: Invalid option: expected one of "html-od-podstaw"|"css-od-podstaw"|"js-od-podstaw"|"ts-w-praktyce"|"jak-powstal-destinations"|"jak-powstal-metar"|"redesign-z-claude"
+~~~
+
+Komunikat od razu wypisuje wszystkie dozwolone serie, choć nigdzie nie podałem tej listy drugi raz.
+
+<Hare type="architecture">
+Tak wyglądało dodanie tej serii: dopisałem jeden klucz `"ts-w-praktyce"` w `serie.ts`. Od tej chwili frontmatter nowych wpisów mógł go użyć, projekt mógł go wskazać, a strona główna i `/blog` pokazały nową serię (funkcja `getSeriesOverview` przechodzi po tym samym obiekcie). Nazwy serii nie wpisywałem w żadnym innym pliku. To jest **jedno źródło prawdy**: dane są w jednym miejscu, a typy i sprawdzanie same się z nich robią.
+</Hare>
+
+## Record z unią: żadne lotnisko nie zostanie pominięte
+
+W generatorze testów w Destinations destynacje są pogrupowane według lotnisk. Stan wygląda tak (w uproszczeniu, dla dwóch lotnisk):
+
+~~~tsx
+const [destinations, setDestinations] = useState<
+  Record<Airport, Destination[]>
+>({
+  KTW: [],
+  KRK: [],
+});
+~~~
+
+`Record<Airport, Destination[]>` to obiekt, który ma listę destynacji dla **każdego** lotniska z unii `Airport`. Na start wszystkie listy są puste, a po pobraniu danych z bazy się wypełniają.
+
+Gdybym przy pustych listach zapomniał o jednym lotnisku:
+
+~~~text
+Property 'KRK' is missing in type '{ KTW: never[]; }' but required in type 'Record<Airport, Destination[]>'.
+~~~
+
+To ten sam mechanizm co przy `labels` w `Hare.astro`. Gdy do `Airport` dojdzie nowe lotnisko, TypeScript pokaże każde miejsce, w którym obiekt z lotniskami nie ma jeszcze dla niego wpisu. Nie muszę szukać ich sam.
+
+<Hare type="explain">
+W Destinations `Airport` to kod IATA lotniska wylotowego, dla którego szkoleniowiec przygotowuje test. `Destination` to lotnisko docelowe, do którego z niego się lata: kod, miasto, kraj i strefa.
+</Hare>
+
+## Jeszcze jedno keyof typeof, tym razem z as
+
+Na koniec funkcja `odmien` z `src/utils/posts.ts`, która pisze „1 wpis”, „3 wpisy”, „35 wpisów”:
+
+~~~ts
+export function odmien(
+  n: number,
+  formy: { one: string; few: string; many: string },
+) {
+  const kategoria = odmiana.select(n) as keyof typeof formy;
+  return `${n} ${formy[kategoria] ?? formy.many}`;
+}
+~~~
+
+`keyof typeof formy` to znowu unia kluczy obiektu: `"one" | "few" | "many"`. Nowe jest tu `as`. `odmiana.select(n)` może zwrócić więcej kategorii, niż jest w `formy`, a `as` mówi TypeScriptowi: „potraktuj to jako jeden z tych trzech kluczy”. To nie jest sprawdzenie, tylko obietnica. Skąd wiem, że tutaj jest uczciwa, i po co jest `?? formy.many`, opowiem w części 6, która jest w całości o takich obietnicach.
+
+<Hare type="learn">
+Szczegóły w dokumentacji TypeScriptu: [typeof w typach](https://www.typescriptlang.org/docs/handbook/2/typeof-types.html), [keyof](https://www.typescriptlang.org/docs/handbook/2/keyof-types.html) i [typ elementu przez `[number]`](https://www.typescriptlang.org/docs/handbook/2/indexed-access-types.html). `as const` jest opisane w [notatkach do TypeScriptu 3.4](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-4.html#const-assertions), a `satisfies` w [notatkach do TypeScriptu 4.9](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-9.html#the-satisfies-operator), razem z przykładem, który bardzo przypomina `serie.ts`.
+</Hare>
+
+## Co nam to daje?
+
+- **`typeof` w typach:** typ wzięty z wartości, zamiast przepisywania go ręcznie.
+- **`keyof`:** unia kluczy obiektu. Nowe pole w interfejsie od razu jest w unii.
+- **`keyof typeof`:** to samo dla zwykłego obiektu z wartościami, jak `badges` w `Hare.astro`.
+- **`as const`:** TypeScript pamięta dokładne teksty, a z tablicy da się zrobić unię.
+- **`satisfies`:** sprawdza wartość jak adnotacja, ale nie gubi jej dokładnego typu.
+- **Jedno źródło prawdy:** nowa seria to jeden klucz w `serie.ts`, a reszta projektu sama się dostosowuje.
+
+W **części 5** zajmiemy się **generykami**, czyli typami z parametrem. Używasz ich od początku serii, nawet jeśli nie wiesz o tym: `Map<string, number>`, `Record<Airport, Destination[]>`, `CollectionEntry<"blog">`. Zobaczysz, jak działają i jak jedna funkcja w Avia Weather pobiera trzy różne rodzaje danych bez gubienia typów. Do zobaczenia!
