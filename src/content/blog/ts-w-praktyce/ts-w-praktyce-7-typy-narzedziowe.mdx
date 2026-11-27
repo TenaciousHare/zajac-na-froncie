@@ -1,0 +1,191 @@
+---
+title: 'TypeScript w praktyce (cz. 7): typy narzędziowe i co dalej'
+description: 'Finał serii. Partial, Pick, Omit, ReturnType i Awaited, czyli gotowe przekształcenia typów. Jak wziąć typ wyniku funkcji bez przepisywania go, jak czytać długie komunikaty błędów i podsumowanie całej serii.'
+pubDate: 2026-11-30
+tags: ['typescript', 'średnio-zaawansowane']
+series: 'ts-w-praktyce'
+seriesPart: 7
+---
+
+import Hare from "../../../components/Hare.astro";
+
+W [części 6](/blog/ts-w-praktyce-6-dane-z-zewnatrz) doszliśmy do granicy, na której typy się kończą. Dziś ostatnia część serii i coś lżejszego: **typy narzędziowe** (ang. *utility types*).
+
+To gotowe przekształcenia typów, które TypeScript ma wbudowane. Biorą typ, który już masz, i robią z niego nowy: z polami opcjonalnymi, z wybranymi polami, bez jednego pola. Technicznie to zwykłe generyki z części 5, tylko że napisał je ktoś inny. Jeden znasz już od dawna: `Record<K, V>` z części 3 i 4. Dziś poznasz kilka kolejnych i zobaczysz, gdzie pasują w kodzie tego bloga i Destinations, a gdzie by tylko przeszkadzały.
+
+## Partial, czyli wszystkie pola opcjonalne
+
+`Partial<T>` robi z każdego pola w `T` pole opcjonalne, czyli dopisuje mu `?` z części 2. Na przykładzie `Destination` z Destinations:
+
+~~~ts
+type Szkic = Partial<Destination>;
+// { abbreviation?: string; expansion?: string; country?: string; zone?: Zone; airport?: Airport }
+~~~
+
+Do `Szkic` pasuje każdy obiekt z dowolną częścią pól, także pusty `{}`.
+
+W panelu szkoleniowca jest formularz dodawania destynacji. Jego stan to pełne `Destination`, a na start pola tekstowe są puste:
+
+~~~ts
+const [formData, setFormData] = useState<Destination>({
+  abbreviation: "",
+  expansion: "",
+  country: "",
+  zone: "Schengen",
+  airport: "KTW",
+});
+~~~
+
+Przy planowaniu serii zastanawiałem się, czy `Partial<Destination>` nie byłby tu lepszy, bo formularz na początku przecież „nie ma” danych. Sprawdziłem i odpowiedź brzmi: nie. Gdy stan jest `Partial`, przy zapisie do bazy TypeScript protestuje:
+
+~~~text
+Argument of type 'Partial<Destination>' is not assignable to parameter of type 'Destination'.
+  Types of property 'abbreviation' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+~~~
+
+Musiałbym przed zapisem sprawdzić każde pole po kolei, a i tak zrobiłbym to tylko po to, żeby wrócić do pełnego `Destination`. Puste teksty na start są prostsze: obiekt od początku ma wszystkie pola, a o to, żeby nie były puste, dba atrybut `required` w formularzu.
+
+<Hare type="decision">
+Kiedy więc `Partial`? Gdy funkcja naprawdę dostaje tylko część pól. Typowy przykład to edycja: `zaktualizuj(id: string, zmiany: Partial<Destination>)`, gdzie przekazujesz tylko to, co się zmieniło, np. `{ country: "Niemcy" }`. W Destinations nie ma jeszcze edytowania destynacji, więc `Partial` nie ma tam swojego miejsca. Lekcja z tego przykładu: typ narzędziowy nie jest lepszy dlatego, że jest sprytniejszy. Pasuje wtedy, gdy opisuje to, co dzieje się w kodzie.
+</Hare>
+
+## Omit i Pick, czyli bez pola albo tylko wybrane pola
+
+`Omit<T, "pole">` to typ `T` bez podanego pola. W części 2 był w Destinations taki zapis:
+
+~~~ts
+export interface Destination {
+  abbreviation: string;
+  expansion: string;
+  country: string;
+  zone: Zone;
+  airport: Airport;
+}
+
+export interface DestinationWithId extends Destination {
+  id: string;
+}
+~~~
+
+Ten sam związek da się zapisać odwrotnie: najpierw pełny typ z `id`, a potem wersja bez niego:
+
+~~~ts
+type Destination = Omit<DestinationWithId, "id">;
+~~~
+
+Wynik jest ten sam. Gdy spróbuję podać `id` w obiekcie typu `Destination`, dostanę:
+
+~~~text
+Object literal may only specify known properties, and 'id' does not exist in type 'Destination'.
+~~~
+
+Który kierunek wybrać? W Destinations zostałbym przy `extends`. Destynacja bez `id` to coś, co naprawdę istnieje w aplikacji: tak wygląda obiekt w formularzu, zanim trafi do bazy. `id` dokleja dopiero Firestore. Więc `Destination` jest punktem wyjścia, a `DestinationWithId` jego rozszerzeniem. `Omit` przydaje się, gdy pełny typ dostajesz z zewnątrz, np. z biblioteki, i nie możesz go podzielić na dwa.
+
+`Pick<T, "a" | "b">` działa w drugą stronę: zostawia tylko wymienione pola. Na tym blogu wpis ma sporo danych we frontmatterze, a mały komponent często potrzebuje dwóch z nich:
+
+~~~ts
+type Wpis = CollectionEntry<"blog">;
+type DaneKarty = Pick<Wpis["data"], "title" | "pubDate">;
+// { title: string; pubDate: Date }
+~~~
+
+`Wpis["data"]` to zapis `T[K]` z części 5: typ pola `data` we wpisie, czyli frontmatter. `Pick` wybiera z niego tytuł i datę. Gdy podam datę jako tekst, TypeScript od razu to zauważy:
+
+~~~text
+Type 'string' is not assignable to type 'Date'.
+~~~
+
+Typ daty nie jest przepisany ręcznie, tylko wzięty ze schematu. Gdy kiedyś zmienię w schemacie `pubDate`, `DaneKarty` zmieni się razem z nim.
+
+## ReturnType i Awaited, czyli typ wyniku funkcji
+
+Teraz przykład, na który czekałem przez całą serię. W `src/utils/posts.ts` jest funkcja `getSeriesOverview()`, która zbiera wszystkie serie razem z ich częściami. Z niej korzysta strona główna i `/blog`. Zwraca obiekt z polami `klucz`, `tytul`, `opis`, `czesci`, `wkrotce`, `zamknieta` i kilkoma innymi. Nigdzie nie opisałem tej struktury typem. TypeScript wywnioskował ją sam, jak w części 1.
+
+Na stronie głównej karta serii (tytuł, opis, liczba części i kwadraty) powtarza się trzy razy: dla podstaw, dla serii średnio zaawansowanych i dla warsztatu. To dobry kandydat na osobny komponent, np. `KartaSerii.astro`. Tylko jaki typ ma mieć jego właściwość `seria`? Mógłbym przepisać ręcznie wszystkie pola, ale wtedy przy każdej zmianie w `getSeriesOverview` musiałbym pamiętać o drugim miejscu. Zamiast tego biorę typ prosto z funkcji:
+
+~~~ts
+import type { getSeriesOverview } from "../utils/posts";
+
+type SeriaPrzeglad = Awaited<ReturnType<typeof getSeriesOverview>>[number];
+
+interface Props {
+  seria: SeriaPrzeglad;
+}
+~~~
+
+Ta linijka wygląda groźnie, ale składa się z rzeczy, które już znasz. Czytamy ją od środka:
+
+- `typeof getSeriesOverview` to typ funkcji, czyli `typeof` w typach z części 4,
+- `ReturnType<…>` wyciąga z typu funkcji typ tego, co zwraca. Funkcja jest asynchroniczna, więc zwraca `Promise<…[]>`, czyli obietnicę tablicy serii,
+- `Awaited<…>` „rozpakowuje” obietnicę, tak jak robi to `await` w zwykłym kodzie. Zostaje sama tablica,
+- `[number]` to typ elementu tablicy, też z części 4. Zostaje jedna seria.
+
+Przy okazji: `import type` zamiast zwykłego `import`, bo z `posts.ts` potrzebuję tu tylko typu funkcji, a nie samej funkcji. Taki import znika przy budowaniu.
+
+Sprawdziłem ten komponent na kopii bloga: `astro check` przyjmuje go bez błędów, a gdy przekażę mu niepełną serię, od razu protestuje. Samo wydzielenie karty zostawiam sobie na osobne porządki na stronie głównej, bo to zmiana w kodzie strony, a nie w typach.
+
+<Hare type="explain">
+Jedna ciekawostka z tego typu. `seria.klucz` ma typ `string`, a nie `KluczSerii` z części 4. Dlaczego? Bo `getSeriesOverview` przechodzi po seriach przez `Object.entries(serie)`, a `Object.entries`, tak jak `Object.keys` z części 6, zawsze daje klucze jako zwykły `string`. Typ wyniku funkcji jest dokładnie taki, jak wynika z jej kodu, i nic więcej.
+</Hare>
+
+<Hare type="simple">
+Zanim napiszesz własny typ, sprawdź, czy da się go wziąć z czegoś, co już istnieje. Z wartości przez `typeof`, z kluczy przez `keyof`, z innego typu przez `Pick` albo `Omit`, z funkcji przez `ReturnType`. Typ wzięty ze źródła nie rozjedzie się z nim przy następnej zmianie.
+</Hare>
+
+## Jak czytać długie komunikaty błędów
+
+Przy takich typach komunikaty błędów potrafią być bardzo długie. Gdy przekazałem do `KartaSerii` obiekt z samym tytułem, `astro check` zwrócił coś takiego (skróciłem środek):
+
+~~~text
+Type '{ tytul: string; }' is not assignable to type '{ czesci: { id: string; body?: string | undefined; collection: "blog"; data: { … }; … }[]; …'.
+  Type '{ tytul: string; }' is missing the following properties from type '{ czesci: …': czesci, wkrotce, zamknieta, opis, and 3 more.
+~~~
+
+Pierwsza linijka jest prawie nieczytelna, bo TypeScript rozpisuje w niej cały typ serii. Ale **najważniejsze jest na końcu**. Ostatnia linijka mówi wprost: brakuje pól `czesci`, `wkrotce`, `zamknieta`, `opis` i trzech innych.
+
+Tak samo było przy `Partial` wyżej. Komunikat miał cztery linijki, a każda kolejna była bardziej konkretna:
+
+1. `Partial<Destination>` nie pasuje do `Destination`,
+2. nie zgadza się pole `abbreviation`,
+3. `string | undefined` nie pasuje do `string`,
+4. `undefined` nie pasuje do `string`.
+
+Pierwsza linijka mówi, **gdzie** jest problem, ostatnia mówi, **na czym** polega.
+
+<Hare type="tip">
+Przy długim błędzie TypeScriptu czytaj od końca. Ostatnia linijka zwykle wskazuje konkretne pole albo wartość, a dopiero potem, gdy trzeba, wracaj wyżej, żeby zobaczyć, w którym miejscu kodu to się dzieje. I nie przejmuj się rozpisanymi typami w środku komunikatu. Najczęściej wystarczy znaleźć w nich nazwę pola, o które chodzi.
+</Hare>
+
+<Hare type="learn">
+Wszystkie wbudowane typy narzędziowe są opisane na jednej stronie dokumentacji TypeScriptu: [Utility Types](https://www.typescriptlang.org/docs/handbook/utility-types.html). Oprócz tych z dzisiejszego wpisu są tam m.in. `Required` (odwrotność `Partial`), `Readonly`, `Exclude` i `Extract` (przydatne przy uniach z części 3) i `Parameters` (typy parametrów funkcji).
+</Hare>
+
+## Podsumowanie serii
+
+Przez siedem części przeszliśmy drogę od „TypeScript sam zgaduje typy” do danych, którym nie można ufać:
+
+- **wnioskowanie** — kiedy typ pisać, a kiedy zostawić TypeScriptowi,
+- **typy obiektów** — `type`, `interface`, pola opcjonalne i `Props` w komponentach,
+- **unie i zawężanie** — „to albo to” i zwykły `if`, który mówi TypeScriptowi, który wariant masz,
+- **typy z danych** — `typeof`, `keyof` i `satisfies`, czyli jedno źródło prawdy,
+- **generyki** — funkcje i typy z parametrem zamiast `any`,
+- **dane z zewnątrz** — `unknown`, `as` i walidacja, czyli granica, na której typy się kończą,
+- **typy narzędziowe** — gotowe przekształcenia zamiast przepisywania typów ręcznie.
+
+Myśl przewodnia serii brzmiała: **typy opisują strukturę danych. Im dokładniej ją opiszesz, tym więcej błędów TypeScript złapie za Ciebie.** Po siedmiu częściach dopisałbym do niej jedno zdanie: typy pilnują Twojego kodu, a dane z zewnątrz trzeba sprawdzić osobno. Razem dają aplikację, która nie wysypuje się na literówce ani na dziwnej odpowiedzi z API.
+
+Przy okazji seria poprawiła też trochę moich projektów. Avia Weather sprawdza teraz odpowiedzi AVWX, a reguły lotów mają własną unię zamiast zwykłego tekstu. Zobaczyłem też, że `astro check` nie sprawdza plików MDX i że karta serii na stronie głównej prosi się o osobny komponent. Pisanie o kodzie to dobry sposób, żeby przeczytać go jeszcze raz uważniej.
+
+<Hare type="success">
+Pierwsza seria dla średnio zaawansowanych za nami. Jeśli przeszedłeś przez wszystkie siedem części, rozumiesz już nie tylko, jak pisać typy, ale też, czego TypeScript nie sprawdzi za Ciebie. To dużo więcej niż znajomość składni.
+</Hare>
+
+## Co dalej?
+
+Wszystko, co było w tej serii, działa tak samo w React. `interface TafCardProps` w Avia Weather czy stan z `useState<…>` w Destinations to te same typy obiektów, unie i generyki, które poznaliśmy na kodzie tego bloga. Jeśli chcesz poćwiczyć, oba projekty są publiczne na moim GitHubie i zachęcam do czytania ich kodu z tą serią obok.
+
+W planach mam kolejne serie dla średnio zaawansowanych i dalsze historie o tym, jak powstają moje projekty. Jeśli nie chcesz ich przegapić, zajrzyj na mój [LinkedIn](https://www.linkedin.com/in/pawel-zajaczkowski91/), [Instagram](https://www.instagram.com/zajac.na.froncie/) albo dodaj [kanał RSS](/rss.xml) do swojego czytnika.
+
+Dziękuję za wspólną drogę przez całą serię! Do zobaczenia!
