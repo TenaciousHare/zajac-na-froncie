@@ -1,0 +1,318 @@
+---
+title: 'TypeScript w praktyce (cz. 6): dane z zewnątrz'
+description: 'Typy znikają przy budowaniu, więc nie sprawdzą odpowiedzi z API ani dokumentu z bazy. any, unknown, asercja as i walidacja biblioteką Zod. Do tego obiecana poprawka reguł lotów w Avia Weather.'
+pubDate: 2026-11-29
+tags: ['typescript', 'średnio-zaawansowane', 'api', 'bezpieczeństwo']
+series: 'ts-w-praktyce'
+seriesPart: 6
+---
+
+import Hare from "../../../components/Hare.astro";
+
+Przez pięć części TypeScript łapał za mnie literówki, brakujące pola i zapomniane warianty. Wszystko to działo się **przed** uruchomieniem kodu: w edytorze, w `astro check`, przy budowaniu. Z części 1 wiesz, że potem typy znikają i przeglądarka dostaje zwykły JavaScript.
+
+To ma ważną konsekwencję. TypeScript sprawdza tylko Twój kod. Nie sprawdzi danych, które pojawią się dopiero w trakcie działania: odpowiedzi z API, dokumentu z bazy, wartości z `localStorage` albo z formularza. Tam, gdzie dane przychodzą z zewnątrz, kończy się to, co TypeScript może zagwarantować. Dziś zobaczysz, gdzie dokładnie przebiega ta granica w moich projektach i co z nią zrobić.
+
+## Typy mówią „OK”, a aplikacja się wysypuje
+
+W części 5 była funkcja, która w Avia Weather pobiera dane z serwisu AVWX:
+
+~~~ts
+async function fetchAvwx<T>(type: string, icao: string): Promise<T> {
+  const res = await fetch(`/api/avwx?type=${type}&icao=${icao}`);
+  if (!res.ok) throw new Error(`Błąd API: ${res.status}`);
+  return res.json();
+}
+~~~
+
+Zobaczmy, którędy idą dane. Przeglądarka pyta moją funkcję serwerową na Netlify (opisywałem ją w [części 2 serii o Avia Weather](/blog/jak-powstal-metar-2-dane-i-funkcja-serwerowa)). Ta dokleja klucz API, pyta AVWX i oddaje odpowiedź dalej bez zmian. Sama funkcja jest w czystym JavaScripcie, więc po drodze nic nie sprawdza typów. Potem `res.json()` zamienia tekst odpowiedzi na obiekt, a `fetchAvwx` obiecuje, że to `Metar`.
+
+Kto sprawdza, że to naprawdę `Metar`? Nikt. Gdyby AVWX zmienił format albo przysłał `"temperature": null` dla stacji bez czujnika, typy nadal by się zgadzały. Karta pogody dalej by czytała `metar.temperature.value`, a w przeglądarce pojawiłby się błąd:
+
+~~~text
+TypeError: Cannot read properties of null (reading 'value')
+~~~
+
+<Hare type="why">
+Dlaczego TypeScript tego nie złapał? Bo sprawdzał kod, a nie dane. W kodzie wszystko się zgadza: `Metar` ma pole `temperature` z `value`. Ale typ `Metar` to tylko mój opis tego, co **powinno** przyjść. TypeScript nie ma jak sprawdzić, co naprawdę przyjdzie, bo przy budowaniu tej odpowiedzi jeszcze nie ma.
+</Hare>
+
+## any, czyli wyłączony TypeScript
+
+Jak to możliwe, że `return res.json()` w ogóle się kompiluje, skoro funkcja obiecuje `Promise<T>`? Bo `res.json()` zwraca `Promise<any>`.
+
+`any` znaczy „cokolwiek, nie sprawdzaj”. Na wartości typu `any` możesz zrobić wszystko:
+
+~~~ts
+const dane = await res.json(); // any
+dane.cokolwiek.dalej(); // kompiluje się
+~~~
+
+TypeScript nie zgłosi błędu, nawet jeśli `cokolwiek` nie istnieje. Co więcej, `any` da się przypisać do każdego typu, także do `T`. Dlatego `fetchAvwx` przechodzi sprawdzanie: `any` „pasuje” do obietnicy `Metar`, `Taf` i `Station` jednocześnie.
+
+W części 5 pisałem, że `any` przechodzi dalej. Tu widać to w praktyce: jedno `any` z `res.json()` zamienia się w `Metar`, a od tej chwili cała aplikacja ufa danym, których nikt nie sprawdził.
+
+## unknown, czyli „najpierw sprawdź”
+
+TypeScript ma drugi typ na „nie wiem, co to jest”: `unknown`. Różnica jest jedna, ale bardzo ważna. Z `any` możesz zrobić wszystko. Z `unknown` nie możesz zrobić nic, dopóki nie sprawdzisz, co to jest:
+
+~~~ts
+const dane: unknown = await res.json();
+dane.temperature;
+~~~
+
+~~~text
+'dane' is of type 'unknown'.
+~~~
+
+Żeby sięgnąć po `temperature`, trzeba najpierw zawęzić typ, tak jak w części 3. Na przykład sprawdzić `typeof dane === "object"`, potem `dane !== null`, potem `"temperature" in dane` i tak dalej, pole po polu. To uczciwe, ale przy depeszy z kilkunastoma polami robi się bardzo długie. Na szczęście jest na to lepszy sposób, do którego dojdziemy za chwilę.
+
+`unknown` spotkasz też tam, gdzie się go nie spodziewasz. W trybie `strict` z części 1 zmienna w `catch` ma typ `unknown`:
+
+~~~ts
+try {
+  // …
+} catch (err) {
+  console.error(err); // OK
+  err.message; // błąd: 'err' is of type 'unknown'.
+}
+~~~
+
+Dlaczego? Bo w JavaScripcie rzucić można wszystko, nie tylko `Error`. `throw "coś"` też jest poprawne. W Destinations bloki `catch` tylko przekazują `err` do `console.error` i ustawiają komunikat dla użytkownika, więc nie muszą wiedzieć, czym błąd jest. Gdybyś chciał odczytać `err.message`, najpierw sprawdź `if (err instanceof Error)`.
+
+## as, czyli „wiem lepiej”
+
+Trzecie narzędzie to **asercja typu**: `wartość as Typ`. Mówisz nią TypeScriptowi: „wiem, co tu jest, potraktuj to jako ten typ”.
+
+Ważne: asercja niczego nie sprawdza i niczego nie zmienia. Przy budowaniu znika razem z typami. To tylko obietnica. TypeScript zablokuje jedynie obietnice oczywiście bez sensu:
+
+~~~ts
+const d = "tekst" as Destination;
+~~~
+
+~~~text
+Conversion of type 'string' to type 'Destination' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+~~~
+
+Ale już `"tekst" as unknown as Destination` przejdzie, czyli zablokuje tylko oczywiste przypadki. Czy dana asercja jest w porządku, zależy od tego, czy obietnica jest prawdziwa. Poniżej są trzy `as` z tego bloga i z moich projektów. Przy każdym zadaję te same dwa pytania: skąd pochodzą dane i co się stanie, jeśli obietnica okaże się nieprawdziwa.
+
+### as w funkcji odmien na tym blogu
+
+Z części 4 pamiętasz funkcję, która pisze „1 wpis”, „3 wpisy”, „35 wpisów”:
+
+~~~ts
+const odmiana = new Intl.PluralRules("pl-PL");
+
+export function odmien(
+  n: number,
+  formy: { one: string; few: string; many: string },
+) {
+  const kategoria = odmiana.select(n) as keyof typeof formy;
+  return `${n} ${formy[kategoria] ?? formy.many}`;
+}
+~~~
+
+`odmiana.select(n)` zwraca kategorię liczby. TypeScript zna wszystkie kategorie ze wszystkich języków świata: `"zero"`, `"one"`, `"two"`, `"few"`, `"many"` i `"other"`. Nie wie, że dla polskiego zostają tylko cztery. Bez `as` dostałbym błąd:
+
+~~~text
+Element implicitly has an 'any' type because expression of type 'LDMLPluralRule' can't be used to index type '{ one: string; few: string; many: string; }'.
+  Property 'zero' does not exist on type '{ one: string; few: string; many: string; }'.
+~~~
+
+`as keyof typeof formy` obiecuje, że kategoria to `"one"`, `"few"` albo `"many"`. Czy to prawda? Prawie. Dla liczb całkowitych po polsku tak: 1 to `one`, 2–4 i 22–24 to `few`, reszta to `many`. Ale dla ułamków, np. `1.5`, polski zwraca czwartą kategorię, `"other"`. Na blogu nie liczę połówek wpisów, a gdyby jednak trafił się ułamek, `formy["other"]` da `undefined`, a `?? formy.many` wstawi formę zapasową. Asercja jest uczciwa, bo obok niej jest zabezpieczenie na przypadek, w którym obietnica by nie wystarczyła.
+
+### as przy Object.keys w schemacie frontmattera
+
+Też z części 4:
+
+~~~ts
+series: z
+  .enum(Object.keys(serie) as [KluczSerii, ...KluczSerii[]])
+  .optional(),
+~~~
+
+`Object.keys` w TypeScripcie zawsze zwraca `string[]`, nawet dla obiektu, którego klucze dokładnie zna. Powód: typ obiektu mówi, jakie pola **na pewno** są, ale nie zabrania, żeby w trakcie działania było ich więcej. TypeScript nie może więc obiecać, że w `Object.keys` będą tylko klucze z typu.
+
+Bez `as` schemat by działał, ale `post.data.series` miałoby typ `string`, a nie `KluczSerii`. Cały mechanizm z części 4 by się rozpadł. Tu asercja jest bezpieczna, bo `serie` to mój obiekt z mojego pliku i wiem, że nie ma w nim nic poza seriami.
+
+Zapis `[KluczSerii, ...KluczSerii[]]` znaczy „tablica z co najmniej jednym elementem”. Starsze wersje Zod wymagały takiego typu w `z.enum`. Sprawdziłem, że w obecnej wersji wystarczy `as KluczSerii[]`, więc to dobry kandydat na małe uproszczenie.
+
+### as przy dokumentach z bazy w Destinations
+
+W Destinations destynacje są w bazie Firestore. Generator, panel szkoleniowca i strona do druku czytają je tak:
+
+~~~ts
+const data = querySnapshot.docs.map((doc) => doc.data() as Destination);
+~~~
+
+`doc.data()` zwraca typ `DocumentData`, czyli „obiekt z dowolnymi polami o dowolnych wartościach”. Bez `as` TypeScript nie pozwoli przypisać go do `Destination`, bo nie wie, czy są tam `abbreviation`, `zone` i reszta. `as Destination` to obietnica, że są.
+
+Czy to prawda? Dopóki destynacje dodaje się tylko przez formularz w panelu, tak, bo formularz tworzy pełny obiekt `Destination`. Ale baza nie wie nic o moim typie. Gdyby ktoś dodał dokument ręcznie w konsoli Firebase i zapomniał o strefie, aplikacja dostałaby `zone: undefined` z typem, który twierdzi, że to `"Schengen"` albo `"Non-Schengen"`. Ta asercja jest więc ryzykowna, bo dane przychodzą z bazy, a nie z mojego kodu.
+
+<Hare type="decision">
+Kiedy `as`, a kiedy prawdziwe sprawdzenie? Moja zasada: `as` jest w porządku, gdy dane pochodzą z mojego kodu i wiem, co w nich jest (`Object.keys(serie)`, opcje w `<select>` z wartościami wpisanymi w kodzie). Gdy dane przychodzą z zewnątrz, czyli z API, bazy, `localStorage` albo od użytkownika, `as` niczego nie zabezpiecza. Wtedy wybieram sprawdzenie: zawężanie z części 3 albo walidację, o której za chwilę.
+</Hare>
+
+<Hare type="tip">
+Każdy `as` w kodzie to miejsce, w którym TypeScript przestał sprawdzać i uwierzył Ci na słowo. Warto dopisać nad nim krótki komentarz **dlaczego** ta obietnica jest prawdziwa, np. `// opcje w <select> pochodzą z kodu, więc wartość to zawsze Zone`. Za pół roku nie będziesz pamiętać, a komentarz od razu powie, czy asercja jest jeszcze aktualna. Asercji bez dobrego uzasadnienia lepiej poszukać zamiennika.
+</Hare>
+
+## Sprawdzić zamiast obiecać
+
+Dobry wzór jest już w Avia Weather. Przy motywie z `localStorage` (część 3) nie ma `as`:
+
+~~~ts
+const saved = localStorage.getItem("theme");
+if (saved === "light" || saved === "dark") return saved;
+~~~
+
+Zamiast obiecywać, że w `localStorage` jest `"light"` albo `"dark"`, kod to sprawdza. Każda inna wartość spada do ustawień systemu. Typ wyniku jest pewny, bo wynika ze sprawdzenia, a nie z obietnicy.
+
+Przy jednej wartości wystarczy `if`. Przy depeszy pogodowej z kilkunastoma polami, w tym zagnieżdżonymi obiektami i tablicami, ręczne sprawdzanie byłoby bardzo długie. Do tego służą biblioteki do **walidacji**, czyli sprawdzania danych w trakcie działania programu.
+
+## Zod, czyli schemat, który sprawdza dane i daje typ
+
+Ten blog już korzysta z takiej biblioteki. To **Zod**, a schemat frontmattera w `content.config.ts` jest napisany właśnie w nim:
+
+~~~ts
+schema: z.object({
+  title: z.string(),
+  pubDate: z.coerce.date(),
+  tags: z.array(z.string()).default([]),
+  // …
+}),
+~~~
+
+Frontmatter to też dane z zewnątrz, tyle że dla kodu bloga. Astro przy budowaniu przepuszcza każdy wpis przez schemat, a w części 4 widziałeś, co się dzieje przy literówce w `series`. Do tego `CollectionEntry<"blog">` z części 5 bierze typ ze schematu, więc schemat jest zapisany raz, a daje i sprawdzanie, i typy.
+
+W Avia Weather można zrobić to samo z odpowiedzią AVWX. Zamiast `interface Metar` z części 2 piszę schemat:
+
+~~~ts
+import { z } from "zod";
+
+export const MetarSchema = z.object({
+  station: z.string(),
+  raw: z.string(),
+  temperature: z.object({ value: z.number() }),
+  wind_gust: z.object({ value: z.number() }).nullable(),
+  clouds: z.array(
+    z.object({ type: z.string(), altitude: z.number(), repr: z.string() }),
+  ),
+  // … pozostałe pola
+});
+
+export type Metar = z.infer<typeof MetarSchema>;
+~~~
+
+Po kolei:
+
+- `z.object({ … })` opisuje obiekt, a każde pole ma swój schemat: `z.string()` to tekst, `z.number()` to liczba,
+- `.nullable()` to odpowiednik `| null` z części 2: pole jest, ale może być puste,
+- `z.array(…)` to tablica elementów o podanym schemacie,
+- `z.infer<typeof MetarSchema>` robi ze schematu typ TypeScriptu. `typeof` z części 4 bierze typ wartości `MetarSchema`, a `z.infer` wyciąga z niego typ danych, które schemat przepuści. Wychodzi dokładnie to samo, co było w `interface Metar`.
+
+Różnica między schematem a interfejsem: interfejs znika przy budowaniu, a schemat zostaje w kodzie i działa w trakcie działania programu. `MetarSchema.parse(dane)` sprawdza dane i albo zwraca je z typem `Metar`, albo rzuca błąd z dokładnym opisem, co się nie zgadza. Sformatowany funkcją `z.prettifyError` wygląda tak:
+
+~~~text
+✖ Invalid input: expected object, received null
+  → at temperature
+~~~
+
+## fetchAvwx po poprawce
+
+Teraz funkcja pobierająca dostaje schemat jako trzeci parametr:
+
+~~~ts
+import type { z } from "zod";
+import { MetarSchema, StationSchema, TafSchema } from "./types";
+
+async function fetchAvwx<T>(
+  type: string,
+  icao: string,
+  schema: z.ZodType<T>,
+): Promise<T> {
+  const res = await fetch(`/api/avwx?type=${type}&icao=${icao}`);
+  if (!res.ok) throw new Error(`Błąd API: ${res.status}`);
+  const dane: unknown = await res.json();
+  return schema.parse(dane);
+}
+
+export const fetchMetar = (icao: string) =>
+  fetchAvwx("metar", icao, MetarSchema);
+export const fetchTaf = (icao: string) => fetchAvwx("taf", icao, TafSchema);
+export const fetchStation = (icao: string) =>
+  fetchAvwx("station", icao, StationSchema);
+~~~
+
+Co się zmieniło:
+
+- `schema: z.ZodType<T>` to „schemat, który daje dane typu `T`”. Generyk z części 5 zostaje, ale `T` nie trzeba już podawać w nawiasach. TypeScript wywnioskuje go ze schematu: przy `MetarSchema` to `Metar`, przy `TafSchema` to `Taf`,
+- `const dane: unknown` zamienia `any` z `res.json()` na `unknown`. Od tej chwili danych nie da się użyć bez sprawdzenia,
+- `schema.parse(dane)` to właśnie to sprawdzenie. Typ `T` w wyniku nie jest już obietnicą, tylko wynikiem sprawdzenia.
+
+Gdy AVWX przyśle coś, co nie pasuje do schematu, `parse` rzuci błąd. Pobieraniem w Avia Weather zajmuje się TanStack Query (część 3), który złapie ten błąd i ustawi `isError`. Aplikacja pokaże komunikat „Nie udało się pobrać danych” zamiast wysypać się w środku karty.
+
+Przy okazji: `z.object` domyślnie **usuwa pola spoza schematu**. AVWX zwraca dużo więcej danych, niż używam, a po `parse` zostają tylko te, które opisałem. Typ i dane są więc ze sobą zgodne.
+
+## Obiecana poprawka reguł lotów
+
+W części 3 zostawiłem w Avia Weather `flight_rules: string`, choć reguł lotów są tylko cztery. Problem był taki: unia `"VFR" | "MVFR" | "IFR" | "LIFR"` to obietnica, a wartość przychodzi z AVWX. Teraz, kiedy dane są sprawdzane, mogę tę obietnicę spełnić:
+
+~~~ts
+export const FlightRulesSchema = z.enum(["VFR", "MVFR", "IFR", "LIFR"]);
+export type FlightRules = z.infer<typeof FlightRulesSchema>;
+~~~
+
+`z.enum` to schemat, który przepuści tylko jeden z podanych tekstów. `FlightRules` to typ z tego schematu, czyli unia czterech reguł. To ten sam pomysł co `as const` z części 4: lista jest raz, a typ robi się z niej sam.
+
+Zostało pytanie, co zrobić z wartością spoza listy. Nie chcę, żeby jedno dziwne pole zablokowało całą kartę z temperaturą, wiatrem i chmurami. Dlatego w schemacie depeszy reguły lotów mają zapasową wartość:
+
+~~~ts
+const flightRules = FlightRulesSchema.nullable().catch(null);
+
+export const MetarSchema = z.object({
+  station: z.string(),
+  flight_rules: flightRules,
+  // …
+});
+~~~
+
+- `.nullable()` dopuszcza `null` obok czterech reguł,
+- `.catch(null)` znaczy: jeśli wartość nie pasuje, nie rzucaj błędu, tylko wstaw `null`.
+
+Typ pola to teraz `FlightRules | null`, a funkcja koloru obsługuje oba przypadki:
+
+~~~ts
+export function flightRuleColor(rules: FlightRules | null): string {
+  if (rules === null) return "gray";
+  const colors: Record<FlightRules, string> = {
+    VFR: "green",
+    MVFR: "blue",
+    IFR: "red",
+    LIFR: "purple",
+  };
+  return colors[rules];
+}
+~~~
+
+Porównaj z wersją z części 3. Szara etykieta została, ale zmieniło się, skąd się bierze. Wcześniej `?? "gray"` łapało każdą wartość, której brakowało w obiekcie, także literówkę w moim kodzie. Teraz szary jest tylko wtedy, gdy AVWX przysłał coś spoza listy. `Record<FlightRules, string>` pilnuje, żeby każda z czterech reguł miała kolor, a `if (rules === null)` zawęża typ tak, że `colors[rules]` zawsze coś zwraca. Tak samo zmieniła się funkcja z opisem reguł: zamiast oddawać nieznany kod, przy `null` pisze „brak danych”.
+
+Testy w Avia Weather też się zmieniły. Te dla funkcji koloru i opisu sprawdzają teraz `null` zamiast nieznanych kodów, a do tego doszły trzy testy schematu: poprawna depesza przechodzi, reguły spoza listy zamieniają się w `null`, a depesza bez temperatury jest odrzucona. Wszystkie testy i `tsc -b` przechodzą.
+
+<Hare type="bug">
+Pułapka przy walidacji: łatwo opisać w schemacie więcej, niż potrzebujesz, i potem odrzucać dobre dane przez pole, którego nawet nie wyświetlasz. Opisuj tylko to, czego aplikacja naprawdę używa. W Avia Weather schemat ma te same pola co wcześniejsze interfejsy, a nie całą odpowiedź AVWX. Każde dodatkowe pole to kolejny powód, żeby `parse` rzucił błąd.
+</Hare>
+
+<Hare type="learn">
+Szczegóły: w dokumentacji TypeScriptu [asercje typów](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#type-assertions) i [unknown](https://www.typescriptlang.org/docs/handbook/2/functions.html#unknown), a w dokumentacji [Zod](https://zod.dev/) podstawy schematów, `z.infer` i `.catch()`. O schemacie frontmattera w Astro przeczytasz w przewodniku po [kolekcjach treści](https://docs.astro.build/en/guides/content-collections/).
+</Hare>
+
+## Co nam to daje?
+
+- **Typy kończą się na granicy aplikacji:** sprawdzają Twój kod, ale nie dane, które przychodzą w trakcie działania.
+- **`any` wyłącza sprawdzanie:** `res.json()` zwraca `any`, a `any` pasuje do każdego typu.
+- **`unknown` zmusza do sprawdzenia:** zanim użyjesz wartości, musisz zawęzić jej typ.
+- **`as` to obietnica, nie sprawdzenie:** w porządku przy danych z Twojego kodu, ryzykowna przy danych z zewnątrz. Dobrze ją opisać komentarzem.
+- **Zod łączy jedno z drugim:** schemat sprawdza dane w trakcie działania, a `z.infer` daje z niego typ. Jeden zapis, dwie korzyści.
+
+W **części 7**, ostatniej w serii, zajmiemy się **typami narzędziowymi**: `Partial`, `Pick`, `Omit` i innymi gotowymi przekształceniami typów. Zobaczysz, jak wziąć typ wyniku funkcji bez przepisywania go ręcznie, i podsumujemy całą serię. Do zobaczenia!
