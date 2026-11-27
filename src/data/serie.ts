@@ -36,7 +36,7 @@ export const serie = {
     opis: "Wnioskowanie, typy obiektów, unie, generyki i dane z zewnątrz, na kodzie tego bloga, Avia Weather i Destinations.",
     rodzaj: "srednio-zaawansowane",
     kolejnosc: 1,
-    zamknieta: false,
+    zamknieta: true,
   },
   "jak-powstal-destinations": {
     tytul: "Jak powstał Destinations",
