@@ -1,0 +1,281 @@
+---
+title: 'TypeScript w praktyce (cz. 5): generyki, czyli typy z parametrem'
+description: 'Co znaczą nawiasy <…> w Map<string, number>, Promise<T> i CollectionEntry<"blog">. Własna funkcja generyczna zamiast any, ograniczenia przez extends i jedna funkcja w Avia Weather, która pobiera trzy różne rodzaje danych.'
+pubDate: 2026-11-28
+tags: ['typescript', 'średnio-zaawansowane', 'generyki']
+series: 'ts-w-praktyce'
+seriesPart: 5
+---
+
+import Hare from "../../../components/Hare.astro";
+
+W tej serii nawiasy `<…>` pojawiały się już wiele razy: `new Map<string, number>()` w części 1, `Record<Airport, Destination[]>` w części 4, `useState<"light" | "dark">` w części 3. Za każdym razem w nawiasach był jakiś typ, a ja obiecywałem, że wyjaśnię to później.
+
+Wszystkie te zapisy to **generyki**, czyli typy i funkcje z parametrem. Dziś zobaczysz, jak działają, dlaczego bez nich trzeba by wybierać między `any` a przepisywaniem tej samej funkcji kilka razy i jak jedna funkcja w Avia Weather pobiera metar, prognozę i dane lotniska.
+
+## Funkcja, która nie wie, co dostanie
+
+Zacznijmy od prostej funkcji, która zwraca pierwszy element tablicy. W zwykłym JS:
+
+~~~js
+function pierwszy(tablica) {
+  return tablica[0];
+}
+~~~
+
+Jaki typ ma parametr? Funkcja ma działać z każdą tablicą: destynacji, tagów, liczb. Pierwszy pomysł to `any`, czyli „cokolwiek”:
+
+~~~ts
+function pierwszy(tablica: any[]): any {
+  return tablica[0];
+}
+
+const destynacja = pierwszy(destinations);
+destynacja.abrevation; // literówka, a TypeScript milczy
+~~~
+
+Kod się kompiluje, ale TypeScript przestał pomagać. `pierwszy` zwraca `any`, więc `destynacja` też jest `any`. Literówka w `abrevation` (zamiast `abbreviation`) przejdzie bez słowa, a w trakcie działania dostaniesz `undefined`.
+
+Drugi pomysł to osobna funkcja dla każdego typu: `pierwszaDestynacja(tablica: Destination[])`, `pierwszyTag(tablica: Tag[])` i tak dalej. Typy są dobre, ale kod jest wszędzie ten sam.
+
+Generyk łączy jedno z drugim:
+
+~~~ts
+function pierwszy<T>(tablica: T[]): T | undefined {
+  return tablica[0];
+}
+~~~
+
+Po kolei:
+
+- `<T>` zaraz po nazwie funkcji to **parametr typu**. Tak jak `tablica` jest miejscem na wartość, tak `T` jest miejscem na typ. Nazwa jest dowolna, ale przyjęło się pisać jedną wielką literę, najczęściej `T` (od *type*),
+- `tablica: T[]` znaczy „tablica elementów typu `T`”,
+- `T | undefined` to typ wyniku: element tego samego typu albo `undefined`, gdy tablica jest pusta. Unię z `undefined` znasz z części 3.
+
+Teraz to samo wywołanie:
+
+~~~ts
+const destynacja = pierwszy(destinations);
+// destynacja: Destination | undefined
+
+destynacja?.abrevation;
+~~~
+
+~~~text
+Property 'abrevation' does not exist on type 'Destination'. Did you mean 'abbreviation'?
+~~~
+
+Nie musiałem pisać `pierwszy<Destination>(destinations)`. TypeScript sam zobaczył, że przekazuję `Destination[]`, więc `T` to `Destination`. To to samo **wnioskowanie** co w części 1, tylko zastosowane do parametru typu.
+
+<Hare type="explain">
+Najprościej myśleć o generyku jak o funkcji, która ma dwa rodzaje parametrów. Zwykłe, w nawiasach `( )`, dostają wartości w trakcie działania programu. Parametry typu, w nawiasach `< >`, dostają typy podczas sprawdzania kodu i znikają przy budowaniu. Przeglądarka dostanie zwykłe `function pierwszy(tablica) { return tablica[0]; }`, dokładnie takie jak na początku.
+</Hare>
+
+## Generyki, które już poznaliśmy
+
+Skoro wiesz, czym jest parametr typu, wróćmy do typów z poprzednich części. Każdy z nich to generyk, w którym ktoś inny napisał `<T>`, a Ty tylko podajesz typ.
+
+**Tablica.** `Destination[]` to krótszy zapis `Array<Destination>`. `Array` jest generykiem z jednym parametrem: typem elementów.
+
+**Mapa.** `Map<K, V>` ma dwa parametry: typ klucza i typ wartości. Na tym blogu `getAllTags()` w `src/utils/posts.ts` liczy wpisy dla każdego tagu:
+
+~~~ts
+const counts = new Map<string, number>();
+~~~
+
+W części 1 pisałem, że pusta mapa to miejsce, w którym TypeScript nie ma z czego zgadywać. Teraz widać, co się dzieje bez dopisku: `new Map()` dostaje typ `Map<any, any>`. Wtedy `const liczba: string = counts.get("css")` przejdzie bez błędu, choć w mapie są liczby. Dopisek `<string, number>` wypełnia oba parametry.
+
+**Obietnica.** `Promise<T>` to obietnica, która kiedyś da wartość typu `T`. Gdy najedziesz kursorem na `getPublishedPosts` w edytorze, zobaczysz długi typ, który zaczyna się tak:
+
+~~~text
+Promise<{ id: string; body?: string | undefined; collection: "blog"; data: { title: string; … }; … }[]>
+~~~
+
+Na zewnątrz jest `Promise<…>`, a w środku tablica obiektów z polami wpisu. Czyli obietnica tablicy wpisów. A `await` „rozpakowuje” obietnicę i zostaje sama tablica.
+
+**Record.** `Record<K, V>` z części 3 i 4 to obiekt z kluczami typu `K` i wartościami typu `V`. Też generyk z dwoma parametrami.
+
+**Stan w React.** `useState<"light" | "dark">` w Avia Weather wypełnia parametr typu funkcji `useState`. Przy `useState(true)` dopisek nie jest potrzebny, bo TypeScript wywnioskuje `boolean` z wartości startowej. Przy motywie jest potrzebny, bo z samego `"dark"` wywnioskowałby ogólny `string` i do stanu dałoby się wpisać dowolny tekst.
+
+## Ograniczenia, czyli extends
+
+Typ wpisu na tym blogu to `CollectionEntry<"blog">`. W nawiasach nie ma typu obiektu, tylko nazwa kolekcji. `CollectionEntry` to generyk z Astro, który na podstawie tej nazwy odczytuje schemat z `content.config.ts` i daje dokładny typ wpisu: z `title`, `pubDate`, `series` i resztą pól frontmattera.
+
+Co się stanie, gdy pomylę nazwę kolekcji?
+
+~~~ts
+type Wpis = CollectionEntry<"blogg">;
+~~~
+
+~~~text
+Type '"blogg"' does not satisfy the constraint '"blog"'.
+~~~
+
+Parametr typu `CollectionEntry` nie przyjmuje dowolnego tekstu. Ma **ograniczenie** (ang. *constraint*): tylko nazwy kolekcji, które istnieją w projekcie. Na tym blogu jest jedna, więc ograniczeniem jest `"blog"`.
+
+Ograniczenie zapisuje się słowem `extends`:
+
+~~~ts
+function dlugosc<T extends { length: number }>(x: T) {
+  return x.length;
+}
+
+dlugosc("KTW"); // 3
+dlugosc([1, 2]); // 2
+dlugosc(5); // błąd
+~~~
+
+`T extends { length: number }` znaczy „`T` może być dowolnym typem, byle miał pole `length` z liczbą”. Tekst i tablica je mają, liczba nie:
+
+~~~text
+Argument of type 'number' is not assignable to parameter of type '{ length: number; }'.
+~~~
+
+Bez ograniczenia TypeScript nie pozwoliłby napisać `x.length` w środku funkcji, bo o zwykłym `T` nie wie nic. Ograniczenie mówi mu, co na pewno w `T` jest.
+
+<Hare type="explain">
+To samo słowo `extends` widziałeś w części 2: `interface DestinationWithId extends Destination`. Znaczenie jest podobne. W interfejsie „rozszerza”, czyli ma wszystko, co `Destination`, i coś więcej. W generyku „spełnia”, czyli ma przynajmniej to, co podano po `extends`.
+</Hare>
+
+## querySelector, czyli generyk z ograniczeniem w DOM
+
+W [części 11 serii JS](/blog/js-od-podstaw-11-moduly-i-typescript) pisałem o dopisku w `Comments.astro`:
+
+~~~ts
+const iframe = document.querySelector<HTMLIFrameElement>("iframe.giscus-frame");
+~~~
+
+Teraz wiadomo, co to jest: wypełnienie parametru typu funkcji `querySelector`. Ciekawe jest jednak to, że czasem ten dopisek nie jest potrzebny:
+
+~~~ts
+const ramka = document.querySelector("iframe");
+// ramka: HTMLIFrameElement | null
+~~~
+
+Gdy selektor to sama nazwa znacznika, TypeScript sprawdza go na liście wszystkich znaczników HTML i wie, że `"iframe"` to `HTMLIFrameElement`. W tej liście używa `keyof` z części 4, a parametr typu ma ograniczenie „tylko nazwy znaczników”. Ale `"iframe.giscus-frame"` to już selektor z klasą, a nie sama nazwa znacznika, więc TypeScript wybiera ogólną wersję i zwraca `Element`. Stąd potrzeba dopisku.
+
+Warto zauważyć jeszcze jedno. Dopisek `<HTMLIFrameElement>` nie sprawdza, czy pod tym selektorem naprawdę jest ramka. TypeScript wierzy mi na słowo. O takich sytuacjach będzie część 6.
+
+## Jedna funkcja, trzy typy wyniku
+
+Najlepszy przykład generyka w moich projektach jest w Avia Weather, w `src/api.ts`. Aplikacja pobiera trzy rodzaje danych z serwisu AVWX: aktualną depeszę METAR, prognozę TAF i informacje o lotnisku. Każda ma inny typ, ale samo pobieranie wygląda tak samo:
+
+~~~ts
+async function fetchAvwx<T>(type: string, icao: string): Promise<T> {
+  const res = await fetch(`/api/avwx?type=${type}&icao=${icao}`);
+  if (!res.ok) throw new Error(`Błąd API: ${res.status}`);
+  return res.json();
+}
+
+export const fetchMetar = (icao: string) => fetchAvwx<Metar>("metar", icao);
+export const fetchTaf = (icao: string) => fetchAvwx<Taf>("taf", icao);
+export const fetchStation = (icao: string) =>
+  fetchAvwx<Station>("station", icao);
+~~~
+
+Po kolei:
+
+- `fetchAvwx<T>` ma parametr typu `T`, czyli typ danych, które przyjdą,
+- `type` to rodzaj danych w adresie (`"metar"`, `"taf"` albo `"station"`), a `icao` to kod lotniska, np. `"EPKT"`,
+- wynik to `Promise<T>`, czyli obietnica danych typu `T`,
+- trzy krótkie funkcje na dole wypełniają `T` za każdym razem innym typem: `Metar`, `Taf` i `Station` z części 2.
+
+Tutaj `T` trzeba podać ręcznie w nawiasach. TypeScript nie ma z czego go wywnioskować, bo w parametrach `fetchAvwx` nie ma nic typu `T`, są tylko dwa teksty.
+
+Efekt: w komponencie `fetchMetar("EPKT")` zwraca `Promise<Metar>`, a `fetchTaf("EPKT")` zwraca `Promise<Taf>`. Edytor podpowiada pola depeszy w jednym miejscu i pola prognozy w drugim, a kod pobierania jest napisany raz.
+
+<Hare type="question">
+Skoro `res.json()` nic nie wie o typie `Metar`, to skąd TypeScript wie, że wynik jest `Metar`? Nie wie. Uwierzył na słowo, bo `res.json()` zwraca `any`, a `any` da się przypisać do czegokolwiek, także do `T`. Jeśli AVWX przyśle coś innego, typy dalej powiedzą „OK”. To najważniejszy temat części 6 i tam ta funkcja dostanie poprawkę.
+</Hare>
+
+## Własny generyk: losowanie pytań do testu
+
+W Destinations generator testów losuje 20 kodów lotnisk i 20 miast. Robi to funkcja z `src/utils/random.ts`, o której wspomniałem w części 4:
+
+~~~ts
+export function losoweWartosci(
+  tablica: Destination[],
+  ilosc: number,
+  klucz: keyof Destination,
+): string[] {
+  if (!tablica || !tablica.length || ilosc <= 0) return [];
+
+  const wylosowaneWartosci: string[] = [];
+  const pomocniczaTablica = [...tablica];
+
+  for (let i = 0; i < ilosc; i++) {
+    if (pomocniczaTablica.length === 0) break;
+    const losowyIndeks = Math.floor(Math.random() * pomocniczaTablica.length);
+    wylosowaneWartosci.push(pomocniczaTablica[losowyIndeks][klucz]);
+    pomocniczaTablica.splice(losowyIndeks, 1);
+  }
+  return wylosowaneWartosci;
+}
+~~~
+
+Funkcja kopiuje tablicę, losuje z niej element, zapisuje wartość wybranego pola i usuwa element z kopii, żeby się nie powtórzył. Nic w tym kodzie nie zależy od tego, że to destynacje. Ale typy mówią co innego: przyjmuje tylko `Destination[]` i zawsze zwraca `string[]`.
+
+Gdybym kiedyś chciał losować coś innego, na przykład miejsca w samolocie, wersja generyczna wyglądałaby tak:
+
+~~~ts
+export function losoweWartosci<T, K extends keyof T>(
+  tablica: T[],
+  ilosc: number,
+  klucz: K,
+): T[K][] {
+  if (!tablica || !tablica.length || ilosc <= 0) return [];
+
+  const wylosowaneWartosci: T[K][] = [];
+  const pomocniczaTablica = [...tablica];
+
+  // … pętla bez zmian
+
+  return wylosowaneWartosci;
+}
+~~~
+
+Zmieniły się tylko typy. Po kolei:
+
+- `<T, K extends keyof T>` to dwa parametry typu. `T` to typ elementów tablicy. `K` to klucz, ale z ograniczeniem: musi być jednym z kluczy `T`. Tu spotykają się `extends` z tej części i `keyof` z części 4,
+- `tablica: T[]` przyjmuje tablicę czegokolwiek,
+- `klucz: K` przyjmuje tylko nazwę pola, które istnieje w `T`,
+- `T[K][]` to typ wyniku. `T[K]` znaczy „typ pola `K` w obiekcie `T`”, a `[]` na końcu robi z niego tablicę.
+
+Teraz typ wyniku zależy od tego, co przekażę:
+
+~~~ts
+type Miejsce = { rzad: number; litera: string };
+
+losoweWartosci(destynacje, 20, "abbreviation"); // string[]
+losoweWartosci(destynacje, 20, "airport"); // Airport[]
+losoweWartosci(miejsca, 5, "rzad"); // number[]
+losoweWartosci(miejsca, 5, "kolumna"); // błąd
+~~~
+
+~~~text
+Argument of type '"kolumna"' is not assignable to parameter of type 'keyof Miejsce'.
+~~~
+
+Zwróć uwagę na drugą linijkę. Wersja generyczna jest dokładniejsza nawet dla destynacji: losując lotniska, dostaję `Airport[]`, a nie ogólne `string[]`.
+
+<Hare type="tip">
+Czy zmienię to w Destinations? Na razie nie. Funkcja losuje tylko destynacje i robi to dobrze, a wersja z `<T, K extends keyof T>` jest trudniejsza do przeczytania. Moja zasada: **zacznij od konkretnego typu, a generyk dopisz, gdy funkcja jest potrzebna w drugim miejscu z innymi danymi**. Wtedy wiesz już, co naprawdę musi być wspólne. Generyk na zapas to dodatkowy kod do zrozumienia, z którego nikt nie korzysta.
+</Hare>
+
+<Hare type="bug">
+Uważaj na `any`, bo **przechodzi dalej**. Jeśli funkcja zwraca `any`, to każda zmienna, do której przypiszesz wynik, też jest `any`. To samo dotyczy każdego pola, po które z niej sięgniesz, i każdej funkcji, której ją przekażesz. Jedno `any` w funkcji pomocniczej potrafi wyłączyć sprawdzanie w połowie komponentu, a edytor nie pokaże żadnego ostrzeżenia. Generyk z `<T>` przekazuje dalej prawdziwy typ, więc literówki i braki wychodzą od razu.
+</Hare>
+
+<Hare type="learn">
+Szczegóły w dokumentacji TypeScriptu: rozdział o [generykach](https://www.typescriptlang.org/docs/handbook/2/generics.html), a w nim [ograniczenia przez extends](https://www.typescriptlang.org/docs/handbook/2/generics.html#generic-constraints) i [parametr typu ograniczony przez keyof](https://www.typescriptlang.org/docs/handbook/2/generics.html#using-type-parameters-in-generic-constraints), czyli dokładnie to, co w `losoweWartosci`. Zapis `T[K]` jest opisany w rozdziale o [typie pola](https://www.typescriptlang.org/docs/handbook/2/indexed-access-types.html).
+</Hare>
+
+## Co nam to daje?
+
+- **Generyk to typ z parametrem:** `<T>` jest miejscem na typ, tak jak zwykły parametr jest miejscem na wartość.
+- **Bez `any` i bez kopiowania:** jedna funkcja działa z różnymi danymi, a typ wyniku zależy od tego, co przekażesz.
+- **Wnioskowanie działa też tutaj:** najczęściej nie trzeba pisać typu w nawiasach, TypeScript wywnioskuje go z argumentów.
+- **`extends` ogranicza parametr:** `K extends keyof T` przyjmie tylko pole, które istnieje.
+- **Znane typy to generyki:** `Array<T>`, `Map<K, V>`, `Promise<T>`, `Record<K, V>`, `useState<T>`, `CollectionEntry<"blog">`.
+
+W **części 6** dojdziemy do granicy, na której typy się kończą. Zobaczysz, czemu `res.json()` w `fetchAvwx` to obietnica, której nikt nie sprawdza, czym różni się `any` od `unknown`, kiedy `as` jest uczciwe, a kiedy nie, i jak Avia Weather dostanie wreszcie poprawkę reguł lotów obiecaną w części 3. Do zobaczenia!
